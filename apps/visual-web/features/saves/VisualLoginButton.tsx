@@ -69,7 +69,7 @@ export function VisualLoginButton({ redirectTo = '/saves' }: { redirectTo?: stri
 
     let result: LoginState = 'idle';
     try {
-      const userId = await authService.signInWithGoogle();
+      const userId = await authService.signInWithGoogle({ selectAccount: true });
       if (await waitForSignedInUser(authService, userId)) {
         navigate(redirectTo);
       }

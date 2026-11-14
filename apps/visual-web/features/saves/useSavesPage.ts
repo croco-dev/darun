@@ -20,7 +20,11 @@ import { useVisualAccount } from './useVisualAccount';
 
 export type SavesTab = 'screenshots' | 'flows';
 
-export type SavesPageState = { tab: SavesTab; onTabChange: (tab: SavesTab) => void } & (
+export type SavesPageState = {
+  tab: SavesTab;
+  onTabChange: (tab: SavesTab) => void;
+  user: ReturnType<typeof useVisualAccount>;
+} & (
   | { status: 'loading' }
   | { status: 'login-required' }
   | { status: 'error'; retry: () => void }
@@ -132,7 +136,8 @@ export function readSavesTabParam(searchParams: URLSearchParams): SavesTab {
  */
 export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageState {
   const apolloClient = useApolloClient();
-  const account = useVisualAccount();
+  const user = useVisualAccount();
+  const account = user == null ? user : user.id;
   const generations = useRef<Record<SavesTab, number>>({
     screenshots: 0,
     flows: 0,
@@ -343,18 +348,19 @@ export function useSavesPage(initialTab: SavesTab = 'screenshots'): SavesPageSta
   }, [tab, onLoadMore]);
 
   if (status === 'loading') {
-    return { status: 'loading', tab, onTabChange };
+    return { status: 'loading', tab, onTabChange, user };
   }
   if (status === 'login-required') {
-    return { status: 'login-required', tab, onTabChange };
+    return { status: 'login-required', tab, onTabChange, user };
   }
   if (status === 'error') {
-    return { status: 'error', retry, tab, onTabChange };
+    return { status: 'error', retry, tab, onTabChange, user };
   }
   const loadingMore = tab === 'screenshots' ? screenshotLoadingMore : flowLoadingMore;
   const loadMoreError = tab === 'screenshots' ? screenshotLoadMoreError : flowLoadMoreError;
   return {
     status: 'loaded',
+    user,
     tab,
     onTabChange,
     screenshotCards,

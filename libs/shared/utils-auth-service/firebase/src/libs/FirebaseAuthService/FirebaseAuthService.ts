@@ -12,12 +12,14 @@ type FirebaseAuthConfig = {
   privateKey: string;
   authDomain: string;
   apiKey: string;
+  waitForSignOutConfirmation?: boolean;
 };
 
 export class FirebaseAuthService implements AuthService {
   private authMethods: ReturnType<typeof getFirebaseAuth>;
   private authStorage?: AuthStorage;
   private apiKey: string;
+  private readonly waitForSignOutConfirmation: boolean;
   private authHandlers = new Set<{
     onChange: (user?: AuthUser) => void;
     onError?: () => void;
@@ -25,9 +27,18 @@ export class FirebaseAuthService implements AuthService {
   private unsubscribeAuth?: () => void;
   private authRevision = 0;
   private signOutsInFlight = 0;
+  private tokenReadDeferredBySignOut = false;
   private latestAuthResult?: { status: 'ready'; user?: AuthUser } | { status: 'error' };
 
-  constructor({ projectId, privateKey, clientEmail, authDomain, apiKey }: FirebaseAuthConfig) {
+  constructor({
+    projectId,
+    privateKey,
+    clientEmail,
+    authDomain,
+    apiKey,
+    waitForSignOutConfirmation = false,
+  }: FirebaseAuthConfig) {
+    this.waitForSignOutConfirmation = waitForSignOutConfirmation;
     const normalizedPrivateKey = privateKey.replace(/\\n/g, '\n');
 
     this.authMethods = getFirebaseAuth(
@@ -68,15 +79,36 @@ export class FirebaseAuthService implements AuthService {
   }
 
   async signOut() {
-    // Invalidate before clearing cookies, including the interval before Firebase emits null.
+    const auth = getAuth();
+    // Invalidate older token reads immediately, while preserving a confirmed session if Firebase rejects sign-out.
     this.authRevision++;
-    this.latestAuthResult = undefined;
     this.signOutsInFlight++;
     try {
-      this.authStorage?.clear();
-      await getAuth().signOut();
+      if (!this.waitForSignOutConfirmation) {
+        this.latestAuthResult = undefined;
+        this.authStorage?.clear();
+      }
+      await auth.signOut();
     } finally {
       this.signOutsInFlight--;
+      if (this.signOutsInFlight === 0 && this.waitForSignOutConfirmation) {
+        const currentUser = auth.currentUser;
+        const refreshToken = this.tokenReadDeferredBySignOut;
+        this.tokenReadDeferredBySignOut = false;
+        if (!currentUser) {
+          this.authStorage?.clear();
+          // Persistence can reject after Firebase sets currentUser to null, before it notifies listeners.
+          if (this.latestAuthResult?.status !== 'ready' || this.latestAuthResult.user) {
+            await this.readAuthState(null);
+          }
+        } else if (
+          refreshToken ||
+          this.latestAuthResult?.status !== 'ready' ||
+          this.latestAuthResult.user?.id !== currentUser.uid
+        ) {
+          await this.readAuthState(currentUser);
+        }
+      }
     }
   }
 
@@ -136,6 +168,10 @@ export class FirebaseAuthService implements AuthService {
   }
 
   private async readAuthState(user: User | null) {
+    if (this.waitForSignOutConfirmation && user && this.signOutsInFlight > 0) {
+      this.tokenReadDeferredBySignOut = true;
+      return;
+    }
     const revision = ++this.authRevision;
     this.latestAuthResult = undefined;
     const isCurrent = () =>
@@ -182,10 +218,11 @@ export class FirebaseAuthService implements AuthService {
     }
   }
 
-  public async signInWithGoogle() {
+  public async signInWithGoogle({ selectAccount = false }: { selectAccount?: boolean } = {}) {
     const provider = new GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
+    if (selectAccount) provider.setCustomParameters({ prompt: 'select_account' });
 
     const { user } = await signInWithPopup(getAuth(), provider);
     return user.uid;

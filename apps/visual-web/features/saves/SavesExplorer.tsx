@@ -2,7 +2,7 @@
 
 import { Button, Layers } from '@darun/ui';
 import { Link } from '@darun/utils-router';
-import { useId, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { VISUAL_FLOW_TYPE_LABELS } from '../flows/flowClassifications';
 import type { FlowCard } from '../flows/useFlowExplorer';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
@@ -16,6 +16,7 @@ import {
   isVisualScreenTypeValue,
 } from '../screenshots/visualClassifications';
 import { useSavesPage, type SavesPageState, type SavesTab } from './useSavesPage';
+import { useVisualSignOut } from './useVisualSignOut';
 import { VisualLoginButton } from './VisualLoginButton';
 
 const TABS: Array<{ value: SavesTab; label: string }> = [
@@ -131,18 +132,94 @@ function SavesSkeletons() {
   );
 }
 
+function SavesAccount({
+  identifier,
+  pending,
+  failed,
+  onSignOut,
+  onFocusChange,
+}: {
+  identifier?: string;
+  pending: boolean;
+  failed: boolean;
+  onSignOut: () => void;
+  onFocusChange: (focused: boolean) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        {identifier && (
+          <p className="min-w-0 text-sm wrap-anywhere text-dark-600">
+            <span className="font-semibold text-dark-900">현재 계정:</span> {identifier}
+          </p>
+        )}
+        <Button
+          type="button"
+          variant="shadow"
+          size="sm"
+          className="min-h-11 shrink-0 aria-disabled:cursor-wait"
+          aria-disabled={pending}
+          aria-busy={pending}
+          onClick={onSignOut}
+          onFocus={() => onFocusChange(true)}
+          onBlur={event => {
+            if (event.relatedTarget) onFocusChange(false);
+          }}
+        >
+          {pending ? '로그아웃 중…' : failed && !identifier ? '로그아웃 다시 시도' : '로그아웃'}
+        </Button>
+      </div>
+      {failed && (
+        <p role="alert" className="text-sm text-dark-700">
+          로그아웃하지 못했어요. 다시 시도해 주세요.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /**
  * M4 내 저장 페이지. 로그인 필수 — 미인증 시 로그인 안내.
  * 탭별 화면/플로 저장 카드 목록, 저장 시각 내림차순, 더보기 페이징.
  */
 export function SavesExplorer() {
   const state = useSavesPage();
+  const { attempt, signOut, dismissOtherAccountError } = useVisualSignOut();
   const id = useId();
   const tabButtons = useRef<Partial<Record<SavesTab, HTMLButtonElement | null>>>({});
+  const logoutFocused = useRef(false);
   const [focusedTab, setFocusedTab] = useState<SavesTab | null>(null);
+  const accountId = state.user?.id;
+  const logout = attempt && (!accountId || accountId === attempt.accountId) ? attempt : undefined;
+  const showAccountControl = Boolean(accountId || logout);
+  const signingOut = attempt?.status === 'pending';
+
+  useLayoutEffect(() => {
+    if (accountId) dismissOtherAccountError(accountId);
+  }, [accountId, dismissOtherAccountError]);
+
+  useLayoutEffect(() => {
+    if (showAccountControl || !logoutFocused.current) return;
+    logoutFocused.current = false;
+    if (document.activeElement === document.body) tabButtons.current[state.tab]?.focus();
+  }, [showAccountControl, state.tab]);
 
   return (
     <div className="flex w-full flex-col gap-6 md:gap-10">
+      {showAccountControl && (
+        <SavesAccount
+          identifier={state.user?.email || accountId}
+          pending={signingOut}
+          failed={logout?.status === 'error'}
+          onSignOut={() => {
+            const owner = accountId ?? logout?.accountId;
+            if (owner && !signingOut) void signOut(owner);
+          }}
+          onFocusChange={focused => {
+            logoutFocused.current = focused;
+          }}
+        />
+      )}
       {state.status === 'loaded' && (
         <p className="text-sm text-dark-500">계정에 저장한 항목입니다. 이 브라우저의 컬렉션과는 별개입니다.</p>
       )}
@@ -201,7 +278,7 @@ export function SavesExplorer() {
           hidden={state.tab !== value}
           className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-dark-900/60"
         >
-          {state.tab === value && <SavesPanelContent state={state} />}
+          {state.tab === value && !(state.status === 'login-required' && logout) && <SavesPanelContent state={state} />}
         </div>
       ))}
     </div>
