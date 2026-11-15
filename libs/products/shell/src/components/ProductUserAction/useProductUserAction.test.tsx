@@ -6,11 +6,14 @@ import { useProductUserAction } from './useProductUserAction';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const { mutate } = vi.hoisted(() => ({ mutate: vi.fn() }));
-vi.mock('@apollo/client/react', () => ({
-  useApolloClient: () => ({ query: vi.fn() }),
-  useQuery: () => ({ data: { productBySlug: { voteCount: 3 } } }),
-  useMutation: () => [mutate],
-}));
+vi.mock('@apollo/client/react', () => {
+  const data = { productBySlug: { voteCount: 3 } };
+  return {
+    useApolloClient: () => ({ query: vi.fn(), readQuery: () => data }),
+    useQuery: () => ({ data }),
+    useMutation: () => [mutate],
+  };
+});
 vi.mock('next-intl', () => ({ useLocale: () => 'en' }));
 let current: {
   upvoteProduct: () => Promise<void>;
