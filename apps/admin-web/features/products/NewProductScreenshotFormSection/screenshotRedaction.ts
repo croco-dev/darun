@@ -44,24 +44,44 @@ function pngDimensions(bytes: DataView): ImageDimensions {
   throw new Error(INVALID_IMAGE);
 }
 
+function jpegMarkerOffset(bytes: DataView, start: number): number | undefined {
+  if (bytes.getUint8(start) !== 0xff) return;
+  let offset = start + 1;
+  while (offset < bytes.byteLength && bytes.getUint8(offset) === 0xff) offset++;
+  if (offset + 3 <= bytes.byteLength) return offset;
+}
+
 function jpegDimensions(bytes: DataView): ImageDimensions {
   if (bytes.getUint16(0) !== 0xffd8) throw new Error(INVALID_IMAGE);
-  for (let offset = 2; offset + 4 <= bytes.byteLength;) {
-    if (bytes.getUint8(offset++) !== 0xff) break;
-    while (offset < bytes.byteLength && bytes.getUint8(offset) === 0xff) offset++;
-    if (offset + 3 > bytes.byteLength) break;
-    const marker = bytes.getUint8(offset++);
+  let offset = 2;
+  while (offset + 4 <= bytes.byteLength) {
+    const markerOffset = jpegMarkerOffset(bytes, offset);
+    if (markerOffset === undefined) break;
+    const marker = bytes.getUint8(markerOffset);
     if (marker === 0xda || marker === 0xd9) break; // Start of scan or end of image.
-    const length = bytes.getUint16(offset);
-    if (length < 2 || offset + length > bytes.byteLength) break;
+    const segment = markerOffset + 1;
+    const length = bytes.getUint16(segment);
+    if (length < 2 || segment + length > bytes.byteLength) break;
     // Baseline, extended sequential, and progressive JPEG.
-    if (marker === 0xc0 || marker === 0xc1 || marker === 0xc2) {
+    if ([0xc0, 0xc1, 0xc2].includes(marker)) {
       if (length < 8) break;
-      return { width: bytes.getUint16(offset + 5), height: bytes.getUint16(offset + 3) };
+      return { width: bytes.getUint16(segment + 5), height: bytes.getUint16(segment + 3) };
     }
-    offset += length;
+    offset = segment + length;
   }
   throw new Error(INVALID_IMAGE);
+}
+
+function webpFrameDimensions(bytes: DataView, kind: number, start: number, length: number): ImageDimensions {
+  if (kind === 0x56503820) {
+    if (length < 10 || (bytes.getUint32(start + 2) & 0xffffff) !== 0x9d012a) {
+      throw new Error(INVALID_IMAGE);
+    }
+    return { width: bytes.getUint16(start + 6, true) & 0x3fff, height: bytes.getUint16(start + 8, true) & 0x3fff };
+  }
+  if (length < 5 || bytes.getUint8(start) !== 0x2f) throw new Error(INVALID_IMAGE);
+  const dimensions = bytes.getUint32(start + 1, true);
+  return { width: (dimensions & 0x3fff) + 1, height: ((dimensions >>> 14) & 0x3fff) + 1 };
 }
 
 function webpDimensions(bytes: DataView): ImageDimensions {
@@ -96,18 +116,10 @@ function webpDimensions(bytes: DataView): ImageDimensions {
         };
         break;
       case 0x56503820: // VP8
-        if (length < 10 || image || (bytes.getUint32(start + 2) & 0xffffff) !== 0x9d012a) {
-          throw new Error(INVALID_IMAGE);
-        }
-        image = { width: bytes.getUint16(start + 6, true) & 0x3fff, height: bytes.getUint16(start + 8, true) & 0x3fff };
+      case 0x5650384c: // VP8L
+        if (image) throw new Error(INVALID_IMAGE);
+        image = webpFrameDimensions(bytes, kind, start, length);
         break;
-      case 0x5650384c: {
-        // VP8L
-        if (length < 5 || image || bytes.getUint8(start) !== 0x2f) throw new Error(INVALID_IMAGE);
-        const dimensions = bytes.getUint32(start + 1, true);
-        image = { width: (dimensions & 0x3fff) + 1, height: ((dimensions >>> 14) & 0x3fff) + 1 };
-        break;
-      }
     }
   }
 
@@ -200,7 +212,7 @@ export async function createRedactedScreenshot(
     }
 
     const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
-    if (!blob || blob.type !== 'image/png') throw new Error('가림 결과를 만들 수 없습니다.');
+    if (blob?.type !== 'image/png') throw new Error('가림 결과를 만들 수 없습니다.');
     if (blob.size > MAX_SCREENSHOT_BYTES) throw new Error('가림 결과가 10MB를 초과합니다.');
     return new File([blob], 'redacted-screenshot.png', { type: 'image/png' });
   } finally {

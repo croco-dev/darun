@@ -47,3 +47,25 @@ it('rejects animated or mislabeled containers before browser decode', async () =
   ).rejects.toThrow(/이미지를 읽을 수 없/);
   expect(decode).not.toHaveBeenCalled();
 });
+
+it.each([
+  [
+    'tiny.jpg',
+    'image/jpeg',
+    '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAALAAcDAREAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFgEBAQEAAAAAAAAAAAAAAAAAAAcI/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AjiTtdgP/2Q==',
+  ],
+  [
+    'tiny.webp',
+    'image/webp',
+    'UklGRjoAAABXRUJQVlA4IC4AAACwAQCdASoHAAsAAgA0JaACdLoABDAAAP7u09/8Buvi2mX/1Bn/lof+rQ/W4AAA',
+  ],
+  ['tiny-lossless.webp', 'image/webp', 'UklGRh4AAABXRUJQVlA4TBEAAAAvBoACAAfQmvYWpP+BiOh/AAA='],
+])('accepts a static %s container before decoding', async (name, mime, fixture) => {
+  const bitmap = { width: 7, height: 11, close: vi.fn() };
+  const decode = vi.fn(async () => bitmap);
+  vi.stubGlobal('createImageBitmap', decode);
+  const file = new File([Buffer.from(fixture, 'base64')], name, { type: mime });
+
+  await expect(decodeScreenshotForRedaction(file)).resolves.toBe(bitmap);
+  expect(decode).toHaveBeenCalledOnce();
+});

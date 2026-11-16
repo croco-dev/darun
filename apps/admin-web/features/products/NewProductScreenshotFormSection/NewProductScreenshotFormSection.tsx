@@ -33,12 +33,12 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               className="file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 file:px-3 file:py-1.5 file:text-sm file:font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               onChange={event => {
                 let next = event.currentTarget.files?.[0];
-                const error =
-                  next && !next.type.startsWith('image/')
-                    ? '이미지 파일(PNG, JPEG, WebP)만 업로드할 수 있습니다.'
-                    : next && next.size > MAX_SCREENSHOT_BYTES
-                      ? '스크린샷 이미지는 10MB 이하만 업로드할 수 있습니다.'
-                      : undefined;
+                let error: string | undefined;
+                if (next && !next.type.startsWith('image/')) {
+                  error = '이미지 파일(PNG, JPEG, WebP)만 업로드할 수 있습니다.';
+                } else if (next && next.size > MAX_SCREENSHOT_BYTES) {
+                  error = '스크린샷 이미지는 10MB 이하만 업로드할 수 있습니다.';
+                }
                 if (error) {
                   notifications.show({ message: error, color: 'red' });
                   event.currentTarget.value = '';
@@ -71,7 +71,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
                 }
               }}
             />
-            업로드 전에 민감한 부분 가리기
+            <span>업로드 전에 민감한 부분 가리기</span>
           </label>
           {file &&
             (redacting ? (

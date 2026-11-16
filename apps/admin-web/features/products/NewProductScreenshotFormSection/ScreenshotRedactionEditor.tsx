@@ -25,10 +25,10 @@ interface PositionedRegion extends RedactionRegion {
 
 function readRegion({ left, top, right, bottom }: Selection['coordinates']): RedactionRegion {
   return {
-    left: Number(left || NaN),
-    top: Number(top || NaN),
-    right: Number(right || NaN),
-    bottom: Number(bottom || NaN),
+    left: Number(left || Number.NaN),
+    top: Number(top || Number.NaN),
+    right: Number(right || Number.NaN),
+    bottom: Number(bottom || Number.NaN),
   };
 }
 
@@ -51,13 +51,13 @@ export function LocalScreenshotPreview({
   alt,
   onLoad,
   onError,
-}: {
+}: Readonly<{
   file: File;
   className: string;
   alt: string;
   onLoad?: () => void;
   onError?: () => void;
-}) {
+}>) {
   const imageRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     const image = imageRef.current;
@@ -79,13 +79,13 @@ function ScreenshotRedactionPreview({
   disabled,
   onDragChange,
   onAdd,
-}: {
+}: Readonly<{
   bitmap: ImageBitmap;
   regions: readonly PositionedRegion[];
   disabled: boolean;
   onDragChange: Dispatch<boolean>;
   onAdd: Dispatch<RedactionRegion>;
-}) {
+}>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const start = useRef<{ pointerId: number; point: Point } | null>(null);
   const [draft, setDraft] = useState<RedactionRegion>();
@@ -160,7 +160,6 @@ function ScreenshotRedactionPreview({
         width={Math.max(1, Math.round(width * scale))}
         height={Math.max(1, Math.round(height * scale))}
         className="block w-full"
-        aria-hidden="true"
       />
       {regions.map(region => (
         <span
@@ -174,7 +173,11 @@ function ScreenshotRedactionPreview({
   );
 }
 
-export function ScreenshotRedactionEditor({ file, disabled, onUploadFileChange }: ScreenshotRedactionEditorProps) {
+export function ScreenshotRedactionEditor({
+  file,
+  disabled,
+  onUploadFileChange,
+}: Readonly<ScreenshotRedactionEditorProps>) {
   const [bitmap, setBitmap] = useState<ImageBitmap>();
   const [regions, setRegions] = useState<Selection[]>([]);
   const [result, setResult] = useState<File>();
@@ -268,6 +271,20 @@ export function ScreenshotRedactionEditor({ file, disabled, onUploadFileChange }
     }
   };
 
+  const updateCoordinate = (id: number, edge: keyof RedactionRegion, value: string) => {
+    clearResult();
+    setRegions(current =>
+      current.map(item => (item.id === id ? { id, coordinates: { ...item.coordinates, [edge]: value } } : item))
+    );
+  };
+
+  let statusMessage = '';
+  if (preparing) {
+    statusMessage = '가림 결과를 만드는 중입니다…';
+  } else if (confirmed) {
+    statusMessage = '가림 결과를 등록할 이미지로 선택했습니다.';
+  }
+
   const busy = disabled || preparing;
   const atRegionLimit = regions.length >= MAX_REDACTION_REGIONS;
 
@@ -294,7 +311,7 @@ export function ScreenshotRedactionEditor({ file, disabled, onUploadFileChange }
           </Button>
         </>
       )}
-      {!bitmap && !decodeError && <p role="status">이미지를 읽는 중입니다…</p>}
+      {!bitmap && !decodeError && <output>이미지를 읽는 중입니다…</output>}
       {bitmap && (
         <>
           <ScreenshotRedactionPreview
@@ -325,7 +342,7 @@ export function ScreenshotRedactionEditor({ file, disabled, onUploadFileChange }
           >
             가림 영역 추가
           </Button>
-          {atRegionLimit && <p role="status">가림 영역은 최대 20개까지 추가할 수 있습니다.</p>}
+          {atRegionLimit && <output>가림 영역은 최대 20개까지 추가할 수 있습니다.</output>}
           {regions.map(({ id, coordinates }, index) => {
             const invalid = !validRegions.some(region => region.id === id);
             const errorId = `${addButtonId}-region-${id}-error`;
@@ -345,15 +362,7 @@ export function ScreenshotRedactionEditor({ file, disabled, onUploadFileChange }
                         onKeyDown={event => {
                           if (event.key === 'Enter') event.preventDefault();
                         }}
-                        onChange={event => {
-                          const value = event.currentTarget.value;
-                          clearResult();
-                          setRegions(current =>
-                            current.map(item =>
-                              item.id === id ? { id, coordinates: { ...item.coordinates, [edge]: value } } : item
-                            )
-                          );
-                        }}
+                        onChange={event => updateCoordinate(id, edge, event.currentTarget.value)}
                       />
                     </AdminField>
                   ))}
@@ -387,9 +396,7 @@ export function ScreenshotRedactionEditor({ file, disabled, onUploadFileChange }
           >
             가림 결과 만들기
           </Button>
-          <p role="status" className="text-sm">
-            {preparing ? '가림 결과를 만드는 중입니다…' : confirmed ? '가림 결과를 등록할 이미지로 선택했습니다.' : ''}
-          </p>
+          <output className="text-sm">{statusMessage}</output>
           {composeError && (
             <p role="alert" className="text-sm text-cherry-700">
               {composeError}
