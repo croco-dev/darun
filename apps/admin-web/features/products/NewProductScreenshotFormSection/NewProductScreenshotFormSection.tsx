@@ -5,89 +5,94 @@ import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminActions, AdminSelect } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
+import { MAX_SCREENSHOT_BYTES } from './screenshotRedaction';
+import { LocalScreenshotPreview, ScreenshotRedactionEditor } from './ScreenshotRedactionEditor';
 
 type NewProductScreenshotFormSectionProps = {
   productSlug: string;
 };
 
 export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScreenshotFormSectionProps) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File>();
+  const [fileSelection, setFileSelection] = useState(0);
+  const [redacting, setRedacting] = useState(false);
+  const [redactionPending, setRedactionPending] = useState(false);
 
   return (
     <NewProductScreenForm productSlug={productSlug}>
       {({ form, loading, isUploading, cancelUpload }) => (
         <div className="flex flex-col gap-3">
           <AdminField label="이미지" error={form.errors.file}>
-            <div className="flex flex-col gap-2">
-              <AdminInput
-                name="file"
-                type="file"
+            <AdminInput
+              ref={fileInput}
+              type="file"
+              disabled={loading}
+              accept="image/png,image/jpeg,image/webp"
+              className="file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 file:px-3 file:py-1.5 file:text-sm file:font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              onChange={event => {
+                let next = event.currentTarget.files?.[0];
+                let error: string | undefined;
+                if (next && !next.type.startsWith('image/')) {
+                  error = '이미지 파일(PNG, JPEG, WebP)만 업로드할 수 있습니다.';
+                } else if (next && next.size > MAX_SCREENSHOT_BYTES) {
+                  error = '스크린샷 이미지는 10MB 이하만 업로드할 수 있습니다.';
+                }
+                if (error) {
+                  notifications.show({ message: error, color: 'red' });
+                  event.currentTarget.value = '';
+                  next = undefined;
+                }
+                form.setFieldValue('file', redacting ? undefined : next);
+                form.clearFieldError('file');
+                setRedactionPending(redacting);
+                setFile(next);
+                setFileSelection(current => current + 1);
+              }}
+            />
+          </AdminField>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={redacting}
+              disabled={loading}
+              onChange={event => {
+                const enabled = event.currentTarget.checked;
+                // Never restore an original file to the upload form when leaving the editor.
+                form.setFieldValue('file', undefined);
+                form.clearFieldError('file');
+                setRedacting(enabled);
+                setRedactionPending(enabled);
+                if (!enabled) {
+                  setFile(undefined);
+                  if (fileInput.current) fileInput.current.value = '';
+                  fileInput.current?.focus();
+                }
+              }}
+            />
+            <span>업로드 전에 민감한 부분 가리기</span>
+          </label>
+          {file &&
+            (redacting ? (
+              <ScreenshotRedactionEditor
+                key={fileSelection}
+                file={file}
                 disabled={loading}
-                accept="image/png,image/jpeg,image/webp"
-                className="file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 file:px-3 file:py-1.5 file:text-sm file:font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                onChange={event => {
-                  const file = event.currentTarget.files?.[0] ?? undefined;
-                  if (file && !file.type.startsWith('image/')) {
-                    notifications.show({
-                      message: '이미지 파일(PNG, JPEG, WebP)만 업로드할 수 있습니다.',
-                      color: 'red',
-                    });
-                    event.currentTarget.value = '';
-                    form.getInputProps('file').onChange(undefined);
-                    if (previewUrl) {
-                      URL.revokeObjectURL(previewUrl);
-                      setPreviewUrl(null);
-                    }
-                    return;
-                  }
-                  const MAX_SCREENSHOT_SIZE = 10 * 1024 * 1024;
-                  if (file && file.size > MAX_SCREENSHOT_SIZE) {
-                    notifications.show({
-                      message: '스크린샷 이미지는 10MB 이하만 업로드할 수 있습니다.',
-                      color: 'red',
-                    });
-                    event.currentTarget.value = '';
-                    form.getInputProps('file').onChange(undefined);
-                    if (previewUrl) {
-                      URL.revokeObjectURL(previewUrl);
-                      setPreviewUrl(null);
-                    }
-                    return;
-                  }
-                  form.getInputProps('file').onChange(file);
-                  if (previewUrl) {
-                    URL.revokeObjectURL(previewUrl);
-                  }
-                  if (file) {
-                    setPreviewUrl(URL.createObjectURL(file));
-                  } else {
-                    setPreviewUrl(null);
-                  }
+                onUploadFileChange={result => {
+                  form.setFieldValue('file', result);
+                  form.clearFieldError('file');
+                  setRedactionPending(!result);
                 }}
               />
-              {previewUrl && (
-                <div className="flex items-center gap-3">
-                  <img
-                    src={previewUrl}
-                    alt="스크린샷 미리보기"
-                    className="h-24 w-auto shrink-0 rounded-lg border border-dark-200 object-contain p-1 bg-white"
-                  />
-                  <span className="text-xs text-dark-500 select-none break-words [word-break:keep-all]">
-                    선택된 스크린샷 미리보기
-                  </span>
-                </div>
-              )}
-            </div>
-          </AdminField>
+            ) : (
+              <LocalScreenshotPreview
+                key={fileSelection}
+                file={file}
+                alt="스크린샷 미리보기"
+                className="h-24 w-auto max-w-full self-start rounded-lg border border-dark-200 bg-white object-contain p-1"
+              />
+            ))}
           <AdminField label="이미지 alt" error={form.errors.imageAlt}>
             <AdminInput
               name="imageAlt"
@@ -151,7 +156,7 @@ export const NewProductScreenshotFormSection = ({ productSlug }: NewProductScree
               size="md"
               variant="contained"
               color="primary"
-              disabled={loading}
+              disabled={loading || redactionPending}
               className="active:scale-[0.98] motion-reduce:transform-none"
             >
               <span className="select-none whitespace-nowrap">{loading ? '추가 중...' : '추가'}</span>
