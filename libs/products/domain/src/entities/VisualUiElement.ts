@@ -1,35 +1,11 @@
 import { productInvalidArgs } from '../errors/productError';
+import {
+  VISUAL_UI_ELEMENTS,
+  VISUAL_UI_ELEMENTS_MAX_COUNT,
+  type VisualUiElement,
+} from '../visual-ui-elements/VisualUiElementOptions';
 
-/**
- * 스크린샷당 복수 태그 가능한 UI 요소 닫힌 집합.
- * 조인 테이블에 저장되는 코드이며, 화면 탐색 필터의 기준 어휘다.
- */
-export const VISUAL_UI_ELEMENTS = [
-  'AVATAR',
-  'BADGE',
-  'BOTTOM_SHEET',
-  'BUTTON',
-  'CALENDAR',
-  'CARD',
-  'CAROUSEL',
-  'DROPDOWN',
-  'INPUT',
-  'LIST',
-  'MAP',
-  'MODAL',
-  'NAVIGATION_BAR',
-  'PAGINATION',
-  'PROGRESS',
-  'SEARCH_BAR',
-  'STEPPER',
-  'TAB_BAR',
-  'TABLE',
-  'TOGGLE',
-] as const;
-export type VisualUiElement = (typeof VISUAL_UI_ELEMENTS)[number];
-
-/** 스크린샷 하나에 달 수 있는 UI 요소 태그 수 상한. */
-export const VISUAL_UI_ELEMENTS_MAX_COUNT = 10;
+export { VISUAL_UI_ELEMENTS, VISUAL_UI_ELEMENTS_MAX_COUNT, type VisualUiElement };
 
 export function isVisualUiElement(value: string): value is VisualUiElement {
   return (VISUAL_UI_ELEMENTS as readonly string[]).includes(value);
