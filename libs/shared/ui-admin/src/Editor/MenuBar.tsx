@@ -1,10 +1,11 @@
 'use client';
 
-import { cn } from '@darun/ui';
 import { useImageUpload } from '@darun/utils-image-upload';
 import { notifications } from '@mantine/notifications';
+import { NodeSelection } from '@tiptap/pm/state';
 import { type Editor, useEditorState } from '@tiptap/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ImageAltFields } from './ImageAltFields';
 import { MenuItem, menuItemVariants } from './MenuItem';
 
 type MenuBarProps = {
@@ -13,9 +14,18 @@ type MenuBarProps = {
   onImageUploadingChange?: (uploading: boolean) => void;
 };
 
+type ImageDraft = { file: File } | { selection: NodeSelection };
+
+function getSelectedImage(editor: Editor) {
+  const { selection } = editor.state;
+  return selection instanceof NodeSelection && selection.node.type.name === 'image' ? selection : null;
+}
+
 export function MenuBar({ editor, disabled = false, onImageUploadingChange }: MenuBarProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const editImageButtonRef = useRef<HTMLButtonElement | null>(null);
   const { upload } = useImageUpload();
+  const [imageDraft, setImageDraft] = useState<ImageDraft | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const activeUpload = useRef<{
     controller: AbortController;
@@ -32,23 +42,47 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     [editor]
   );
 
-  const handleSelectImage = useCallback(async () => {
-    if (disabled || activeUpload.current) {
+  useEffect(() => {
+    const editorElement = editor.view.dom;
+    const focusImageEditButton = (event: KeyboardEvent) => {
+      const button = editImageButtonRef.current;
+      if (
+        event.key !== 'Tab' ||
+        !event.shiftKey ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        !button ||
+        button.disabled ||
+        !getSelectedImage(editor)
+      ) {
+        return;
+      }
+
+      // Table shortcuts otherwise move to a different cell and deselect the image.
+      event.preventDefault();
+      event.stopPropagation();
+      button.focus();
+    };
+    editorElement.addEventListener('keydown', focusImageEditButton, true);
+    return () => editorElement.removeEventListener('keydown', focusImageEditButton, true);
+  }, [editor]);
+
+  const handleSelectImage = () => {
+    if (disabled || imageDraft || activeUpload.current) {
       return;
     }
 
     const file = inputRef.current?.files?.[0];
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
+    if (inputRef.current) inputRef.current.value = '';
 
     if (!file.type.startsWith('image/')) {
       notifications.show({
         message: '이미지 파일만 업로드할 수 있습니다.',
         color: 'red',
       });
-      if (inputRef.current) inputRef.current.value = '';
       return;
     }
 
@@ -57,10 +91,32 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         message: '이미지 크기는 최대 10MB까지 가능합니다.',
         color: 'red',
       });
-      if (inputRef.current) inputRef.current.value = '';
       return;
     }
 
+    setImageDraft({ file });
+  };
+
+  const confirmImage = async (alt: string) => {
+    if (disabled || !editor.isEditable || !imageDraft || activeUpload.current) return;
+
+    if ('selection' in imageDraft) {
+      const { selection } = imageDraft;
+      if (editor.state.doc !== selection.$from.doc) {
+        setImageDraft(null);
+        notifications.show({
+          message: '본문에서 이미지를 다시 선택해 주세요.',
+          color: 'red',
+        });
+        editor.commands.focus();
+        return;
+      }
+      editor.chain().setNodeSelection(selection.from).updateAttributes('image', { alt }).focus().run();
+      setImageDraft(null);
+      return;
+    }
+
+    const { file } = imageDraft;
     const pending = {
       controller: new AbortController(),
       onImageUploadingChange,
@@ -81,7 +137,8 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         return;
       }
 
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+      editor.chain().focus().setImage({ src: imageUrl, alt }).run();
+      setImageDraft(null);
       notifications.show({
         message: '이미지가 본문에 추가되었습니다.',
         color: 'teal',
@@ -98,17 +155,15 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         activeUpload.current = null;
         setIsUploading(false);
         onImageUploadingChange?.(false);
-        if (inputRef.current) {
-          inputRef.current.value = '';
-        }
       }
     }
-  }, [disabled, editor, onImageUploadingChange, upload]);
+  };
 
   // Read the current prop even before a replacement editor emits its first transaction.
   const activeFormats = useEditorState({
     editor,
     selector: () => ({
+      imageSelected: getSelectedImage(editor) !== null,
       bold: editor.isActive('bold'),
       italic: editor.isActive('italic'),
       heading1: editor.isActive('heading', { level: 1 }),
@@ -162,29 +217,56 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     },
   ];
 
+  const toolbarDisabled = disabled || isUploading || imageDraft !== null;
+
   return (
-    <div className="flex flex-wrap gap-2" role="toolbar" aria-label="서식 도구 모음">
-      {menuItems.map(({ label, action, active }) => (
-        <MenuItem key={label} label={label} disabled={disabled || isUploading} onClick={action} active={active} />
-      ))}
-      <label
-        className={cn(
-          menuItemVariants({ active: false }),
-          disabled || isUploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer',
-          'inline-flex items-center justify-center select-none whitespace-nowrap active:scale-95 motion-reduce:transform-none focus-within:ring-2 focus-within:ring-dark-900/40'
-        )}
-      >
-        {isUploading ? '업로드 중...' : 'Image'}
+    <>
+      <div className="flex flex-wrap gap-2" role="toolbar" aria-label="서식 도구 모음">
+        {menuItems.map(({ label, action, active }) => (
+          <MenuItem key={label} label={label} disabled={toolbarDisabled} onClick={action} active={active} />
+        ))}
+        <button
+          type="button"
+          className={menuItemVariants()}
+          disabled={toolbarDisabled}
+          onClick={() => inputRef.current?.click()}
+        >
+          {isUploading ? '업로드 중...' : '이미지 추가'}
+        </button>
         <input
           ref={inputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp,image/gif"
-          className="sr-only"
+          hidden
           aria-label="본문 이미지 업로드"
-          disabled={disabled || isUploading}
+          disabled={toolbarDisabled}
           onChange={handleSelectImage}
         />
-      </label>
-    </div>
+        <button
+          type="button"
+          className={menuItemVariants()}
+          ref={editImageButtonRef}
+          disabled={toolbarDisabled || !activeFormats.imageSelected}
+          onClick={() => {
+            const selection = getSelectedImage(editor);
+            if (selection) setImageDraft({ selection });
+          }}
+        >
+          이미지 대체 텍스트 수정
+        </button>
+      </div>
+      {imageDraft && (
+        <ImageAltFields
+          adding={'file' in imageDraft}
+          initialAlt={'selection' in imageDraft ? (imageDraft.selection.node.attrs.alt as string | null) : null}
+          disabled={disabled || isUploading}
+          onConfirm={confirmImage}
+          onCancel={() => {
+            setImageDraft(null);
+            editor.commands.focus();
+          }}
+        />
+      )}
+    </>
   );
 }

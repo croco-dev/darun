@@ -67,6 +67,10 @@ function fixture() {
         files: [new File(['image'], 'screen.png', { type: 'image/png' })],
       },
     });
+    fireEvent.change(screen.getByRole('textbox', { name: '대체 텍스트' }), {
+      target: { value: '가격 안내 화면' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '이미지 삽입' }));
   };
   return { client, view, writes, ui, selectImage };
 }
@@ -90,6 +94,7 @@ describe('본문 이미지 업로드와 상품 소개 저장', () => {
       const saved = new DOMParser().parseFromString(f.writes[0].description, 'text/html');
       expect(saved.body.textContent).toContain('첫 상품의 소개');
       expect(saved.querySelector('img')?.src).toBe('https://example.com/first.png');
+      expect(saved.querySelector('img')?.getAttribute('alt')).toBe('가격 안내 화면');
       expect(f.writes[0].slug).toBe('first');
     } finally {
       f.view.unmount();
@@ -109,7 +114,14 @@ describe('본문 이미지 업로드와 상품 소개 저장', () => {
       expect((screen.getByRole('button', { name: '저장' }) as HTMLButtonElement).disabled).toBe(false);
       expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
       const retry = deferredUpload();
-      f.selectImage();
+      expect(
+        (
+          screen.getByRole('textbox', {
+            name: '대체 텍스트',
+          }) as HTMLInputElement
+        ).value
+      ).toBe('가격 안내 화면');
+      fireEvent.click(screen.getByRole('button', { name: '이미지 삽입' }));
       await act(async () => retry('https://example.com/retry.png'));
       fireEvent.click(screen.getByRole('button', { name: '저장' }));
       await waitFor(() => expect(f.writes).toHaveLength(1));

@@ -79,6 +79,8 @@ it.each(['success', 'reject', 'empty'] as const)(
         files: [new File(['synthetic'], 'figure.png', { type: 'image/png' })],
       },
     });
+    fireEvent.click(screen.getByRole('checkbox', { name: '장식용 이미지' }));
+    fireEvent.click(screen.getByRole('button', { name: '이미지 삽입' }));
     await waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
     fireEvent.change(screen.getByLabelText('한 줄 요약'), { target: { value: '업로드 중 작성한 요약' } });
     expect(screen.getByRole<HTMLButtonElement>('button', { name: '저장' }).disabled).toBe(true);
@@ -107,7 +109,7 @@ it.each(['success', 'reject', 'empty'] as const)(
         summary: '업로드 중 작성한 요약',
         content:
           outcome === 'success'
-            ? expect.stringContaining('<img src="https://fixture.invalid/figure.png"')
+            ? expect.stringContaining('<img src="https://fixture.invalid/figure.png" alt="">')
             : '<p>이미지를 포함할 본문</p>',
       },
     });
