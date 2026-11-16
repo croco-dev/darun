@@ -35,16 +35,61 @@ export default $config({
       VISUAL_FLOW_WRITES_ENABLED: process.env.VISUAL_FLOW_WRITES_ENABLED ?? 'false',
     };
 
-    const translationQueue = new sst.aws.Queue('TranslationQueue', {
-      visibilityTimeout: '6 minutes',
-    });
+    function createJobQueue(name: string, workerTimeoutMinutes: number) {
+      const retainOnDelete = $app.stage === 'prod';
+      const deadLetter = new sst.aws.Queue(
+        `${name}DeadLetterQueue`,
+        { transform: { queue: { messageRetentionSeconds: 14 * 24 * 60 * 60 } } },
+        { retainOnDelete }
+      );
+      const source = new sst.aws.Queue(`${name}Queue`, {
+        visibilityTimeout: `${workerTimeoutMinutes * 6} minutes`,
+        dlq: { queue: deadLetter.arn, retry: 5 },
+        transform: { queue: { messageRetentionSeconds: 4 * 24 * 60 * 60 } },
+      });
+      const allowPolicy = new aws.sqs.RedriveAllowPolicy(
+        `${name}DeadLetterRedriveAllowPolicy`,
+        {
+          queueUrl: deadLetter.url,
+          redriveAllowPolicy: source.arn.apply(arn =>
+            JSON.stringify({ redrivePermission: 'byQueue', sourceQueueArns: [arn] })
+          ),
+        },
+        { retainOnDelete }
+      );
+      return {
+        source,
+        output: {
+          source: {
+            url: source.url,
+            arn: source.arn,
+            messageRetentionSeconds: source.nodes.queue.messageRetentionSeconds,
+            visibilityTimeoutSeconds: source.nodes.queue.visibilityTimeoutSeconds,
+            redrivePolicy: source.nodes.queue.redrivePolicy,
+          },
+          deadLetter: {
+            url: deadLetter.url,
+            arn: deadLetter.arn,
+            messageRetentionSeconds: deadLetter.nodes.queue.messageRetentionSeconds,
+            redriveAllowPolicy: allowPolicy.redriveAllowPolicy,
+          },
+        },
+      };
+    }
+
+    const llmWorkerTimeoutMinutes = 5;
+    const contentSyncWorkerTimeoutMinutes = 1;
+    const { source: translationQueue, output: translationQueueOutput } = createJobQueue(
+      'Translation',
+      llmWorkerTimeoutMinutes
+    );
 
     const translationWorker = new sst.aws.Function('TranslationWorker', {
       handler: 'translation-worker.handler',
       bundle: '.build/lambda',
       runtime: 'nodejs22.x',
       architecture: 'arm64',
-      timeout: '5 minutes',
+      timeout: `${llmWorkerTimeoutMinutes} minutes`,
       logging: { retention: '1 week' },
       permissions: [
         {
@@ -63,20 +108,21 @@ export default $config({
 
     translationQueue.subscribe(translationWorker.arn, { batch: { size: 1 } });
 
-    const productDescriptionQueue = new sst.aws.Queue('ProductDescriptionQueue', {
-      visibilityTimeout: '6 minutes',
-    });
-
-    const productResearchQueue = new sst.aws.Queue('ProductResearchQueue', {
-      visibilityTimeout: '6 minutes',
-    });
+    const { source: productDescriptionQueue, output: productDescriptionQueueOutput } = createJobQueue(
+      'ProductDescription',
+      llmWorkerTimeoutMinutes
+    );
+    const { source: productResearchQueue, output: productResearchQueueOutput } = createJobQueue(
+      'ProductResearch',
+      llmWorkerTimeoutMinutes
+    );
 
     const productDescriptionWorker = new sst.aws.Function('ProductDescriptionWorker', {
       handler: 'product-description-worker.handler',
       bundle: '.build/lambda',
       runtime: 'nodejs22.x',
       architecture: 'arm64',
-      timeout: '5 minutes',
+      timeout: `${llmWorkerTimeoutMinutes} minutes`,
       logging: { retention: '1 week' },
       permissions: [
         {
@@ -100,7 +146,7 @@ export default $config({
       bundle: '.build/lambda',
       runtime: 'nodejs22.x',
       architecture: 'arm64',
-      timeout: '5 minutes',
+      timeout: `${llmWorkerTimeoutMinutes} minutes`,
       logging: { retention: '1 week' },
       permissions: [
         {
@@ -119,13 +165,16 @@ export default $config({
 
     productResearchQueue.subscribe(productResearchWorker.arn, { batch: { size: 1 } });
 
-    const contentSyncQueue = new sst.aws.Queue('ProductContentSyncQueue', { visibilityTimeout: '2 minutes' });
+    const { source: contentSyncQueue, output: contentSyncQueueOutput } = createJobQueue(
+      'ProductContentSync',
+      contentSyncWorkerTimeoutMinutes
+    );
     const contentSyncWorker = new sst.aws.Function('ProductContentSyncWorker', {
       handler: 'product-content-sync-worker.handler',
       bundle: '.build/lambda',
       runtime: 'nodejs22.x',
       architecture: 'arm64',
-      timeout: '1 minute',
+      timeout: `${contentSyncWorkerTimeoutMinutes} minutes`,
       logging: { retention: '1 week' },
       environment,
       permissions: [
@@ -141,7 +190,7 @@ export default $config({
         },
       ],
     });
-    contentSyncQueue.subscribe(contentSyncWorker.arn);
+    contentSyncQueue.subscribe(contentSyncWorker.arn, { batch: { size: 1 } });
 
     const screenshotCleanupQueue = new sst.aws.Queue('ScreenshotCleanupQueue', {
       visibilityTimeout: '2 minutes',
@@ -258,6 +307,15 @@ export default $config({
       },
     });
 
-    return { api: router.url, jobRecoveryScheduleArn: jobRecoveryTick.nodes.schedule.arn };
+    return {
+      api: router.url,
+      jobRecoveryScheduleArn: jobRecoveryTick.nodes.schedule.arn,
+      jobQueues: {
+        translation: translationQueueOutput,
+        productDescription: productDescriptionQueueOutput,
+        productResearch: productResearchQueueOutput,
+        productContentSync: contentSyncQueueOutput,
+      },
+    };
   },
 });

@@ -889,6 +889,13 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     expect(row?.name).toBe('새 이름');
     expect(row?.description).toBe('<p>검토한 소개</p>');
     expect(row?.sourceRevision.toString()).toBe(revision.toString());
+
+    const completed = await sync.status(searchIntent.id);
+    await runSearch(searchIntent.id);
+    expect(await sync.status(searchIntent.id)).toEqual(completed);
+    expect(await SearchableProductModel.collection.findOne({ productId: product.id }, { promoteLongs: false })).toEqual(
+      row
+    );
   }, 25_000);
 
   it('name N 뒤 Tag N+1은 N translation을 대체하지 않고 현재 원문을 한 번 번역한다', async () => {
