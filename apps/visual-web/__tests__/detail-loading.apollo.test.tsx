@@ -224,7 +224,16 @@ it('추가 플로 조회가 실패해도 카드를 유지하고 재시도 성공
     })
   );
   const region = within(screen.getByRole('region', { name: '관련 플로' }));
-  const cards = () => region.getAllByRole('listitem').map(item => within(item).getByRole('link'));
+  const cards = () => {
+    const links = region.queryAllByRole('link');
+    return region.getAllByRole('listitem').map(item => {
+      const cardLinks = links.filter(link => item.contains(link));
+      expect(cardLinks).toHaveLength(1);
+      return cardLinks[0];
+    });
+  };
+  const siblingLink = () =>
+    within(screen.getByRole('region', { name: /^다른 화면/ })).getByRole('link', { name: /채팅 화면/ });
   const more = region.getByRole('button', { name: '관련 플로 더 보기' });
   expect(cards()).toHaveLength(8);
   more.focus();
@@ -237,7 +246,7 @@ it('추가 플로 조회가 실패해도 카드를 유지하고 재시도 성공
   await act(async () => f.pending[1].fail());
   expect(region.getByRole('alert')).toBeDefined();
   expect(cards()).toHaveLength(8);
-  expect(screen.getByRole('link', { name: /채팅 화면/ }).getAttribute('href')).toBe('/screenshots/sibling');
+  expect(siblingLink().getAttribute('href')).toBe('/screenshots/sibling');
 
   const retry = region.getByRole('button', { name: '관련 플로 다시 시도' });
   expect(document.activeElement).toBe(retry);
@@ -251,11 +260,12 @@ it('추가 플로 조회가 실패해도 카드를 유지하고 재시도 성공
       },
     })
   );
-  expect(cards().map(card => card.getAttribute('href'))).toEqual(
+  const loadedCards = cards();
+  expect(loadedCards.map(card => card.getAttribute('href'))).toEqual(
     Array.from({ length: 9 }, (_, index) => `/flows/flow-${index + 1}`)
   );
-  expect(document.activeElement).toBe(cards()[8]);
-  expect(screen.getByRole('link', { name: /채팅 화면/ })).toBeDefined();
+  expect(document.activeElement).toBe(loadedCards[8]);
+  expect(siblingLink()).toBeDefined();
   expect(region.queryByRole('button')).toBeNull();
   expect(region.queryByRole('alert')).toBeNull();
   expect(f.calls).not.toContain('VisualScreenshotOnDetail');
