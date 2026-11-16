@@ -1,7 +1,6 @@
 import type { VisualPlatform, VisualScreenType } from '@darun/products-domain';
 import { Field, ID, ObjectType } from 'type-graphql';
 import { Product } from './Product';
-import { VisualFlow } from './VisualFlow';
 import { VisualPlatformGraph } from './VisualPlatform';
 import { VisualScreenTypeGraph } from './VisualScreenType';
 
@@ -27,7 +26,4 @@ export class VisualScreenshot {
 
   @Field(() => Product)
   product: Product;
-
-  @Field(() => [VisualFlow])
-  flows: VisualFlow[];
 }

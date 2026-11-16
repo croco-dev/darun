@@ -134,11 +134,16 @@ it('recovers the real screenshot detail without repeating GraphQL reads, view tr
                     summary: '',
                     logoUrl: '',
                   },
-                  flows: [],
                 },
               }
             : operation.operationName === 'VisualSiblingScreenshotsOnDetail'
-              ? { visualScreenshot: { id: 'a', flows: [] }, visualScreenshots: { totalCount: 1, edges: [] } }
+              ? {
+                  visualScreenshot: {
+                    id: 'a',
+                    flows: { edges: [], pageInfo: { hasNextPage: false, endCursor: null } },
+                  },
+                  visualScreenshots: { totalCount: 1, edges: [] },
+                }
               : { trackVisualScreenshotView: { tracked: true } };
         observer.next({ data });
         observer.complete();

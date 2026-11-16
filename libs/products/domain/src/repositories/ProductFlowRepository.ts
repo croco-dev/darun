@@ -25,6 +25,8 @@ export type VisualFlowSummary = {
   productSummary: string;
 };
 
+export type VisualScreenshotFlow = Pick<VisualFlowSummary, 'id' | 'title' | 'stepCount' | 'coverScreenshot'>;
+
 export type VisualFlowDetailStep = {
   position: number;
   caption: string;
@@ -84,7 +86,11 @@ export interface ProductFlowRepository {
   ): Promise<VisualFlowSummary[]>;
   findVisualPublishedById(id: string): Promise<VisualFlowDetail | null>;
   countVisualPublishedByFilter(filter: VisualFlowFilter): Promise<number>;
-  findManyVisualPublishedByScreenshotId(screenshotId: string): Promise<VisualFlowSummary[]>;
+  findManyVisualPublishedByScreenshotId(
+    screenshotId: string,
+    limit: number,
+    afterId?: string
+  ): Promise<VisualScreenshotFlow[]>;
   /**
    * M2 조회 기록. 같은 viewerHash+target의 24시간 내 중복은 무시한다.
    * true면 신규 기록, false면 중복 무시(24시간 내 기존 기록 존재).

@@ -714,6 +714,12 @@ nullable 응답을 처리하는 웹을 먼저 배포한 뒤 API를 배포할 수
 
 `VISUAL_SAVE_TEST_DATABASE_URL`을 격리 로컬 `darun_visual_save` DB로 지정하고 `pnpm --filter @darun/products-datasource exec vitest run src/__tests__/VisualSave.pg.test.ts`를 실행하면 병렬 목표 저장·해제, 기존 토글 직렬화, 저장 시각·목록·개수와 계정·대상별 독립성을 검증합니다. PR CI는 전용 DB와 필수 PostgreSQL reporter로 skip 없이 실행합니다.
 
+공개 화면의 `VisualScreenshot.flows(first, after)`는 `edges { cursor node }`와 `pageInfo`를 반환합니다. `first`의 기본값은 8이고 1~48을 허용합니다. 플로 ID 내림차순으로 읽으며 다음 페이지에는 같은 화면의 `pageInfo.endCursor`를 전달합니다. `hasNextPage`가 false이면 순회를 마칩니다. 범위를 벗어난 크기와 잘못된 커서는 `product/invalid-args`로 거절합니다. 카드에는 제목·커버·단계 수가 포함됩니다. 플로 본문과 전체 단계는 `visualFlow(id)`에서 읽을 수 있습니다.
+
+기존 배열을 읽던 소비자는 connection으로 이관해야 합니다. GraphQL API와 Visual 웹의 배포·롤백 버전을 함께 맞춥니다. 버전이 어긋나는 동안 관련 목록 요청이 실패할 수 있습니다. Visual 웹은 추가 페이지가 실패하면 읽은 카드를 보존하고 같은 커서로 재시도합니다.
+
+격리 로컬 `darun_related_flows` DB를 `RELATED_FLOW_TEST_DATABASE_URL`로 지정한 뒤 `pnpm --filter graphql-api exec vitest run __tests__/screenshotFlowPagination.pg.test.ts`를 실행합니다. 1,000개 연결의 SQL 한도·전체 순회·공개 범위와 입력 오류를 검사합니다. PR CI도 같은 테스트를 skip 없이 실행합니다.
+
 소개 생성 `generateProductDescription(input: { slug, requestId })`와 실패 작업 재시도
 `retryProductDescriptionJob(id, requestId)`는 UUID v4 요청 ID를 받습니다. 같은 ID의 재전송은
 같은 작업과 저장된 후보를 반환하며, 다른 상품이나 재시도 부모에 재사용하면

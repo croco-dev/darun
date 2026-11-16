@@ -7,7 +7,7 @@ import {
   VisualSiblingScreenshotsOnDetailDocument,
 } from '@darun/provider-graphql';
 import type { VisualPlatform, VisualScreenType } from '@darun/provider-graphql';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { RelatedDetailState } from '../detail/RelatedDetailStatus';
 import { VISUAL_SCREENSHOT_DETAIL_RELATED_FETCH_SIZE, VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE } from './detailDocuments';
 import { filterSiblingScreenshots, normalizeDetailFlows, siblingDisplayTotalCount } from './relatedCollections';
@@ -42,7 +42,6 @@ export type ScreenshotDetailData = {
     logoUrl: string;
   };
   flows: ScreenshotDetailRelatedFlow[];
-  flowTotalCount: number;
   relatedScreenshots: ScreenshotDetailRelatedScreenshot[];
   relatedScreenshotTotalCount: number;
 };
@@ -55,6 +54,10 @@ export type ScreenshotDetailState = RelatedDetailState & {
   status: 'loading' | 'not-found' | 'error' | 'loaded';
   detail: ScreenshotDetailData | null;
   retry: () => void;
+  hasMoreFlows: boolean;
+  loadingMoreFlows: boolean;
+  loadMoreFlowsError: boolean;
+  loadMoreFlows: () => void;
 };
 
 export function useScreenshotDetail(id: string, initialDetail?: InitialScreenshotDetail): ScreenshotDetailState {
@@ -75,6 +78,45 @@ export function useScreenshotDetail(id: string, initialDetail?: InitialScreensho
     fetchPolicy: 'no-cache',
     notifyOnNetworkStatusChange: true,
   });
+  const requestingFlows = useRef(false);
+  const [loadingMoreFlows, setLoadingMoreFlows] = useState(false);
+  const [loadMoreFlowsError, setLoadMoreFlowsError] = useState(false);
+  const relatedScreenshot = related.data?.visualScreenshot;
+  const flowPage = relatedScreenshot?.id === id ? relatedScreenshot.flows : undefined;
+  const after = flowPage?.pageInfo.hasNextPage ? flowPage.pageInfo.endCursor : null;
+
+  function loadMoreFlows() {
+    if (!after || requestingFlows.current) return;
+    requestingFlows.current = true;
+    setLoadingMoreFlows(true);
+    setLoadMoreFlowsError(false);
+    void related
+      .fetchMore({
+        variables: { flowAfter: after, includeSiblings: false },
+        updateQuery: (previous, { fetchMoreResult }) => {
+          const current = previous?.visualScreenshot;
+          const next = fetchMoreResult.visualScreenshot;
+          if (current?.id !== id || current.flows.pageInfo.endCursor !== after) return previous;
+          if (next?.id !== id) return previous;
+          return {
+            ...previous,
+            visualScreenshot: {
+              ...current,
+              flows: { ...next.flows, edges: [...current.flows.edges, ...next.flows.edges] },
+            },
+          };
+        },
+      })
+      .then(result => {
+        if (result.data?.visualScreenshot?.id !== id) setLoadMoreFlowsError(true);
+      })
+      .catch(() => setLoadMoreFlowsError(true))
+      .finally(() => {
+        requestingFlows.current = false;
+        setLoadingMoreFlows(false);
+      });
+  }
+
   const apolloClient = useApolloClient();
   const viewedId = screenshot?.id;
   useEffect(() => {
@@ -87,13 +129,15 @@ export function useScreenshotDetail(id: string, initialDetail?: InitialScreensho
       .catch((error: unknown) => console.error('Failed to track screenshot view', error));
   }, [apolloClient, viewedId]);
   const status = screenshot ? 'loaded' : primary.loading ? 'loading' : primary.error ? 'error' : 'not-found';
-  const relatedStatus = related.loading || !screenshot ? 'loading' : related.error ? 'error' : 'loaded';
-  const flows = normalizeDetailFlows(related.data?.visualScreenshot?.flows ?? []);
-  const siblings = filterSiblingScreenshots(
-    related.data?.visualScreenshots.edges ?? [],
-    id,
-    VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE
-  );
+  let relatedStatus: RelatedDetailState['relatedStatus'] = 'loaded';
+  if (!screenshot || (related.loading && !related.data)) {
+    relatedStatus = 'loading';
+  } else if (related.error) {
+    relatedStatus = 'error';
+  }
+  const flows = normalizeDetailFlows(flowPage?.edges.map(edge => edge.node) ?? []);
+  const siblingConnection = related.data?.visualScreenshots;
+  const siblings = filterSiblingScreenshots(siblingConnection?.edges ?? [], id, VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE);
   return {
     status,
     detail: screenshot
@@ -112,15 +156,18 @@ export function useScreenshotDetail(id: string, initialDetail?: InitialScreensho
             logoUrl: screenshot.product.logoUrl,
           },
           flows,
-          flowTotalCount: flows.length,
           relatedScreenshots: siblings,
-          relatedScreenshotTotalCount: siblingDisplayTotalCount(related.data?.visualScreenshots.totalCount ?? 0),
+          relatedScreenshotTotalCount: siblingDisplayTotalCount(siblingConnection?.totalCount ?? 0),
         }
       : null,
     retry: () => {
       void primary.refetch().catch(() => {});
     },
     relatedStatus,
+    hasMoreFlows: Boolean(after),
+    loadingMoreFlows,
+    loadMoreFlowsError,
+    loadMoreFlows,
     retryRelated: () => {
       void related.refetch().catch(() => {});
     },

@@ -85,6 +85,7 @@ export type {
   VisualFlowDetailStep,
   VisualFlowFilter,
   VisualFlowSummary,
+  VisualScreenshotFlow,
 } from './repositories/ProductFlowRepository';
 export { ProductFlowRepositoryToken } from './repositories/ProductFlowRepository';
 export type {

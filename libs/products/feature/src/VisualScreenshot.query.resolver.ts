@@ -1,17 +1,24 @@
-import { GetVisualScreenshotById, GetVisualScreenshots, GetVisualScreenshotFlows } from '@darun/products-domain';
+import {
+  GetVisualScreenshotById,
+  GetVisualScreenshots,
+  GetVisualScreenshotFlows,
+  productInvalidArgs,
+} from '@darun/products-domain';
 import type { VisualScreenshotWithProduct } from '@darun/products-domain';
 import { Cursor } from '@darun/utils-apollo-server';
 import { Arg, FieldResolver, Int, Query, Resolver, Root } from 'type-graphql';
 import { Service } from 'typedi';
-import { VisualFlow } from './graphs/VisualFlow';
 import { VisualPlatformGraph } from './graphs/VisualPlatform';
 import { VisualScreenshot } from './graphs/VisualScreenshot';
 import { VisualScreenshotConnection } from './graphs/VisualScreenshotConnection';
+import { VisualScreenshotFlowConnection } from './graphs/VisualScreenshotFlowConnection';
 import { VisualScreenTypeGraph } from './graphs/VisualScreenType';
 import { VisualSortGraph } from './graphs/VisualSort';
 import { VisualUiElementGraph } from './graphs/VisualUiElement';
 
 const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+// The encoded cursor contains two IDs of up to 26 characters and the signed envelope.
+const MAX_SCREENSHOT_FLOW_CURSOR_LENGTH = 512;
 
 /**
  * M4 내 저장 목록 매핑 공용. 저장 카드 connection의 node 변환을
@@ -32,8 +39,6 @@ export function toGraphVisualScreenshot(screenshot: VisualScreenshotWithProduct)
       summary: screenshot.productSummary,
       logoUrl: screenshot.productLogoUrl,
     },
-    // flows는 FieldResolver가 채운다.
-    flows: [],
   };
 }
 
@@ -50,30 +55,28 @@ export class VisualScreenshotQueryResolver {
    * 이 화면을 사용하는 공개 플로. 같은 published_at IS NOT NULL 조건이
    * repository 조회에 적용되므로 비공개 제품 플로는 노출되지 않는다.
    */
-  @FieldResolver(() => [VisualFlow])
-  public async flows(@Root() screenshot: VisualScreenshot): Promise<VisualFlow[]> {
-    const flows = await this.getVisualScreenshotFlowsUseCase.execute({ screenshotId: screenshot.id });
-    return flows.map(flow => ({
-      id: flow.id,
-      title: flow.title,
-      description: flow.description,
-      platform: flow.platform,
-      flowType: flow.flowType,
-      product: {
-        id: screenshot.product?.id ?? '',
-        name: flow.productName,
-        slug: flow.productSlug,
-        logoUrl: '',
-        summary: '',
-      },
-      coverScreenshot: {
-        id: flow.coverScreenshot.id,
-        imageUrl: flow.coverScreenshot.imageUrl,
-        imageAlt: flow.coverScreenshot.imageAlt,
-      },
-      stepCount: flow.stepCount,
-      steps: [],
+  @FieldResolver(() => VisualScreenshotFlowConnection)
+  public async flows(
+    @Root() screenshot: VisualScreenshot,
+    @Arg('first', () => Int, { defaultValue: 8 }) first: number,
+    @Arg('after', () => String, { nullable: true }) after?: string | null
+  ): Promise<VisualScreenshotFlowConnection> {
+    const screenshotId = screenshot.id;
+    const afterId = after == null ? undefined : decodeScreenshotFlowCursor(after, screenshotId);
+    const { flows, hasNextPage } = await this.getVisualScreenshotFlowsUseCase.execute({ screenshotId, first, afterId });
+    const edges = flows.map(node => ({
+      node,
+      cursor: Cursor.encode({ screenshotId, flowId: node.id }, ['screenshotId', 'flowId']),
     }));
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: afterId !== undefined,
+        startCursor: edges[0]?.cursor,
+        endCursor: edges[edges.length - 1]?.cursor,
+      },
+    };
   }
 
   @Query(() => VisualScreenshotConnection)
@@ -145,4 +148,18 @@ export class VisualScreenshotQueryResolver {
 
     return screenshot ? toGraphVisualScreenshot(screenshot) : null;
   }
+}
+
+function decodeScreenshotFlowCursor(after: string, screenshotId: string): string {
+  const invalidCursor = () => productInvalidArgs('이 화면의 관련 플로 커서가 올바르지 않습니다.');
+  if (after.length > MAX_SCREENSHOT_FLOW_CURSOR_LENGTH) throw invalidCursor();
+  let decoded: { screenshotId: string; flowId: string };
+  try {
+    decoded = Cursor.decode(after, ['screenshotId', 'flowId'] as const);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'pagination/invalid-cursor') throw invalidCursor();
+    throw error;
+  }
+  if (decoded.screenshotId !== screenshotId || !decoded.flowId || decoded.flowId.length > 26) throw invalidCursor();
+  return decoded.flowId;
 }

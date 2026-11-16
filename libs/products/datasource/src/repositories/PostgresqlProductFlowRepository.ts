@@ -7,10 +7,12 @@ import {
   type VisualFlowDetail,
   type VisualFlowFilter,
   type VisualFlowSummary,
+  type VisualScreenshotFlow,
   productFlowNotFound,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, asc, count, eq, inArray, isNotNull, lt, or, sql, type SQLWrapper } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNotNull, lt, ne, or, sql, type SQLWrapper } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { Inject, Service } from 'typedi';
 import { productFlowSteps, productFlows } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
@@ -478,34 +480,42 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
     return rows[0]?.value ?? 0;
   }
 
-  async findManyVisualPublishedByScreenshotId(screenshotId: string): Promise<VisualFlowSummary[]> {
-    const rows = await this.db
+  findManyVisualPublishedByScreenshotId(
+    screenshotId: string,
+    limit: number,
+    afterId?: string
+  ): Promise<VisualScreenshotFlow[]> {
+    const coverStep = alias(productFlowSteps, 'cover_step');
+    return this.db
       .select({
         id: productFlows.id,
         title: productFlows.title,
-        description: productFlows.description,
-        platform: productFlows.platform,
-        flowType: productFlows.flowType,
         stepCount: stepCountExpr,
-        coverId: sql<string | null>`${coverColumn('id')}`,
-        coverImageUrl: sql<string | null>`${coverColumn('image_url')}`,
-        coverImageAlt: sql<string | null>`${coverColumn('image_alt')}`,
-        productId: productFlows.productId,
-        productName: products.name,
-        productSlug: products.slug,
-        productLogoUrl: products.logoUrl,
-        productSummary: products.summary,
+        coverScreenshot: {
+          id: productScreenshots.id,
+          imageUrl: productScreenshots.imageUrl,
+          imageAlt: productScreenshots.imageAlt,
+        },
       })
       .from(productFlowSteps)
       .innerJoin(productFlows, eq(productFlows.id, productFlowSteps.flowId))
       .innerJoin(products, eq(products.id, productFlows.productId))
-      .where(and(isNotNull(products.publishedAt), eq(productFlowSteps.screenshotId, screenshotId)))
-      .orderBy(sql`${productFlows.id} DESC`);
-
-    return rows.flatMap(row => {
-      const summary = toVisualSummary(row);
-      return summary ? [summary] : [];
-    });
+      .innerJoin(coverStep, and(eq(coverStep.flowId, productFlows.id), eq(coverStep.position, 0)))
+      .innerJoin(productScreenshots, eq(productScreenshots.id, coverStep.screenshotId))
+      .where(
+        and(
+          eq(productFlowSteps.screenshotId, screenshotId),
+          isNotNull(products.publishedAt),
+          ne(products.name, ''),
+          ne(products.slug, ''),
+          ne(productScreenshots.imageUrl, ''),
+          ne(productScreenshots.imageAlt, ''),
+          afterId === undefined ? undefined : lt(productFlowSteps.flowId, afterId)
+        )
+      )
+      .orderBy(desc(productFlowSteps.flowId))
+      .limit(limit)
+      .execute();
   }
 
   async insertVisualViewEvent(params: { flowId: string; viewerHash: string }): Promise<boolean> {
