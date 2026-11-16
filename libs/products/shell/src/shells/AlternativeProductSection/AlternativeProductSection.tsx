@@ -2,9 +2,9 @@
 
 import { Button, Layers, SectionHeader } from '@darun/ui';
 import { Link } from '@darun/utils-router';
-import { useLocale, useTranslations } from 'next-intl';
-import { useAlternativeProductList } from '../../components/AlternativeProductList/useAlternativeProductList';
+import { useTranslations } from 'next-intl';
 import { ProductAlternativeList } from '../../components/ProductAlternativeList';
+import { useProductAlternativeList } from '../../components/ProductAlternativeList/useProductAlternativeList';
 
 type AlternativeProductSectionProps = {
   slug: string;
@@ -12,10 +12,9 @@ type AlternativeProductSectionProps = {
 
 export const AlternativeProductSection = ({ slug }: AlternativeProductSectionProps) => {
   const t = useTranslations('Alternative');
-  const locale = useLocale();
-  const { alternatives } = useAlternativeProductList({ slug });
+  const { products, locale } = useProductAlternativeList({ slug });
 
-  if (alternatives.length === 0) {
+  if (!products?.length) {
     return (
       <section className="flex flex-col gap-4 md:gap-5">
         <SectionHeader title={t('more.title')} subtitle={t('more.description')} />
@@ -52,7 +51,7 @@ export const AlternativeProductSection = ({ slug }: AlternativeProductSectionPro
   return (
     <section className="flex flex-col gap-4 md:gap-5">
       <SectionHeader title={t('more.title')} subtitle={t('more.description')} />
-      <ProductAlternativeList slug={slug} />
+      <ProductAlternativeList.ViewComponent products={products} locale={locale} />
     </section>
   );
 };

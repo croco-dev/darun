@@ -54,7 +54,6 @@ describe('ProductAlternativeList', () => {
         summary: '요약 1',
         logoUrl: '/logo1.png',
         tags: [{ id: 'tag-1', name: '태그1' }],
-        description: '설명 1',
         features: [
           {
             id: 'feat-1',
