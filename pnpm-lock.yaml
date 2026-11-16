@@ -1581,6 +1581,9 @@ importers:
       '@mantine/core':
         specifier: 'catalog:'
         version: 9.5.1(@mantine/hooks@9.5.1(react@19.2.6))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      dataloader:
+        specifier: 2.2.2
+        version: 2.2.2
       dompurify:
         specifier: ^3.2.0
         version: 3.3.3

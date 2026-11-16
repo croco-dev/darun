@@ -2,12 +2,14 @@
 
 import { gql } from '@apollo/client';
 import { useMutation, useQuery } from '@apollo/client/react';
+import { VISUAL_UI_ELEMENTS, VISUAL_UI_ELEMENTS_MAX_COUNT } from '@darun/products-domain/visual-ui-elements';
 import {
   GetProductScreenshotsOnDetailSectionDocument,
   DeleteProductScreenshotOnDetailSectionDocument,
   UpdateProductScreenshotOnDetailSectionDocument,
   type VisualPlatform,
   type VisualScreenType,
+  type VisualUiElement,
 } from '@darun/provider-graphql';
 import { Button, ImageOff, Loader2, Pencil, Plus, Trash2 } from '@darun/ui';
 import {
@@ -21,7 +23,7 @@ import {
 } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 gql`
   query GetProductScreenshotsOnDetailSection($slug: String!) {
@@ -34,6 +36,7 @@ gql`
         title
         platform
         screenType
+        uiElements
       }
     }
   }
@@ -50,9 +53,17 @@ gql`
     $title: String
     $platform: VisualPlatform
     $screenType: VisualScreenType
+    $uiElements: [VisualUiElement!]
   ) {
     updateProductScreenshot(
-      input: { id: $id, imageAlt: $imageAlt, title: $title, platform: $platform, screenType: $screenType }
+      input: {
+        id: $id
+        imageAlt: $imageAlt
+        title: $title
+        platform: $platform
+        screenType: $screenType
+        uiElements: $uiElements
+      }
     ) {
       screenshot {
         id
@@ -77,6 +88,7 @@ type ScreenshotCardFields = {
   title: string | null;
   platform: VisualPlatform | null;
   screenType: VisualScreenType | null;
+  uiElements: VisualUiElement[];
 };
 
 type ScreenshotMetadataDraft = {
@@ -112,6 +124,29 @@ const SCREEN_TYPE_SELECT_OPTIONS: Array<{
   { value: 'SETTINGS', label: '설정' },
   { value: 'OTHER', label: '기타' },
 ];
+
+const UI_ELEMENT_LABELS: Record<VisualUiElement, string> = {
+  AVATAR: '아바타',
+  BADGE: '배지',
+  BOTTOM_SHEET: '바텀시트',
+  BUTTON: '버튼',
+  CALENDAR: '달력',
+  CARD: '카드',
+  CAROUSEL: '캐러셀',
+  DROPDOWN: '드롭다운',
+  INPUT: '입력',
+  LIST: '리스트',
+  MAP: '지도',
+  MODAL: '모달',
+  NAVIGATION_BAR: '내비게이션 바',
+  PAGINATION: '페이지네이션',
+  PROGRESS: '프로그레스',
+  SEARCH_BAR: '검색 바',
+  STEPPER: '스테퍼',
+  TAB_BAR: '탭 바',
+  TABLE: '테이블',
+  TOGGLE: '토글',
+};
 
 function selectOptionValue<T extends string>(options: Array<{ value: T; label: string }>, raw: string): T {
   return options.find(option => option.value === raw)?.value ?? options[0].value;
@@ -162,6 +197,9 @@ function ScreenshotMetadataEditor({
     screenType: screenshot.screenType ?? '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [editedUiElements, setEditedUiElements] = useState<VisualUiElement[]>();
+  const uiElements = editedUiElements ?? screenshot.uiElements;
+  const uiElementCountId = useId();
 
   const [updateScreenshot] = useMutation(UpdateProductScreenshotOnDetailSectionDocument, {
     refetchQueries: [
@@ -205,6 +243,7 @@ function ScreenshotMetadataEditor({
           title: trimmedTitle.length > 0 ? trimmedTitle : null,
           platform: draft.platform || null,
           screenType: draft.screenType || null,
+          ...(editedUiElements !== undefined ? { uiElements: editedUiElements } : {}),
         },
       });
     } catch {
@@ -289,6 +328,50 @@ function ScreenshotMetadataEditor({
           ))}
         </AdminSelect>
       </label>
+      <fieldset disabled={isSaving} aria-describedby={uiElementCountId} className="@container min-w-0">
+        <legend className="text-2xs font-semibold text-dark-600">UI 요소</legend>
+        <div className="flex flex-wrap items-center justify-between gap-x-2">
+          <output id={uiElementCountId} className="block text-2xs text-dark-600">
+            {uiElements.length}개 선택 · 최대 {VISUAL_UI_ELEMENTS_MAX_COUNT}개
+          </output>
+          <button
+            type="button"
+            onClick={() => setEditedUiElements([])}
+            disabled={uiElements.length === 0}
+            className="min-h-8 max-w-full rounded px-1 text-2xs font-medium text-dark-700 underline [overflow-wrap:anywhere] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+          >
+            전체 해제
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-x-2 @min-[14rem]:grid-cols-2">
+          {VISUAL_UI_ELEMENTS.map(value => {
+            const checked = uiElements.includes(value);
+            return (
+              <label
+                key={value}
+                className="flex min-h-8 items-center gap-1.5 text-2xs text-dark-700 has-disabled:opacity-50"
+              >
+                <input
+                  type="checkbox"
+                  value={value}
+                  checked={checked}
+                  disabled={!checked && uiElements.length >= VISUAL_UI_ELEMENTS_MAX_COUNT}
+                  onChange={event => {
+                    const selected = event.currentTarget.checked;
+                    setEditedUiElements(previous => {
+                      const current = previous ?? screenshot.uiElements;
+                      if (!selected) return current.filter(element => element !== value);
+                      return current.length < VISUAL_UI_ELEMENTS_MAX_COUNT ? [...current, value] : previous;
+                    });
+                  }}
+                  className="shrink-0 accent-dark-900 focus-visible:outline-offset-2"
+                />
+                <span className="min-w-0 [overflow-wrap:anywhere]">{UI_ELEMENT_LABELS[value]}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
       <div className="flex items-center gap-2">
         <Button
           type="submit"
@@ -377,6 +460,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
             title: screenshot.title ?? null,
             platform: screenshot.platform ?? null,
             screenType: screenshot.screenType ?? null,
+            uiElements: screenshot.uiElements,
           },
         ]
       : []
@@ -490,6 +574,11 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                     </button>
                   </span>
                 </div>
+                <p className="px-1 text-2xs text-dark-600 [overflow-wrap:anywhere]">
+                  {screenshot.uiElements.length
+                    ? screenshot.uiElements.map(value => UI_ELEMENT_LABELS[value]).join(', ')
+                    : 'UI 요소 미분류'}
+                </p>
                 {editingId === screenshot.id && (
                   <ScreenshotMetadataEditor
                     screenshot={screenshot}

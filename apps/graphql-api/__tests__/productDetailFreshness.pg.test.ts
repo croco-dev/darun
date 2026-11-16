@@ -19,8 +19,16 @@ import {
   GetPublishedProduct,
   GetPublishedProductsForSitemap,
   GetRankedProducts,
+  GetProductScreenshots,
+  GetVisualScreenshots,
+  UpdateProductScreenshot,
 } from '@darun/products-domain';
-import { ProductMutationResolver, ProductQueryResolver } from '@darun/products-feature/server';
+import {
+  ProductMutationResolver,
+  ProductQueryResolver,
+  ScreenshotFieldResolver,
+  VisualScreenshotQueryResolver,
+} from '@darun/products-feature/server';
 import { ProductDescriptionJobService } from '@darun/products-service';
 import type { Drizzle } from '@darun/provider-database';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
@@ -152,6 +160,128 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   afterAll(async () => {
     if (reader) await reader.end({ timeout: 5 });
     if (writer) await writer.end({ timeout: 5 });
+  });
+
+  it('관리자 스크린샷 분류를 일괄 조회하고 저장·해제한 분류를 공개 필터에 반영한다', async () => {
+    const productId = '651-ui-elements';
+    const slug = productId;
+    const classified = '651-shot-classified';
+    const unclassified = '651-shot-unclassified';
+    const productRepository = new PostgresqlProductRepository(db);
+    const screenshotRepository = new PostgresqlProductScreenshotRepository(db);
+    const instances = new Map<unknown, object>([
+      [
+        ProductQueryResolver,
+        Object.assign(Object.create(ProductQueryResolver.prototype), {
+          getProductUseCase: new GetProduct(productRepository),
+          getPublishedProductUseCase: new GetPublishedProduct(productRepository),
+          getProductScreenshotsUseCase: new GetProductScreenshots(screenshotRepository),
+        }),
+      ],
+      [
+        ProductMutationResolver,
+        Object.assign(Object.create(ProductMutationResolver.prototype), {
+          updateProductScreenshotUseCase: new UpdateProductScreenshot(screenshotRepository),
+        }),
+      ],
+      [ScreenshotFieldResolver, new ScreenshotFieldResolver(screenshotRepository)],
+      [
+        VisualScreenshotQueryResolver,
+        new VisualScreenshotQueryResolver(new GetVisualScreenshots(screenshotRepository), undefined!, undefined!),
+      ],
+    ]);
+    const server = new ApolloServer({
+      schema: buildSchemaSync({
+        resolvers: [
+          ProductQueryResolver,
+          ProductMutationResolver,
+          ScreenshotFieldResolver,
+          VisualScreenshotQueryResolver,
+        ],
+        authChecker: createAuthChecker(),
+        container: {
+          get: resolver => instances.get(resolver),
+        },
+      }),
+      formatError: (formatted, error) => formatServerError(formatted, error, false),
+    });
+    const run = async (query: string, variables: Record<string, unknown>, roles: string[] = ['admin']) => {
+      const result = await server.executeOperation(
+        { query, variables },
+        { contextValue: { getRoles: async () => roles } }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+      return result.body.singleResult;
+    };
+    const adminQuery = `query($slug: String!) { tempProductBySlug(slug: $slug) { screenshots { id uiElements } } }`;
+    const update = `mutation($input: UpdateProductScreenshotInput!) { updateProductScreenshot(input: $input) { screenshot { id } } }`;
+    const visual = `query($slug: String!, $element: VisualUiElement!) {
+      visualScreenshots(productSlug: $slug, uiElements: [$element]) { totalCount edges { node { id } } }
+    }`;
+    const expectClassifications = async (expected: string[]) => {
+      const result = await run(adminQuery, { slug });
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.tempProductBySlug).toEqual({
+        screenshots: [
+          { id: classified, uiElements: expected },
+          { id: unclassified, uiElements: [] },
+        ],
+      });
+    };
+    const expectFiltered = async (element: string, hasMatch: boolean) => {
+      const result = await run(visual, { slug, element }, []);
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.visualScreenshots).toEqual(
+        hasMatch ? { totalCount: 1, edges: [{ node: { id: classified } }] } : { totalCount: 0, edges: [] }
+      );
+    };
+
+    vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'screenshot-classification-test-secret');
+    try {
+      await server.start();
+      // The screenshot mutation uses the production transaction. Keep other metadata stable so this fixture only changes UI elements.
+      await writer`insert into products (id, name, slug, summary, logo_url, published_at)
+        values (${productId}, 'UI fixture', ${slug}, 'summary', 'https://example.com/logo.png', now())`;
+      await writer`insert into product_screenshots (id, product_id, image_url, image_alt) values
+        (${classified}, ${productId}, 'https://example.com/screen-a.png', 'screen'),
+        (${unclassified}, ${productId}, 'https://example.com/screen-b.png', 'screen')`;
+      await writer`insert into product_screenshot_ui_elements (id, screenshot_id, element) values
+        ('651-tag-card', ${classified}, 'CARD'), ('651-tag-button', ${classified}, 'BUTTON')`;
+
+      await expectClassifications(['BUTTON', 'CARD']);
+      const classificationReads = () =>
+        selectQueries.filter(query => query.includes('from "product_screenshot_ui_elements"')).length;
+      expect(classificationReads()).toBe(1);
+      const denied = await run(adminQuery.replace('tempProductBySlug', 'productBySlug'), { slug }, []);
+      expect(denied.errors?.[0]).toMatchObject({
+        path: ['productBySlug', 'screenshots', 0, 'uiElements'],
+        extensions: { code: 'UNAUTHORIZED' },
+      });
+      expect(classificationReads()).toBe(1);
+
+      const input = { id: classified, imageAlt: 'screen' };
+      expect((await run(update, { input })).errors).toBeUndefined();
+      await expectClassifications(['BUTTON', 'CARD']);
+      await expectFiltered('BUTTON', true);
+      expect(
+        (
+          await run(update, {
+            input: { ...input, uiElements: ['CARD', 'SEARCH_BAR'] },
+          })
+        ).errors
+      ).toBeUndefined();
+      await expectClassifications(['CARD', 'SEARCH_BAR']);
+      await expectFiltered('BUTTON', false);
+      await expectFiltered('SEARCH_BAR', true);
+      expect((await run(update, { input: { ...input, uiElements: [] } })).errors).toBeUndefined();
+      await expectClassifications([]);
+      await expectFiltered('SEARCH_BAR', false);
+    } finally {
+      vi.unstubAllEnvs();
+      await server.stop();
+      await writer`delete from product_screenshots where product_id = ${productId}`;
+      await writer`delete from products where id = ${productId}`;
+    }
   });
 
   describe('관리자 상품 목록의 양방향 페이지 경계', () => {

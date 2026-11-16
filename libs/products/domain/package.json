@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./info": "./src/info/ProductInfo.ts",
     "./link": "./src/link/ProductLinkUrl.ts",
-    "./research": "./src/research/ProductResearchLimits.ts"
+    "./research": "./src/research/ProductResearchLimits.ts",
+    "./visual-ui-elements": "./src/visual-ui-elements/VisualUiElementOptions.ts"
   },
   "scripts": {
     "lint": "eslint \"**/*.{ts,tsx}\"",
