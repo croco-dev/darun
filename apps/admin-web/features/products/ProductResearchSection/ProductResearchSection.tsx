@@ -330,16 +330,18 @@ export const ProductResearchSection = () => {
   const featureErrors = review.features.map(feature => {
     if (feature.excluded === true) return null;
     const inspected = inspectReviewedResearchFeature(feature);
-    const length = inspected.feature.summary.length;
+    let summaryError: string | null = null;
+    if (inspected.missingSummary) {
+      summaryError = '기능 설명을 입력해 주세요.';
+    } else if (inspected.summaryTooLong) {
+      const length = inspected.feature.summary.length;
+      summaryError = `현재 ${length}자, ${length - PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 초과입니다. ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 줄여 주세요.`;
+    }
     return {
       name: inspected.invalidName
         ? `기능 이름을 ${PRODUCT_RESEARCH_FEATURE_NAME_MAX_LENGTH}자 이내로 입력해 주세요.`
         : null,
-      summary: inspected.missingSummary
-        ? '기능 설명을 입력해 주세요.'
-        : inspected.summaryTooLong
-          ? `현재 ${length}자, ${length - PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 초과입니다. ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 줄여 주세요.`
-          : null,
+      summary: summaryError,
       emoji: inspected.emojiTooLong
         ? `이모지를 ${PRODUCT_RESEARCH_FEATURE_EMOJI_MAX_LENGTH}자 이내로 줄여 주세요.`
         : null,
