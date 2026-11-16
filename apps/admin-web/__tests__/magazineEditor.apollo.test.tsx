@@ -6,6 +6,10 @@ import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MagazineEditSection } from '../features/magazines/MagazineEditSection/MagazineEditSection';
 
+const { upload } = vi.hoisted(() => ({ upload: vi.fn() }));
+vi.mock('@darun/utils-image-upload', () => ({
+  useImageUpload: () => ({ upload }),
+}));
 vi.mock('@darun/utils-router', () => ({
   Link: ({ children, ...props }: React.ComponentProps<'a'>) => <a {...props}>{children}</a>,
 }));
@@ -26,6 +30,7 @@ const clients: ApolloClient[] = [];
 afterEach(() => {
   cleanup();
   clients.splice(0).forEach(client => client.stop());
+  upload.mockReset();
 });
 const draft = {
   __typename: 'Magazine',
@@ -35,6 +40,7 @@ const draft = {
   title: '기존 제목',
   summary: '기존 요약',
   content: '<p>기존 본문</p>',
+  backgroundImageUrl: 'https://fixture.invalid/original.png',
   publishedAt: null,
 };
 function setup() {
@@ -95,6 +101,175 @@ const flush = async (fn: () => void) => {
 };
 
 describe('magazine draft editor with real Apollo operations', () => {
+  it.each([null, '2026-10-25T10:00:00Z'])(
+    '배경만 교체하고 다시 열어도 저장한 배경을 표시한다 (발행일 %s)',
+    async publishedAt => {
+      const original = { ...draft, publishedAt };
+      const fixture = setup();
+      const query = await fixture.take('MagazineOnAdminEditor');
+      await flush(() => query.resolve({ tempMagazineBySlug: original }));
+      expect(screen.getByRole('img', { name: '매거진 배경 이미지' }).getAttribute('src')).toBe(
+        draft.backgroundImageUrl
+      );
+
+      const file = new File(['replacement'], 'replacement.png', {
+        type: 'image/png',
+      });
+      const replacement = 'https://fixture.invalid/replacement.png';
+      let finish!: (url: string) => void;
+      upload.mockImplementationOnce(
+        () =>
+          new Promise<string>(resolve => {
+            finish = resolve;
+          })
+      );
+      fireEvent.change(screen.getByLabelText('배경 이미지 파일'), {
+        target: { files: [file] },
+      });
+      expect(upload).toHaveBeenCalledWith('images/magazines', file, file.name);
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: '저장' }).disabled).toBe(true);
+      if (!publishedAt) expect(screen.getByRole<HTMLButtonElement>('button', { name: '발행' }).disabled).toBe(true);
+      fireEvent.submit(screen.getByLabelText('글 제목').closest('form')!);
+      expect(fixture.requests).toHaveLength(0);
+      await flush(() => finish(replacement));
+      expect(screen.getByRole('img', { name: '매거진 배경 이미지' }).getAttribute('src')).toBe(replacement);
+      if (!publishedAt) expect(screen.getByRole<HTMLButtonElement>('button', { name: '발행' }).disabled).toBe(true);
+
+      fireEvent.click(screen.getByRole('button', { name: '저장' }));
+      const save = await fixture.take('EditMagazineOnAdminEditor');
+      expect(save.variables.input).toEqual({
+        expectedRevision: 0,
+        backgroundImageUrl: replacement,
+      });
+      const saved = {
+        ...original,
+        revision: 1,
+        backgroundImageUrl: replacement,
+      };
+      await flush(() => save.resolve({ editMagazine: { magazine: saved } }));
+      fixture.rerender(
+        <ApolloProvider client={fixture.client}>
+          <MagazineEditSection key="reopened" slug="draft-a" />
+        </ApolloProvider>
+      );
+      const reopen = await fixture.take('MagazineOnAdminEditor');
+      await flush(() => reopen.resolve({ tempMagazineBySlug: saved }));
+      expect(screen.getByRole('img', { name: '매거진 배경 이미지' }).getAttribute('src')).toBe(replacement);
+      expect(screen.getByText(publishedAt ? '발행됨' : '초안(미발행)')).toBeTruthy();
+    }
+  );
+
+  it('교체 실패 후 배경과 본문 초안을 유지하고 명시적 제거만 빈 배경을 보낸다', async () => {
+    const fixture = setup();
+    const query = await fixture.take('MagazineOnAdminEditor');
+    await flush(() => query.resolve({ tempMagazineBySlug: draft }));
+    const content = '<p>보존할 새 본문</p>';
+    fireEvent.change(screen.getByRole('textbox', { name: '본문' }), {
+      target: { value: content },
+    });
+    upload.mockResolvedValueOnce(undefined);
+    fireEvent.change(screen.getByLabelText('배경 이미지 파일'), {
+      target: {
+        files: [new File(['failed'], 'failed.png', { type: 'image/png' })],
+      },
+    });
+    expect((await screen.findByRole('alert')).textContent).toContain('배경 이미지를 업로드하지 못했습니다');
+    expect(screen.getByRole('img', { name: '매거진 배경 이미지' }).getAttribute('src')).toBe(draft.backgroundImageUrl);
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: '본문' }).value).toBe(content);
+    expect(fixture.requests).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: '배경 이미지 제거' }));
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    const save = await fixture.take('EditMagazineOnAdminEditor');
+    expect(save.variables.input).toMatchObject({
+      backgroundImageUrl: '',
+      content,
+    });
+    await flush(() =>
+      save.resolve({
+        editMagazine: {
+          magazine: { ...draft, revision: 1, backgroundImageUrl: '', content },
+        },
+      })
+    );
+    expect(screen.queryByRole('img', { name: '매거진 배경 이미지' })).toBeNull();
+  });
+
+  it('배경만 바꾼 초안을 최신 버전으로 저장해도 다른 곳에서 바꾼 제목과 본문을 덮어쓰지 않는다', async () => {
+    const fixture = setup();
+    const query = await fixture.take('MagazineOnAdminEditor');
+    await flush(() => query.resolve({ tempMagazineBySlug: draft }));
+    fireEvent.click(screen.getByRole('button', { name: '배경 이미지 제거' }));
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    const firstSave = await fixture.take('EditMagazineOnAdminEditor');
+    await flush(() => firstSave.conflict());
+    fireEvent.click(screen.getByRole('button', { name: '최신 저장본 확인' }));
+    const read = await fixture.take('MagazineOnAdminEditor');
+    const latest = {
+      ...draft,
+      revision: 3,
+      title: '다른 곳에서 바꾼 제목',
+      content: '<p>최신 본문</p>',
+    };
+    await flush(() => read.resolve({ tempMagazineBySlug: latest }));
+    fireEvent.click(screen.getByRole('button', { name: '최신 버전을 기준으로 내 초안 유지' }));
+    expect(screen.getByLabelText<HTMLInputElement>('글 제목').value).toBe(latest.title);
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    const retry = await fixture.take('EditMagazineOnAdminEditor');
+    expect(retry.variables.input).toEqual({
+      expectedRevision: 3,
+      backgroundImageUrl: '',
+    });
+  });
+
+  it('같은 배경 제거가 이미 저장됐으면 충돌을 해결한 뒤 다시 쓰지 않는다', async () => {
+    const fixture = setup();
+    const query = await fixture.take('MagazineOnAdminEditor');
+    await flush(() => query.resolve({ tempMagazineBySlug: { ...draft, summary: null } }));
+    fireEvent.click(screen.getByRole('button', { name: '배경 이미지 제거' }));
+    const saveButton = screen.getByRole<HTMLButtonElement>('button', { name: '저장' });
+    fireEvent.click(saveButton);
+    const firstSave = await fixture.take('EditMagazineOnAdminEditor');
+    await flush(() => firstSave.conflict());
+    fireEvent.click(screen.getByRole('button', { name: '최신 저장본 확인' }));
+    const read = await fixture.take('MagazineOnAdminEditor');
+    await flush(() =>
+      read.resolve({ tempMagazineBySlug: { ...draft, revision: 1, backgroundImageUrl: '', summary: null } })
+    );
+    fireEvent.click(screen.getByRole('button', { name: '최신 버전을 기준으로 내 초안 유지' }));
+    expect(saveButton.disabled).toBe(true);
+    fireEvent.submit(saveButton.closest('form')!);
+    expect(fixture.requests).toHaveLength(0);
+  });
+
+  it('배경 업로드 완료와 제목 입력이 겹치면 두 변경을 함께 저장한다', async () => {
+    const fixture = setup();
+    const query = await fixture.take('MagazineOnAdminEditor');
+    await flush(() => query.resolve({ tempMagazineBySlug: draft }));
+    let finish!: (url: string) => void;
+    upload.mockImplementationOnce(
+      () =>
+        new Promise<string>(resolve => {
+          finish = resolve;
+        })
+    );
+    fireEvent.change(screen.getByLabelText('배경 이미지 파일'), {
+      target: { files: [new File(['replacement'], 'replacement.png', { type: 'image/png' })] },
+    });
+    const replacement = 'https://fixture.invalid/replacement.png';
+    await act(async () => {
+      finish(replacement);
+      await new Promise<void>(resolve =>
+        queueMicrotask(() => {
+          fireEvent.change(screen.getByLabelText('글 제목'), { target: { value: '업로드 중 바꾼 제목' } });
+          resolve();
+        })
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    const save = await fixture.take('EditMagazineOnAdminEditor');
+    expect(save.variables.input).toMatchObject({ title: '업로드 중 바꾼 제목', backgroundImageUrl: replacement });
+  });
+
   it('큰 표의 저장을 거절한 뒤 원문을 유지하고 정상 본문으로 복구한다', async () => {
     const fixture = setup();
     const query = await fixture.take('MagazineOnAdminEditor');
@@ -284,6 +459,7 @@ it.each(['save', 'publish'] as const)(
       ...draft,
       title: 'A의 최신 제목',
       content: '<p>A의 최신 본문</p>',
+      backgroundImageUrl: 'https://fixture.invalid/latest.png',
       revision: 4,
     };
     await flush(() => read.resolve({ tempMagazineBySlug: latest }));
@@ -295,6 +471,7 @@ it.each(['save', 'publish'] as const)(
       })
     );
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('img', { name: '매거진 배경 이미지' }).getAttribute('src')).toBe(latest.backgroundImageUrl);
     expect(screen.getByLabelText<HTMLInputElement>('글 제목').value).toBe(
       action === 'save' ? 'B의 초안' : 'A의 최신 제목'
     );

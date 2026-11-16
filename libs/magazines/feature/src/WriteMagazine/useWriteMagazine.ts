@@ -10,6 +10,7 @@ import { FileWithPath } from '@mantine/dropzone';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef, useState } from 'react';
+import { getMagazineBackgroundFileError } from '../magazineBackgroundFile';
 
 gql`
   mutation CreateMagazineOnWriteMagazine($input: CreateMagazineInput!) {
@@ -134,18 +135,10 @@ export function useWriteMagazine() {
     const droppedFile = files[0];
     if (!droppedFile) return;
 
-    if (!droppedFile.type.startsWith('image/')) {
+    const fileError = getMagazineBackgroundFileError(droppedFile);
+    if (fileError) {
       notifications.show({
-        message: '이미지 파일만 업로드할 수 있습니다.',
-        color: 'red',
-      });
-      return;
-    }
-
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    if (droppedFile.size > MAX_FILE_SIZE) {
-      notifications.show({
-        message: '10MB 이하의 이미지 파일만 업로드할 수 있습니다.',
+        message: fileError,
         color: 'red',
       });
       return;

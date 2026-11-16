@@ -5,6 +5,7 @@ import { AdminActions, AdminField, AdminInput } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import { useRef } from 'react';
+import { MAGAZINE_BACKGROUND_FILE_ACCEPT } from '../magazineBackgroundFile';
 import { useWriteMagazine } from './useWriteMagazine';
 
 export const WriteMagazine = bind(
@@ -66,7 +67,7 @@ export const WriteMagazine = bind(
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp,image/bmp,image/avif"
+              accept={MAGAZINE_BACKGROUND_FILE_ACCEPT}
               aria-label="배경 이미지 선택"
               className="hidden"
               onChange={e => {

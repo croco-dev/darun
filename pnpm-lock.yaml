@@ -328,6 +328,9 @@ importers:
       '@darun/utils-auth-service-firebase':
         specifier: workspace:*
         version: link:../../libs/shared/utils-auth-service/firebase
+      '@darun/utils-image-upload':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-image-upload
       '@darun/utils-llm':
         specifier: workspace:*
         version: link:../../libs/shared/utils-llm
