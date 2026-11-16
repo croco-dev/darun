@@ -480,7 +480,7 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
     return rows[0]?.value ?? 0;
   }
 
-  async findManyVisualPublishedByScreenshotId(
+  findManyVisualPublishedByScreenshotId(
     screenshotId: string,
     limit: number,
     afterId?: string
@@ -514,7 +514,8 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         )
       )
       .orderBy(desc(productFlowSteps.flowId))
-      .limit(limit);
+      .limit(limit)
+      .execute();
   }
 
   async insertVisualViewEvent(params: { flowId: string; viewerHash: string }): Promise<boolean> {

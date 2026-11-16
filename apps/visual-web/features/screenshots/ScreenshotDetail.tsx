@@ -157,6 +157,7 @@ const View = ({
   const screenTypeLabel =
     screenType && isVisualScreenTypeValue(screenType) ? VISUAL_SCREEN_TYPE_LABELS[screenType] : UNCLASSIFIED_LABEL;
   const appHref = `/apps/${encodeURIComponent(product.slug)}`;
+  const loadMoreLabel = loadMoreFlowsError ? '관련 플로 다시 시도' : '관련 플로 더 보기';
 
   return (
     <div className="w-full py-5 md:py-8">
@@ -312,9 +313,9 @@ const View = ({
                 </li>
               ))}
             </ul>
-            <div role="status" className="sr-only">
+            <output className="sr-only">
               {loadingMoreFlows ? '관련 플로를 불러오는 중이에요.' : `관련 플로 ${flows.length}개`}
-            </div>
+            </output>
             {/* Keep the focused trigger mounted until the new card can take focus. */}
             {(hasMoreFlows || flowPageTrigger) && (
               <div className="flex flex-col items-center gap-2">
@@ -339,7 +340,7 @@ const View = ({
                     loadMoreFlows();
                   }}
                 >
-                  {loadingMoreFlows ? '불러오는 중…' : loadMoreFlowsError ? '관련 플로 다시 시도' : '관련 플로 더 보기'}
+                  {loadingMoreFlows ? '불러오는 중…' : loadMoreLabel}
                 </Button>
               </div>
             )}

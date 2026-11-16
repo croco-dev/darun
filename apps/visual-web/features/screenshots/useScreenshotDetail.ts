@@ -129,8 +129,12 @@ export function useScreenshotDetail(id: string, initialDetail?: InitialScreensho
       .catch((error: unknown) => console.error('Failed to track screenshot view', error));
   }, [apolloClient, viewedId]);
   const status = screenshot ? 'loaded' : primary.loading ? 'loading' : primary.error ? 'error' : 'not-found';
-  const relatedStatus =
-    !screenshot || (related.loading && !related.data) ? 'loading' : related.error ? 'error' : 'loaded';
+  let relatedStatus: RelatedDetailState['relatedStatus'] = 'loaded';
+  if (!screenshot || (related.loading && !related.data)) {
+    relatedStatus = 'loading';
+  } else if (related.error) {
+    relatedStatus = 'error';
+  }
   const flows = normalizeDetailFlows(flowPage?.edges.map(edge => edge.node) ?? []);
   const siblingConnection = related.data?.visualScreenshots;
   const siblings = filterSiblingScreenshots(siblingConnection?.edges ?? [], id, VISUAL_SCREENSHOT_DETAIL_RELATED_SIZE);
