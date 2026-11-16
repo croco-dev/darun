@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { GetProductFlowOnEditorDocument, GetProductFlowsOnDetailSectionDocument } from '@darun/provider-graphql';
+import {
+  GetProductFlowOnEditorDocument,
+  GetProductFlowsOnDetailSectionDocument,
+  UpdateProductScreenshotOnDetailSectionDocument,
+} from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
@@ -20,12 +24,13 @@ afterEach(() => {
 });
 
 const screenshots = [1, 2, 3].map(index => ({
-  __typename: 'ProductScreenshot',
+  __typename: 'Screenshot',
   id: `shot-${index}`,
   imageUrl: `https://fixture.invalid/${index}.png`,
   imageAlt: `화면 ${index}`,
   title: `화면 ${index}`,
   platform: 'WEB',
+  screenType: null,
 }));
 
 function makeFlow(id: string, slug: string) {
@@ -104,6 +109,10 @@ function setup({
                 },
               },
             };
+          } else if (name === 'UpdateProductScreenshotOnDetailSection') {
+            const { id, imageAlt } = operation.variables;
+            const screenshot = screenshots.find(shot => shot.id === id);
+            data = { updateProductScreenshot: { screenshot: { ...screenshot, imageAlt } } };
           } else if (name === 'DeleteProductFlowOnDetailSection') {
             const index = flows.findIndex(flow => flow.id === operation.variables.id);
             if (index >= 0) flows.splice(index, 1);
@@ -348,4 +357,39 @@ it('첫 페이지에서 삭제하면 같은 상품의 첫 페이지를 빈 자�
   expect(screen.queryByText('alpha 기존 플로')).toBeNull();
   expect(screen.queryByRole('button', { name: '플로 더 보기' })).toBeNull();
   expect(pageRequests).toEqual([null, null]);
+});
+
+it('같은 상품의 화면 대체 텍스트를 저장하면 불러온 모든 페이지의 커버에 반영한다', async () => {
+  const { Harness, client, pageRequests } = setup({ extraFlows: 24 });
+  render(<Harness />);
+  fireEvent.click(await screen.findByRole('button', { name: '플로 더 보기' }));
+  await screen.findByText('추가 플로 24');
+  expect(screen.getAllByRole('img', { name: '화면 1' })).toHaveLength(25);
+
+  await client.mutate({
+    mutation: UpdateProductScreenshotOnDetailSectionDocument,
+    variables: { id: 'shot-1', imageAlt: '새 화면 설명' },
+  });
+  await waitFor(() => expect(screen.getAllByRole('img', { name: '새 화면 설명' })).toHaveLength(25));
+  expect(screen.queryByRole('img', { name: '화면 1' })).toBeNull();
+  expect(pageRequests).toEqual([null, 'flow-alpha-023']);
+});
+
+it('여러 페이지에서 삭제한 뒤 목록을 다시 열면 첫 페이지의 남은 카드를 다시 조회한다', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const { Harness, pageRequests } = setup({ extraFlows: 24 });
+  const firstVisit = render(<Harness />);
+  fireEvent.click(await screen.findByRole('button', { name: '플로 더 보기' }));
+  await screen.findByText('추가 플로 24');
+  fireEvent.click(screen.getByRole('button', { name: 'alpha 기존 플로 플로 삭제' }));
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: '추가 플로 24 플로 삭제' }).matches(':disabled')).toBe(false)
+  );
+
+  firstVisit.unmount();
+  render(<Harness />);
+  await screen.findByText('추가 플로 24');
+  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(24);
+  expect(screen.queryByRole('button', { name: '플로 더 보기' })).toBeNull();
+  expect(pageRequests).toEqual([null, 'flow-alpha-023', 'flow-alpha-023', null]);
 });

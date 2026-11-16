@@ -14,21 +14,26 @@ gql`
       edges {
         node {
           id
-          title
-          platform
-          flowType
-          stepCount
-          coverScreenshot {
-            id
-            imageUrl
-            imageAlt
-          }
+          ...AdminProductFlowCard
         }
       }
       pageInfo {
         hasNextPage
         endCursor
       }
+    }
+  }
+
+  fragment AdminProductFlowCard on AdminProductFlowSummary {
+    id
+    title
+    platform
+    flowType
+    stepCount
+    coverScreenshot {
+      id
+      imageUrl
+      imageAlt
     }
   }
 
@@ -51,6 +56,8 @@ export function useProductFlowPages(slug: string) {
   const client = useApolloClient();
   const { data, error, loading, refetch } = useQuery(GetProductFlowsOnDetailSectionDocument, {
     variables: { slug },
+    fetchPolicy: 'network-only',
+    nextFetchPolicy: 'cache-first',
   });
   const [mutate] = useMutation(DeleteProductFlowOnDetailSectionDocument);
   const [pages, setPages] = useState<LoadedPage[]>([]);
@@ -62,8 +69,8 @@ export function useProductFlowPages(slug: string) {
   const firstPage = data?.adminProductFlowSummaries;
   const tail = pages.at(-1);
   const pageInfo = (tail?.page ?? firstPage)?.pageInfo;
-  const flows = [firstPage, ...pages.map(({ page }) => page)].flatMap(
-    page => page?.edges.map(({ node }) => node) ?? []
+  const ids = [firstPage, ...pages.map(({ page }) => page)].flatMap(
+    page => page?.edges.map(({ node }) => node.id) ?? []
   );
 
   const readPage = async (request: PageRequest) => {
@@ -73,17 +80,11 @@ export function useProductFlowPages(slug: string) {
       const result = await client.query({
         query: GetProductFlowsOnDetailSectionDocument,
         variables: request.after === null ? { slug } : { slug, after: request.after },
-        fetchPolicy: 'no-cache',
+        fetchPolicy: 'network-only',
       });
       if (!result.data) throw new Error('플로 목록 응답이 비어 있습니다.');
       const page = result.data.adminProductFlowSummaries;
-      if (request.after === null) {
-        client.writeQuery({
-          query: GetProductFlowsOnDetailSectionDocument,
-          variables: { slug },
-          data: result.data,
-        });
-      } else {
+      if (request.after !== null) {
         const loaded = { after: request.after, page };
         setPages(current => (request.kind === 'append' ? [...current, loaded] : [...current.slice(0, -1), loaded]));
       }
@@ -143,7 +144,7 @@ export function useProductFlowPages(slug: string) {
   };
 
   return {
-    flows,
+    ids,
     loading,
     error,
     refetch,

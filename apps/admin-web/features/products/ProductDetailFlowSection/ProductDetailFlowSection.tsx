@@ -1,5 +1,7 @@
 'use client';
 
+import { useFragment } from '@apollo/client/react';
+import { AdminProductFlowCardFragmentDoc } from '@darun/provider-graphql';
 import { Button, ImageOff, Layers, Loader2, Pencil, Plus, Trash2 } from '@darun/ui';
 import {
   AdminEmptyState,
@@ -60,7 +62,7 @@ export function ProductDetailFlowSection({ slug }: ProductDetailFlowSectionProps
 
 function ProductFlowList({ slug }: ProductDetailFlowSectionProps) {
   const {
-    flows,
+    ids,
     loading,
     error,
     refetch,
@@ -123,7 +125,7 @@ function ProductFlowList({ slug }: ProductDetailFlowSectionProps) {
               </Button>
             }
           />
-        ) : flows.length === 0 ? (
+        ) : ids.length === 0 ? (
           <AdminEmptyState
             title="등록된 UX 플로가 없습니다."
             description="사용 흐름을 단계별 스크린샷으로 구성해 Visual에 공개해 보세요."
@@ -143,55 +145,15 @@ function ProductFlowList({ slug }: ProductDetailFlowSectionProps) {
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {flows.map(flow => (
-              <div
-                key={flow.id}
-                className="group flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card"
-              >
-                <div className="relative">
-                  <FlowCoverImage
-                    src={flow.coverScreenshot?.imageUrl}
-                    alt={flow.coverScreenshot?.imageAlt || (flow.title ? `${flow.title} 플로 커버` : '플로 커버 화면')}
-                  />
-                  <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-dark-900/80 px-2 py-0.5 text-xs font-medium text-surface-50">
-                    <Layers size={12} className="shrink-0" aria-hidden="true" />
-                    <span className="tabular-nums">{flow.stepCount}단계</span>
-                  </span>
-                </div>
-                <div className="mt-2.5 flex flex-1 flex-col gap-1 px-1">
-                  <span className="truncate text-sm font-semibold text-dark-900" title={flow.title}>
-                    {flow.title}
-                  </span>
-                  <span className="text-xs text-dark-500">
-                    {PLATFORM_LABELS[flow.platform] ?? flow.platform} ·{' '}
-                    {FLOW_TYPE_LABELS[flow.flowType] ?? flow.flowType}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center justify-end gap-1 px-1">
-                  <Link
-                    href={`/products/${encodeURIComponent(slug)}/flows/${encodeURIComponent(flow.id)}/edit`}
-                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
-                    title="플로 수정"
-                    aria-label={`${flow.title} 플로 수정`}
-                  >
-                    <Pencil size={16} className="shrink-0" aria-hidden="true" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(flow.id)}
-                    disabled={deletingId !== null || loadingPage}
-                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
-                    title={deletingId === flow.id ? '삭제 중...' : '플로 삭제'}
-                    aria-label={deletingId === flow.id ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
-                  >
-                    {deletingId === flow.id ? (
-                      <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
-                    ) : (
-                      <Trash2 size={16} className="shrink-0" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-              </div>
+            {ids.map(id => (
+              <FlowCard
+                key={id}
+                slug={slug}
+                id={id}
+                deleting={deletingId === id}
+                deleteDisabled={deletingId !== null || loadingPage}
+                onDelete={() => handleDelete(id)}
+              />
             ))}
           </div>
         )}
@@ -230,5 +192,72 @@ function ProductFlowList({ slug }: ProductDetailFlowSectionProps) {
         </div>
       </AdminSectionBody>
     </AdminPanel>
+  );
+}
+
+function FlowCard({
+  slug,
+  id,
+  deleting,
+  deleteDisabled,
+  onDelete,
+}: {
+  slug: string;
+  id: string;
+  deleting: boolean;
+  deleteDisabled: boolean;
+  onDelete: () => void;
+}) {
+  const { data: flow, complete } = useFragment({
+    fragment: AdminProductFlowCardFragmentDoc,
+    from: { __typename: 'AdminProductFlowSummary', id },
+  });
+  if (!complete) return null;
+
+  return (
+    <div className="group flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card">
+      <div className="relative">
+        <FlowCoverImage
+          src={flow.coverScreenshot?.imageUrl}
+          alt={flow.coverScreenshot?.imageAlt || (flow.title ? `${flow.title} 플로 커버` : '플로 커버 화면')}
+        />
+        <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-dark-900/80 px-2 py-0.5 text-xs font-medium text-surface-50">
+          <Layers size={12} className="shrink-0" aria-hidden="true" />
+          <span className="tabular-nums">{flow.stepCount}단계</span>
+        </span>
+      </div>
+      <div className="mt-2.5 flex flex-1 flex-col gap-1 px-1">
+        <span className="truncate text-sm font-semibold text-dark-900" title={flow.title}>
+          {flow.title}
+        </span>
+        <span className="text-xs text-dark-500">
+          {PLATFORM_LABELS[flow.platform] ?? flow.platform} · {FLOW_TYPE_LABELS[flow.flowType] ?? flow.flowType}
+        </span>
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-1 px-1">
+        <Link
+          href={`/products/${encodeURIComponent(slug)}/flows/${encodeURIComponent(flow.id)}/edit`}
+          className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+          title="플로 수정"
+          aria-label={`${flow.title} 플로 수정`}
+        >
+          <Pencil size={16} className="shrink-0" aria-hidden="true" />
+        </Link>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={deleteDisabled}
+          className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
+          title={deleting ? '삭제 중...' : '플로 삭제'}
+          aria-label={deleting ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
+        >
+          {deleting ? (
+            <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
+          ) : (
+            <Trash2 size={16} className="shrink-0" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+    </div>
   );
 }
