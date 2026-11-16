@@ -18,7 +18,6 @@ gql`
           id
           name
         }
-        description
         features {
           emoji
           id
