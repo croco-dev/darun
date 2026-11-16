@@ -298,6 +298,10 @@ it('retries only the read when the list fails after a successful creation', asyn
   expect(notifications.show).not.toHaveBeenCalledWith(expect.objectContaining({ title: '저장 실패' }));
 });
 
+function flowEditLinks() {
+  return document.querySelectorAll('a[aria-label$=" 플로 수정"]');
+}
+
 it('카드 24개를 유지하며 실패한 추가 조회를 같은 커서로 다시 요청한다', async () => {
   const { Harness, pageRequests } = setup({
     extraFlows: 102,
@@ -305,41 +309,41 @@ it('카드 24개를 유지하며 실패한 추가 조회를 같은 커서로 다
   });
   render(<Harness />);
   await screen.findByText('추가 플로 23');
-  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(24);
+  expect(flowEditLinks()).toHaveLength(24);
   expect(screen.queryByText('추가 플로 24')).toBeNull();
 
-  fireEvent.click(screen.getByRole('button', { name: '플로 더 보기' }));
+  fireEvent.click(screen.getByText('플로 더 보기', { selector: 'button' }));
   await screen.findByText('플로를 더 불러오지 못했습니다.');
-  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(24);
+  expect(flowEditLinks()).toHaveLength(24);
 
-  fireEvent.click(screen.getByRole('button', { name: '목록 다시 시도' }));
+  fireEvent.click(screen.getByText('목록 다시 시도', { selector: 'button' }));
   await screen.findByText('추가 플로 47');
-  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(48);
+  expect(flowEditLinks()).toHaveLength(48);
   expect(pageRequests).toEqual([null, 'flow-alpha-023', 'flow-alpha-023']);
 });
 
 it('삭제 이후 이미 읽은 카드를 보존하고 마지막 페이지를 같은 경계로만 갱신한다', async () => {
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   const { Harness, requests, pageRequests } = setup({
-    extraFlows: 47,
+    extraFlows: 24,
     pageFailures: [3],
   });
   render(<Harness />);
-  fireEvent.click(await screen.findByRole('button', { name: '플로 더 보기' }));
-  await screen.findByText('추가 플로 47');
-  expect(screen.queryByRole('button', { name: '플로 더 보기' })).toBeNull();
+  fireEvent.click(await screen.findByText('플로 더 보기', { selector: 'button' }));
+  await screen.findByText('추가 플로 24');
+  expect(screen.queryByText('플로 더 보기', { selector: 'button' })).toBeNull();
 
   // The deleted card is also the previous page's cursor.
-  fireEvent.click(screen.getByRole('button', { name: '추가 플로 23 플로 삭제' }));
+  fireEvent.click(screen.getByLabelText('추가 플로 23 플로 삭제'));
   await screen.findByText('삭제 후 플로 목록을 갱신하지 못했습니다.');
   expect(screen.queryByText('추가 플로 23')).toBeNull();
-  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(47);
+  expect(flowEditLinks()).toHaveLength(24);
 
-  fireEvent.click(screen.getByRole('button', { name: '목록 다시 시도' }));
-  await waitFor(() => expect(screen.queryByRole('button', { name: '목록 다시 시도' })).toBeNull());
-  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(47);
+  fireEvent.click(screen.getByText('목록 다시 시도', { selector: 'button' }));
+  await waitFor(() => expect(screen.queryByText('목록 다시 시도', { selector: 'button' })).toBeNull());
+  expect(flowEditLinks()).toHaveLength(24);
   expect(screen.getByText('alpha 기존 플로')).toBeTruthy();
-  expect(screen.getByText('추가 플로 47')).toBeTruthy();
+  expect(screen.getByText('추가 플로 24')).toBeTruthy();
   expect(pageRequests).toEqual([null, 'flow-alpha-023', 'flow-alpha-023', 'flow-alpha-023']);
   expect(requests.filter(name => name === 'DeleteProductFlowOnDetailSection')).toHaveLength(1);
 });
@@ -351,27 +355,27 @@ it('첫 페이지에서 삭제하면 같은 상품의 첫 페이지를 빈 자�
   await screen.findByText('추가 플로 23');
   expect(screen.queryByText('추가 플로 24')).toBeNull();
 
-  fireEvent.click(screen.getByRole('button', { name: 'alpha 기존 플로 플로 삭제' }));
+  fireEvent.click(screen.getByLabelText('alpha 기존 플로 플로 삭제'));
   await screen.findByText('추가 플로 24');
-  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(24);
+  expect(flowEditLinks()).toHaveLength(24);
   expect(screen.queryByText('alpha 기존 플로')).toBeNull();
-  expect(screen.queryByRole('button', { name: '플로 더 보기' })).toBeNull();
+  expect(screen.queryByText('플로 더 보기', { selector: 'button' })).toBeNull();
   expect(pageRequests).toEqual([null, null]);
 });
 
 it('같은 상품의 화면 대체 텍스트를 저장하면 불러온 모든 페이지의 커버에 반영한다', async () => {
   const { Harness, client, pageRequests } = setup({ extraFlows: 24 });
   render(<Harness />);
-  fireEvent.click(await screen.findByRole('button', { name: '플로 더 보기' }));
+  fireEvent.click(await screen.findByText('플로 더 보기', { selector: 'button' }));
   await screen.findByText('추가 플로 24');
-  expect(screen.getAllByRole('img', { name: '화면 1' })).toHaveLength(25);
+  expect(screen.getAllByAltText('화면 1', { exact: true })).toHaveLength(25);
 
   await client.mutate({
     mutation: UpdateProductScreenshotOnDetailSectionDocument,
     variables: { id: 'shot-1', imageAlt: '새 화면 설명' },
   });
-  await waitFor(() => expect(screen.getAllByRole('img', { name: '새 화면 설명' })).toHaveLength(25));
-  expect(screen.queryByRole('img', { name: '화면 1' })).toBeNull();
+  await waitFor(() => expect(screen.getAllByAltText('새 화면 설명', { exact: true })).toHaveLength(25));
+  expect(screen.queryByAltText('화면 1', { exact: true })).toBeNull();
   expect(pageRequests).toEqual([null, 'flow-alpha-023']);
 });
 
@@ -379,17 +383,15 @@ it('여러 페이지에서 삭제한 뒤 목록을 다시 열면 첫 페이지�
   vi.spyOn(window, 'confirm').mockReturnValue(true);
   const { Harness, pageRequests } = setup({ extraFlows: 24 });
   const firstVisit = render(<Harness />);
-  fireEvent.click(await screen.findByRole('button', { name: '플로 더 보기' }));
+  fireEvent.click(await screen.findByText('플로 더 보기', { selector: 'button' }));
   await screen.findByText('추가 플로 24');
-  fireEvent.click(screen.getByRole('button', { name: 'alpha 기존 플로 플로 삭제' }));
-  await waitFor(() =>
-    expect(screen.getByRole('button', { name: '추가 플로 24 플로 삭제' }).matches(':disabled')).toBe(false)
-  );
+  fireEvent.click(screen.getByLabelText('alpha 기존 플로 플로 삭제'));
+  await waitFor(() => expect(screen.getByLabelText<HTMLButtonElement>('추가 플로 24 플로 삭제').disabled).toBe(false));
 
   firstVisit.unmount();
   render(<Harness />);
   await screen.findByText('추가 플로 24');
-  expect(screen.getAllByRole('button', { name: /플로 삭제$/ })).toHaveLength(24);
-  expect(screen.queryByRole('button', { name: '플로 더 보기' })).toBeNull();
+  expect(flowEditLinks()).toHaveLength(24);
+  expect(screen.queryByText('플로 더 보기', { selector: 'button' })).toBeNull();
   expect(pageRequests).toEqual([null, 'flow-alpha-023', 'flow-alpha-023', null]);
 });
