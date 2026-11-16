@@ -275,7 +275,7 @@ export const ProductFlowEditor = ({ slug, flowId, onSaved, onCancel }: FlowEdito
         // 목록이 unmount된 경우에도 다음 진입에서 저장값을 읽는다. 후속 조회는 저장 성공과 분리한다.
         client.cache.batch({
           update(cache) {
-            cache.evict({ id: 'ROOT_QUERY', fieldName: 'adminProductFlows', args: { productSlug: slug } });
+            cache.evict({ id: 'ROOT_QUERY', fieldName: 'adminProductFlowSummaries', args: { productSlug: slug } });
             cache.evict({ id: 'ROOT_QUERY', fieldName: 'adminProductFlow', args: { id: savedId } });
           },
         });

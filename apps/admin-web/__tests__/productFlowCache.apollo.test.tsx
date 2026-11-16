@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { GetProductFlowOnEditorDocument, GetProductFlowsOnDetailSectionDocument } from '@darun/provider-graphql';
+import {
+  GetProductFlowOnEditorDocument,
+  GetProductFlowsOnDetailSectionDocument,
+  UpdateProductScreenshotOnDetailSectionDocument,
+} from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
@@ -16,15 +20,17 @@ afterEach(() => {
   cleanup();
   clients.splice(0).forEach(client => client.stop());
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 const screenshots = [1, 2, 3].map(index => ({
-  __typename: 'ProductScreenshot',
+  __typename: 'Screenshot',
   id: `shot-${index}`,
   imageUrl: `https://fixture.invalid/${index}.png`,
   imageAlt: `화면 ${index}`,
   title: `화면 ${index}`,
   platform: 'WEB',
+  screenType: null,
 }));
 
 function makeFlow(id: string, slug: string) {
@@ -47,8 +53,24 @@ function makeFlow(id: string, slug: string) {
   };
 }
 
-function setup({ failSavedList = false } = {}) {
-  const flows = [makeFlow('flow-alpha', 'alpha'), makeFlow('flow-beta', 'beta')];
+function setup({
+  failSavedList = false,
+  extraFlows = 0,
+  pageFailures = [],
+}: {
+  failSavedList?: boolean;
+  extraFlows?: number;
+  pageFailures?: number[];
+} = {}) {
+  const flows = [
+    makeFlow('flow-alpha', 'alpha'),
+    ...Array.from({ length: extraFlows }, (_, index) => ({
+      ...makeFlow(`flow-alpha-${String(index + 1).padStart(3, '0')}`, 'alpha'),
+      title: `추가 플로 ${index + 1}`,
+    })),
+    makeFlow('flow-beta', 'beta'),
+  ];
+  const pageRequests: (string | null)[] = [];
   const requests: string[] = [];
   let saved = false;
   let failedList = false;
@@ -61,17 +83,51 @@ function setup({ failSavedList = false } = {}) {
           requests.push(name);
           let data;
           if (name === 'GetProductFlowsOnDetailSection') {
+            const after: string | null = operation.variables.after ?? null;
+            pageRequests.push(after);
+            if (pageFailures.includes(pageRequests.length)) {
+              observer.error(new Error('synthetic page failure'));
+              return;
+            }
             if (saved && failSavedList && !failedList) {
               failedList = true;
               observer.error(new Error('synthetic post-save list failure'));
               return;
             }
-            data = { adminProductFlows: flows.filter(flow => flow.product.slug === operation.variables.slug) };
+            const matching = flows.filter(
+              flow => flow.product.slug === operation.variables.slug && (!after || flow.id > after)
+            );
+            const page = matching.slice(0, 24);
+            data = {
+              adminProductFlowSummaries: {
+                edges: page.map(flow => ({
+                  node: { ...flow, __typename: 'AdminProductFlowSummary' },
+                })),
+                pageInfo: {
+                  hasNextPage: matching.length > 24,
+                  endCursor: page.at(-1)?.id ?? null,
+                },
+              },
+            };
+          } else if (name === 'UpdateProductScreenshotOnDetailSection') {
+            const { id, imageAlt } = operation.variables;
+            const screenshot = screenshots.find(shot => shot.id === id);
+            data = { updateProductScreenshot: { screenshot: { ...screenshot, imageAlt } } };
+          } else if (name === 'DeleteProductFlowOnDetailSection') {
+            const index = flows.findIndex(flow => flow.id === operation.variables.id);
+            if (index >= 0) flows.splice(index, 1);
+            data = { deleteProductFlow: { success: index >= 0 } };
           } else if (name === 'GetProductFlowOnEditor') {
-            data = { adminProductFlow: flows.find(flow => flow.id === operation.variables.id) };
+            data = {
+              adminProductFlow: flows.find(flow => flow.id === operation.variables.id),
+            };
           } else if (name === 'GetProductScreenshotsOnFlowEditor') {
             data = {
-              tempProductBySlug: { __typename: 'Product', id: operation.variables.slug, screenshots },
+              tempProductBySlug: {
+                __typename: 'Product',
+                id: operation.variables.slug,
+                screenshots,
+              },
             };
           } else {
             const input = operation.variables.input;
@@ -134,7 +190,7 @@ function setup({ failSavedList = false } = {}) {
       </ApolloProvider>
     );
   }
-  return { client, requests, Harness };
+  return { client, requests, pageRequests, Harness };
 }
 
 async function addStep(name: string) {
@@ -149,10 +205,14 @@ it('reads the saved creation once after returning to an unmounted list, then ope
   fireEvent.click(screen.getByRole('link', { name: '플로 추가' }));
   await screen.findByLabelText('제목');
   await waitFor(() => expect(screen.getByRole('button', { name: '단계 추가' }).matches(':disabled')).toBe(false));
-  fireEvent.change(screen.getByLabelText('제목'), { target: { value: '새 가입 흐름' } });
+  fireEvent.change(screen.getByLabelText('제목'), {
+    target: { value: '새 가입 흐름' },
+  });
   await addStep('화면 2');
   await addStep('화면 3');
-  fireEvent.change(screen.getByLabelText('단계 1 설명'), { target: { value: '저장한 첫 안내' } });
+  fireEvent.change(screen.getByLabelText('단계 1 설명'), {
+    target: { value: '저장한 첫 안내' },
+  });
   fireEvent.click(screen.getByRole('button', { name: '플로 등록' }));
   await screen.findByText('새 가입 흐름');
   expect(screen.getAllByText('새 가입 흐름')).toHaveLength(1);
@@ -165,18 +225,34 @@ it('reads the saved creation once after returning to an unmounted list, then ope
 
 it('refreshes edited title, steps, cover and captions while keeping another product cache intact', async () => {
   const { Harness, client, requests } = setup();
-  await client.query({ query: GetProductFlowsOnDetailSectionDocument, variables: { slug: 'beta' } });
-  await client.query({ query: GetProductFlowOnEditorDocument, variables: { id: 'flow-beta' } });
-  const betaList = client.readQuery({ query: GetProductFlowsOnDetailSectionDocument, variables: { slug: 'beta' } });
-  const betaFlow = client.readQuery({ query: GetProductFlowOnEditorDocument, variables: { id: 'flow-beta' } });
+  await client.query({
+    query: GetProductFlowsOnDetailSectionDocument,
+    variables: { slug: 'beta' },
+  });
+  await client.query({
+    query: GetProductFlowOnEditorDocument,
+    variables: { id: 'flow-beta' },
+  });
+  const betaList = client.readQuery({
+    query: GetProductFlowsOnDetailSectionDocument,
+    variables: { slug: 'beta' },
+  });
+  const betaFlow = client.readQuery({
+    query: GetProductFlowOnEditorDocument,
+    variables: { id: 'flow-beta' },
+  });
   render(<Harness />);
   await screen.findByText('alpha 기존 플로');
   fireEvent.click(screen.getByRole('link', { name: 'alpha 기존 플로 플로 수정' }));
   await screen.findByLabelText('제목');
-  fireEvent.change(screen.getByLabelText('제목'), { target: { value: '저장된 새 제목' } });
+  fireEvent.change(screen.getByLabelText('제목'), {
+    target: { value: '저장된 새 제목' },
+  });
   fireEvent.click(screen.getByLabelText('단계 2 위로 이동'));
   await addStep('화면 3');
-  fireEvent.change(screen.getByLabelText('단계 1 설명'), { target: { value: '바뀐 첫 안내' } });
+  fireEvent.change(screen.getByLabelText('단계 1 설명'), {
+    target: { value: '바뀐 첫 안내' },
+  });
   fireEvent.click(screen.getByRole('button', { name: '플로 수정' }));
   await screen.findByText('저장된 새 제목');
   expect(screen.getByText('3단계')).toBeTruthy();
@@ -188,10 +264,18 @@ it('refreshes edited title, steps, cover and captions while keeping another prod
   expect(screen.getByLabelText('단계 3 설명')).toBeTruthy();
   expect(requests.filter(name => name === 'GetProductFlowsOnDetailSection')).toHaveLength(3);
   expect(requests.filter(name => name === 'GetProductFlowOnEditor')).toHaveLength(3);
-  expect(client.readQuery({ query: GetProductFlowsOnDetailSectionDocument, variables: { slug: 'beta' } })).toEqual(
-    betaList
-  );
-  expect(client.readQuery({ query: GetProductFlowOnEditorDocument, variables: { id: 'flow-beta' } })).toEqual(betaFlow);
+  expect(
+    client.readQuery({
+      query: GetProductFlowsOnDetailSectionDocument,
+      variables: { slug: 'beta' },
+    })
+  ).toEqual(betaList);
+  expect(
+    client.readQuery({
+      query: GetProductFlowOnEditorDocument,
+      variables: { id: 'flow-beta' },
+    })
+  ).toEqual(betaFlow);
 });
 
 it('retries only the read when the list fails after a successful creation', async () => {
@@ -201,7 +285,9 @@ it('retries only the read when the list fails after a successful creation', asyn
   fireEvent.click(screen.getByRole('link', { name: '플로 추가' }));
   await screen.findByLabelText('제목');
   await waitFor(() => expect(screen.getByRole('button', { name: '단계 추가' }).matches(':disabled')).toBe(false));
-  fireEvent.change(screen.getByLabelText('제목'), { target: { value: '한 번만 만든 플로' } });
+  fireEvent.change(screen.getByLabelText('제목'), {
+    target: { value: '한 번만 만든 플로' },
+  });
   await addStep('화면 1');
   await addStep('화면 2');
   fireEvent.click(screen.getByRole('button', { name: '플로 등록' }));
@@ -210,4 +296,102 @@ it('retries only the read when the list fails after a successful creation', asyn
   expect(requests.filter(name => name === 'CreateProductFlowOnEditor')).toHaveLength(1);
   expect(requests.filter(name => name === 'GetProductFlowsOnDetailSection')).toHaveLength(3);
   expect(notifications.show).not.toHaveBeenCalledWith(expect.objectContaining({ title: '저장 실패' }));
+});
+
+function flowEditLinks() {
+  return document.querySelectorAll('a[aria-label$=" 플로 수정"]');
+}
+
+it('카드 24개를 유지하며 실패한 추가 조회를 같은 커서로 다시 요청한다', async () => {
+  const { Harness, pageRequests } = setup({
+    extraFlows: 102,
+    pageFailures: [2],
+  });
+  render(<Harness />);
+  await screen.findByText('추가 플로 23');
+  expect(flowEditLinks()).toHaveLength(24);
+  expect(screen.queryByText('추가 플로 24')).toBeNull();
+
+  fireEvent.click(screen.getByText('플로 더 보기', { selector: 'button' }));
+  await screen.findByText('플로를 더 불러오지 못했습니다.');
+  expect(flowEditLinks()).toHaveLength(24);
+
+  fireEvent.click(screen.getByText('목록 다시 시도', { selector: 'button' }));
+  await screen.findByText('추가 플로 47');
+  expect(flowEditLinks()).toHaveLength(48);
+  expect(pageRequests).toEqual([null, 'flow-alpha-023', 'flow-alpha-023']);
+});
+
+it('삭제 이후 이미 읽은 카드를 보존하고 마지막 페이지를 같은 경계로만 갱신한다', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const { Harness, requests, pageRequests } = setup({
+    extraFlows: 24,
+    pageFailures: [3],
+  });
+  render(<Harness />);
+  fireEvent.click(await screen.findByText('플로 더 보기', { selector: 'button' }));
+  await screen.findByText('추가 플로 24');
+  expect(screen.queryByText('플로 더 보기', { selector: 'button' })).toBeNull();
+
+  // The deleted card is also the previous page's cursor.
+  fireEvent.click(screen.getByLabelText('추가 플로 23 플로 삭제'));
+  await screen.findByText('삭제 후 플로 목록을 갱신하지 못했습니다.');
+  expect(screen.queryByText('추가 플로 23')).toBeNull();
+  expect(flowEditLinks()).toHaveLength(24);
+
+  fireEvent.click(screen.getByText('목록 다시 시도', { selector: 'button' }));
+  await waitFor(() => expect(screen.queryByText('목록 다시 시도', { selector: 'button' })).toBeNull());
+  expect(flowEditLinks()).toHaveLength(24);
+  expect(screen.getByText('alpha 기존 플로')).toBeTruthy();
+  expect(screen.getByText('추가 플로 24')).toBeTruthy();
+  expect(pageRequests).toEqual([null, 'flow-alpha-023', 'flow-alpha-023', 'flow-alpha-023']);
+  expect(requests.filter(name => name === 'DeleteProductFlowOnDetailSection')).toHaveLength(1);
+});
+
+it('첫 페이지에서 삭제하면 같은 상품의 첫 페이지를 빈 자리까지 채운다', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const { Harness, pageRequests } = setup({ extraFlows: 24 });
+  render(<Harness />);
+  await screen.findByText('추가 플로 23');
+  expect(screen.queryByText('추가 플로 24')).toBeNull();
+
+  fireEvent.click(screen.getByLabelText('alpha 기존 플로 플로 삭제'));
+  await screen.findByText('추가 플로 24');
+  expect(flowEditLinks()).toHaveLength(24);
+  expect(screen.queryByText('alpha 기존 플로')).toBeNull();
+  expect(screen.queryByText('플로 더 보기', { selector: 'button' })).toBeNull();
+  expect(pageRequests).toEqual([null, null]);
+});
+
+it('같은 상품의 화면 대체 텍스트를 저장하면 불러온 모든 페이지의 커버에 반영한다', async () => {
+  const { Harness, client, pageRequests } = setup({ extraFlows: 24 });
+  render(<Harness />);
+  fireEvent.click(await screen.findByText('플로 더 보기', { selector: 'button' }));
+  await screen.findByText('추가 플로 24');
+  expect(screen.getAllByAltText('화면 1', { exact: true })).toHaveLength(25);
+
+  await client.mutate({
+    mutation: UpdateProductScreenshotOnDetailSectionDocument,
+    variables: { id: 'shot-1', imageAlt: '새 화면 설명' },
+  });
+  await waitFor(() => expect(screen.getAllByAltText('새 화면 설명', { exact: true })).toHaveLength(25));
+  expect(screen.queryByAltText('화면 1', { exact: true })).toBeNull();
+  expect(pageRequests).toEqual([null, 'flow-alpha-023']);
+});
+
+it('여러 페이지에서 삭제한 뒤 목록을 다시 열면 첫 페이지의 남은 카드를 다시 조회한다', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const { Harness, pageRequests } = setup({ extraFlows: 24 });
+  const firstVisit = render(<Harness />);
+  fireEvent.click(await screen.findByText('플로 더 보기', { selector: 'button' }));
+  await screen.findByText('추가 플로 24');
+  fireEvent.click(screen.getByLabelText('alpha 기존 플로 플로 삭제'));
+  await waitFor(() => expect(screen.getByLabelText<HTMLButtonElement>('추가 플로 24 플로 삭제').disabled).toBe(false));
+
+  firstVisit.unmount();
+  render(<Harness />);
+  await screen.findByText('추가 플로 24');
+  expect(flowEditLinks()).toHaveLength(24);
+  expect(screen.queryByText('플로 더 보기', { selector: 'button' })).toBeNull();
+  expect(pageRequests).toEqual([null, 'flow-alpha-023', 'flow-alpha-023', null]);
 });

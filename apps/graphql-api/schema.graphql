@@ -26,6 +26,25 @@ type AddProductScreenshotPayload {
   product: Product
 }
 
+type AdminProductFlowConnection {
+  edges: [AdminProductFlowEdge!]!
+  pageInfo: PageInfo!
+}
+
+type AdminProductFlowEdge {
+  cursor: String!
+  node: AdminProductFlowSummary!
+}
+
+type AdminProductFlowSummary {
+  coverScreenshot: Screenshot
+  flowType: VisualFlowType!
+  id: ID!
+  platform: VisualPlatform!
+  stepCount: Int!
+  title: String!
+}
+
 type ApplyProductDescriptionCandidatePayload {
   alreadyApplied: Boolean!
   job: ProductDescriptionJob!
@@ -471,6 +490,7 @@ type PublishedMagazineEdge {
 
 type Query {
   adminProductFlow(id: String!): VisualFlow
+  adminProductFlowSummaries(after: String, first: Int! = 24, productSlug: String!): AdminProductFlowConnection!
   adminProductFlows(productSlug: String!): [VisualFlow!]!
   allCompanies(page: Int!): CompanyPagination!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!

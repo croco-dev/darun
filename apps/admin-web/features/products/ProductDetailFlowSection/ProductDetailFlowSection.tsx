@@ -1,11 +1,7 @@
 'use client';
 
-import { gql } from '@apollo/client';
-import { useMutation, useQuery } from '@apollo/client/react';
-import {
-  DeleteProductFlowOnDetailSectionDocument,
-  GetProductFlowsOnDetailSectionDocument,
-} from '@darun/provider-graphql';
+import { useFragment } from '@apollo/client/react';
+import { AdminProductFlowCardFragmentDoc } from '@darun/provider-graphql';
 import { Button, ImageOff, Layers, Loader2, Pencil, Plus, Trash2 } from '@darun/ui';
 import {
   AdminEmptyState,
@@ -16,41 +12,8 @@ import {
   AdminSectionHeader,
 } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
-import { notifications } from '@mantine/notifications';
-import { useState } from 'react';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-gql`
-  query GetProductFlowsOnDetailSection($slug: String!) {
-    adminProductFlows(productSlug: $slug) {
-      id
-      title
-      description
-      platform
-      flowType
-      stepCount
-      coverScreenshot {
-        id
-        imageUrl
-        imageAlt
-      }
-      steps {
-        position
-        caption
-        screenshot {
-          id
-          title
-        }
-      }
-    }
-  }
-
-  mutation DeleteProductFlowOnDetailSection($id: ID!) {
-    deleteProductFlow(input: { id: $id }) {
-      success
-    }
-  }
-`;
+import { useRef, useState } from 'react';
+import { useProductFlowPages } from './useProductFlowPages';
 
 type ProductDetailFlowSectionProps = {
   slug: string;
@@ -93,65 +56,38 @@ function FlowCoverImage({ src, alt }: { src?: string; alt?: string }) {
   );
 }
 
-export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps) => {
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+export function ProductDetailFlowSection({ slug }: ProductDetailFlowSectionProps) {
+  return <ProductFlowList key={slug} slug={slug} />;
+}
 
-  const { data, loading, error, refetch } = useQuery(GetProductFlowsOnDetailSectionDocument, {
-    variables: { slug },
-  });
+function ProductFlowList({ slug }: ProductDetailFlowSectionProps) {
+  const {
+    ids,
+    loading,
+    error,
+    refetch,
+    hasNextPage,
+    pageFailure,
+    loadingPage,
+    loadMore,
+    retryPage,
+    deletingId,
+    deleteFlow,
+  } = useProductFlowPages(slug);
+  const pageFooter = useRef<HTMLDivElement>(null);
 
-  const [deleteFlow] = useMutation(DeleteProductFlowOnDetailSectionDocument, {
-    onError: err => {
-      notifications.show({
-        title: '삭제 실패',
-        message: err.message,
-        color: 'red',
-      });
-    },
-    onCompleted: () => {
-      notifications.show({
-        message: '플로가 삭제되었습니다.',
-        color: 'teal',
-      });
-      refetch();
-    },
-  });
-
-  const handleDelete = async (id: string) => {
-    if (deletingId !== null) {
-      return;
-    }
-    if (!window.confirm('이 플로를 삭제하시겠습니까? 플로에 포함된 스크린샷은 삭제되지 않습니다.')) {
-      return;
-    }
-
-    setDeletingId(id);
-    try {
-      await deleteFlow({ variables: { id } });
-    } catch {
-      // onError handles notification
-    } finally {
-      setDeletingId(null);
+  const handleDelete = (id: string) => {
+    if (window.confirm('이 플로를 삭제하시겠습니까? 플로에 포함된 스크린샷은 삭제되지 않습니다.')) {
+      void deleteFlow(id);
     }
   };
 
-  const flows = (data?.adminProductFlows ?? []).flatMap(flow => {
-    const cover = flow?.coverScreenshot;
-    if (!flow || !flow.id) {
-      return [];
+  const handlePageRequest = async (button: HTMLButtonElement) => {
+    const hasMore = await (pageFailure ? retryPage() : loadMore());
+    if (hasMore === false && document.activeElement === button) {
+      pageFooter.current?.focus();
     }
-    return [
-      {
-        id: flow.id,
-        title: flow.title ?? '',
-        platform: flow.platform ?? '',
-        flowType: flow.flowType ?? '',
-        stepCount: flow.stepCount ?? 0,
-        coverImageUrl: cover?.imageUrl ?? '',
-        coverImageAlt: cover?.imageAlt ?? '',
-      },
-    ];
-  });
+  };
 
   return (
     <AdminPanel>
@@ -189,7 +125,7 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
               </Button>
             }
           />
-        ) : flows.length === 0 ? (
+        ) : ids.length === 0 ? (
           <AdminEmptyState
             title="등록된 UX 플로가 없습니다."
             description="사용 흐름을 단계별 스크린샷으로 구성해 Visual에 공개해 보세요."
@@ -209,59 +145,119 @@ export const ProductDetailFlowSection = ({ slug }: ProductDetailFlowSectionProps
           />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {flows.map(flow => (
-              <div
-                key={flow.id}
-                className="group flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card"
-              >
-                <div className="relative">
-                  <FlowCoverImage
-                    src={flow.coverImageUrl}
-                    alt={flow.coverImageAlt || (flow.title ? `${flow.title} 플로 커버` : '플로 커버 화면')}
-                  />
-                  <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-dark-900/80 px-2 py-0.5 text-xs font-medium text-surface-50">
-                    <Layers size={12} className="shrink-0" aria-hidden="true" />
-                    <span className="tabular-nums">{flow.stepCount}단계</span>
-                  </span>
-                </div>
-                <div className="mt-2.5 flex flex-1 flex-col gap-1 px-1">
-                  <span className="truncate text-sm font-semibold text-dark-900" title={flow.title}>
-                    {flow.title}
-                  </span>
-                  <span className="text-xs text-dark-500">
-                    {PLATFORM_LABELS[flow.platform] ?? flow.platform} ·{' '}
-                    {FLOW_TYPE_LABELS[flow.flowType] ?? flow.flowType}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center justify-end gap-1 px-1">
-                  <Link
-                    href={`/products/${encodeURIComponent(slug)}/flows/${encodeURIComponent(flow.id)}/edit`}
-                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
-                    title="플로 수정"
-                    aria-label={`${flow.title} 플로 수정`}
-                  >
-                    <Pencil size={16} className="shrink-0" aria-hidden="true" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(flow.id)}
-                    disabled={deletingId !== null}
-                    className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
-                    title={deletingId === flow.id ? '삭제 중...' : '플로 삭제'}
-                    aria-label={deletingId === flow.id ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
-                  >
-                    {deletingId === flow.id ? (
-                      <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
-                    ) : (
-                      <Trash2 size={16} className="shrink-0" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-              </div>
+            {ids.map(id => (
+              <FlowCard
+                key={id}
+                slug={slug}
+                id={id}
+                deleting={deletingId === id}
+                deleteDisabled={deletingId !== null || loadingPage}
+                onDelete={() => handleDelete(id)}
+              />
             ))}
           </div>
         )}
+        <div
+          ref={pageFooter}
+          tabIndex={-1}
+          role="group"
+          aria-label="플로 목록 페이지"
+          className="mt-4 flex flex-col items-center gap-2"
+        >
+          {pageFailure && (
+            <p role="alert" className="text-sm text-cherry-600">
+              {pageFailure === 'refresh'
+                ? '삭제 후 플로 목록을 갱신하지 못했습니다.'
+                : '플로를 더 불러오지 못했습니다.'}
+            </p>
+          )}
+          {loadingPage && (
+            <p role="status" className="text-sm text-dark-500">
+              플로를 불러오는 중입니다.
+            </p>
+          )}
+          {(hasNextPage || pageFailure || loadingPage) && (
+            <Button
+              type="button"
+              variant="contained"
+              color="secondary"
+              aria-disabled={loadingPage || deletingId !== null}
+              onClick={event => {
+                if (!loadingPage && deletingId === null) void handlePageRequest(event.currentTarget);
+              }}
+            >
+              {pageFailure ? '목록 다시 시도' : '플로 더 보기'}
+            </Button>
+          )}
+        </div>
       </AdminSectionBody>
     </AdminPanel>
   );
-};
+}
+
+function FlowCard({
+  slug,
+  id,
+  deleting,
+  deleteDisabled,
+  onDelete,
+}: {
+  slug: string;
+  id: string;
+  deleting: boolean;
+  deleteDisabled: boolean;
+  onDelete: () => void;
+}) {
+  const { data: flow, complete } = useFragment({
+    fragment: AdminProductFlowCardFragmentDoc,
+    from: { __typename: 'AdminProductFlowSummary', id },
+  });
+  if (!complete) return null;
+
+  return (
+    <div className="group flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card">
+      <div className="relative">
+        <FlowCoverImage
+          src={flow.coverScreenshot?.imageUrl}
+          alt={flow.coverScreenshot?.imageAlt || (flow.title ? `${flow.title} 플로 커버` : '플로 커버 화면')}
+        />
+        <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-dark-900/80 px-2 py-0.5 text-xs font-medium text-surface-50">
+          <Layers size={12} className="shrink-0" aria-hidden="true" />
+          <span className="tabular-nums">{flow.stepCount}단계</span>
+        </span>
+      </div>
+      <div className="mt-2.5 flex flex-1 flex-col gap-1 px-1">
+        <span className="truncate text-sm font-semibold text-dark-900" title={flow.title}>
+          {flow.title}
+        </span>
+        <span className="text-xs text-dark-500">
+          {PLATFORM_LABELS[flow.platform] ?? flow.platform} · {FLOW_TYPE_LABELS[flow.flowType] ?? flow.flowType}
+        </span>
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-1 px-1">
+        <Link
+          href={`/products/${encodeURIComponent(slug)}/flows/${encodeURIComponent(flow.id)}/edit`}
+          className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+          title="플로 수정"
+          aria-label={`${flow.title} 플로 수정`}
+        >
+          <Pencil size={16} className="shrink-0" aria-hidden="true" />
+        </Link>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={deleteDisabled}
+          className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
+          title={deleting ? '삭제 중...' : '플로 삭제'}
+          aria-label={deleting ? `${flow.title} 삭제 중` : `${flow.title} 플로 삭제`}
+        >
+          {deleting ? (
+            <Loader2 size={16} className="animate-spin text-cherry-600 motion-reduce:animate-none" />
+          ) : (
+            <Trash2 size={16} className="shrink-0" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}

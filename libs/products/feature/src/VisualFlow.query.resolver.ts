@@ -6,10 +6,12 @@ import {
   GetVisualFlows,
   GetVisualFlowById,
   GetVisualScreenshotFlows,
+  productInvalidArgs,
 } from '@darun/products-domain';
 import { AuthRole, Cursor } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Int, Query, Resolver } from 'type-graphql';
 import { Service } from 'typedi';
+import { AdminProductFlowConnection } from './graphs/AdminProductFlowConnection';
 import { VisualFlow } from './graphs/VisualFlow';
 import { VisualFlowConnection } from './graphs/VisualFlowConnection';
 import { VisualFlowTypeGraph } from './graphs/VisualFlowType';
@@ -18,6 +20,20 @@ import { VisualSortGraph } from './graphs/VisualSort';
 import { toGraphFlowFromSaved } from './VisualFlow.mapper';
 
 const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+
+function decodeAdminFlowCursor(after: string): string {
+  const invalidCursor = () => productInvalidArgs('플로 목록 커서가 올바르지 않습니다.');
+  if (after.length > 256) throw invalidCursor();
+  let id: string;
+  try {
+    id = Cursor.decode(after, ['adminFlowId'] as const).adminFlowId;
+  } catch (error) {
+    if (error instanceof Error && error.message === 'pagination/invalid-cursor') throw invalidCursor();
+    throw error;
+  }
+  if (!id || id.length > 26) throw invalidCursor();
+  return id;
+}
 
 // 제품 정보는 flow row에서 매핑한다. 목록 GraphQL 선택은 cover와 stepCount만 사용하고
 // 전체 steps는 상세에서 요청한다. M4 내 저장 목록 매핑과 공유한다.
@@ -153,6 +169,34 @@ export class VisualFlowQueryResolver {
       pageInfo: {
         hasNextPage,
         hasPreviousPage: resolvedSort === VisualSortGraph.POPULAR ? (page ?? 1) > 1 : afterId !== undefined,
+        startCursor: edges[0]?.cursor,
+        endCursor: edges[edges.length - 1]?.cursor,
+      },
+    };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Query(() => AdminProductFlowConnection, { name: 'adminProductFlowSummaries' })
+  public async adminProductFlowSummaries(
+    @Arg('productSlug', () => String) productSlug: string,
+    @Arg('first', () => Int, { defaultValue: 24 }) first: number,
+    @Arg('after', () => String, { nullable: true }) after?: string | null
+  ): Promise<AdminProductFlowConnection> {
+    const afterId = after == null ? undefined : decodeAdminFlowCursor(after);
+    const { flows, hasNextPage } = await this.getAdminProductFlowsUseCase.listSummaries({
+      productSlug,
+      first,
+      afterId,
+    });
+    const edges = flows.map(node => ({
+      node,
+      cursor: Cursor.encode({ adminFlowId: node.id }, ['adminFlowId']),
+    }));
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: afterId !== undefined,
         startCursor: edges[0]?.cursor,
         endCursor: edges[edges.length - 1]?.cursor,
       },
