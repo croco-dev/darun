@@ -108,6 +108,8 @@ describe('magazine draft editor with real Apollo operations', () => {
       const fixture = setup();
       const query = await fixture.take('MagazineOnAdminEditor');
       await flush(() => query.resolve({ tempMagazineBySlug: original }));
+      const uploadStatus = screen.getByRole('status', { name: '배경 이미지 업로드' });
+      expect(uploadStatus.textContent).toBe('');
       expect(screen.getByRole('img', { name: '매거진 배경 이미지' }).getAttribute('src')).toBe(
         draft.backgroundImageUrl
       );
@@ -126,12 +128,14 @@ describe('magazine draft editor with real Apollo operations', () => {
       fireEvent.change(screen.getByLabelText('배경 이미지 파일'), {
         target: { files: [file] },
       });
+      expect(uploadStatus.textContent).toContain('배경 이미지를 업로드하고 있습니다.');
       expect(upload).toHaveBeenCalledWith('images/magazines', file, file.name);
       expect(screen.getByRole<HTMLButtonElement>('button', { name: '저장' }).disabled).toBe(true);
       if (!publishedAt) expect(screen.getByRole<HTMLButtonElement>('button', { name: '발행' }).disabled).toBe(true);
       fireEvent.submit(screen.getByLabelText('글 제목').closest('form')!);
       expect(fixture.requests).toHaveLength(0);
       await flush(() => finish(replacement));
+      expect(uploadStatus.textContent).toBe('');
       expect(screen.getByRole('img', { name: '매거진 배경 이미지' }).getAttribute('src')).toBe(replacement);
       if (!publishedAt) expect(screen.getByRole<HTMLButtonElement>('button', { name: '발행' }).disabled).toBe(true);
 
@@ -332,7 +336,7 @@ describe('magazine draft editor with real Apollo operations', () => {
     };
     expect(screen.getByLabelText<HTMLInputElement>('글 제목').disabled).toBe(true);
     await flush(() => save.resolve({ editMagazine: { magazine: saved } }));
-    expect(screen.getByRole('status').textContent).toContain('저장했습니다');
+    expect(screen.getByRole('status', { name: '' }).textContent).toContain('저장했습니다');
     expect(screen.getByText('초안(미발행)')).toBeTruthy();
     expect(fixture.requests.some(r => r.name === 'PublishMagazineOnAdminEditor')).toBe(false);
     fixture.rerender(
@@ -378,7 +382,7 @@ describe('magazine draft editor with real Apollo operations', () => {
     expect(fixture.requests).toHaveLength(0);
     await flush(() => save.fail());
     expect(screen.getByRole('alert').textContent).toContain('입력한 내용은 유지');
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('status', { name: '' })).toBeNull();
     expect(screen.getByLabelText<HTMLInputElement>('글 제목').value).toBe('보존할 제목');
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     const retry = await fixture.take('EditMagazineOnAdminEditor');

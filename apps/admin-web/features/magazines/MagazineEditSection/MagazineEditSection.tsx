@@ -346,11 +346,9 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
             배경 이미지 제거
           </Button>
         )}
-        {backgroundUploading && (
-          <p role="status" className="text-sm text-dark-600">
-            배경 이미지를 업로드하고 있습니다. 완료 후 저장할 수 있습니다.
-          </p>
-        )}
+        <output aria-label="배경 이미지 업로드" aria-atomic="true" className="text-sm text-dark-600 empty:sr-only">
+          {backgroundUploading ? '배경 이미지를 업로드하고 있습니다. 완료 후 저장할 수 있습니다.' : ''}
+        </output>
       </section>
       <section aria-label="본문" className="min-w-0">
         <h2 className="mb-2 text-sm font-medium text-dark-900">본문</h2>
