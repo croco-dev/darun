@@ -9,7 +9,7 @@ import {
 import {
   PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
   PRODUCT_RESEARCH_MAX_TAGS,
-  normalizeResearchFeatureSummary,
+  inspectReviewedResearchFeature,
   normalizeResearchTags,
 } from '@darun/products-domain/research';
 import { Inject, Service } from 'typedi';
@@ -34,8 +34,6 @@ const MAX_LOGO_URL_CHARS = 255;
 const MAX_LINK_URL_CHARS = 255;
 const MAX_LINK_TITLE_CHARS = 255;
 const MAX_LINK_DISPLAY_CHARS = 100;
-const MAX_FEATURE_NAME_CHARS = 100;
-const MAX_FEATURE_EMOJI_CHARS = 30;
 const MAX_TAG_NAME_CHARS = 100;
 const MAX_FEATURES = 8;
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -100,24 +98,19 @@ export class ProductResearchReviewService {
     if (input.features.length > MAX_FEATURES) {
       throw productInvalidArgs('기능은 최대 8개까지 입력할 수 있습니다.');
     }
-    const features = input.features.map((feature, index) => {
-      const featureName = clean(feature.name);
-      const featureSummary = normalizeResearchFeatureSummary(feature.summary);
-      const emoji = (feature.emoji || '✨').trim() || '✨';
-      if (
-        !featureName ||
-        featureName.length > MAX_FEATURE_NAME_CHARS ||
-        !featureSummary ||
-        emoji.length > MAX_FEATURE_EMOJI_CHARS
-      ) {
+    const features = input.features.map((inputFeature, index) => {
+      const { feature, invalidName, missingSummary, summaryTooLong, emojiTooLong } =
+        inspectReviewedResearchFeature(inputFeature);
+      if (invalidName || missingSummary || emojiTooLong) {
         throw productInvalidArgs(`features[${index}]를 확인해 주세요.`);
       }
-      if (featureSummary.length > PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH) {
+      if (summaryTooLong) {
+        const length = feature.summary.length;
         throw productInvalidArgs(
-          `기능 ${index + 1} 요약은 ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 입력해 주세요. 현재 ${featureSummary.length}자, ${featureSummary.length - PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 초과입니다.`
+          `기능 ${index + 1} 요약은 ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 입력해 주세요. 현재 ${length}자, ${length - PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 초과입니다.`
         );
       }
-      return { name: featureName, summary: featureSummary, emoji };
+      return feature;
     });
     for (const tag of input.tags) {
       const normalized = clean(tag);

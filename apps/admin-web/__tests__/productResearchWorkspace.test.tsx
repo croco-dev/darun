@@ -1108,7 +1108,15 @@ describe('admin research workspace flow', () => {
       expect(restored.value).toBe(summary);
       expect(restored.getAttribute('aria-invalid')).toBe('true');
       expect(submit().disabled).toBe(true);
+      if (!excludeAll) fireEvent.click(inclusion(1));
+      const secondName = screen.getByRole('textbox', { name: '기능 2 이름' });
+      fireEvent.change(secondName, { target: { value: '   ' } });
+      fireEvent.change(restored, { target: { value: '   ' } });
+      expect(secondName.getAttribute('aria-invalid')).toBe('true');
+      expect(restored.getAttribute('aria-invalid')).toBe('true');
+      expect(submit().disabled).toBe(true);
       fireEvent.click(inclusion(2));
+      if (!excludeAll) fireEvent.click(inclusion(1));
       fireEvent.change(document.querySelector('input[name="review-logo-url"]')!, {
         target: { value: 'https://linear.app/logo.png' },
       });
