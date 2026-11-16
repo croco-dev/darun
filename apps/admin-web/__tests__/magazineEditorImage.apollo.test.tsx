@@ -42,6 +42,7 @@ it.each(['success', 'reject', 'empty'] as const)(
       title: '이미지 초안',
       summary: '',
       content: '<p>이미지를 포함할 본문</p>',
+      backgroundImageUrl: '',
       publishedAt: null,
     };
     const client = new ApolloClient({
@@ -73,12 +74,13 @@ it.each(['success', 'reject', 'empty'] as const)(
     );
     await screen.findByDisplayValue('이미지 초안');
     await waitFor(() => expect(view.container.querySelector('.ProseMirror')).toBeTruthy());
-    fireEvent.change(view.container.querySelector('input[type=file]')!, {
+    fireEvent.change(screen.getByRole('region', { name: '본문' }).querySelector('input[type=file]')!, {
       target: {
         files: [new File(['synthetic'], 'figure.png', { type: 'image/png' })],
       },
     });
     await waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText('한 줄 요약'), { target: { value: '업로드 중 작성한 요약' } });
     expect(screen.getByRole<HTMLButtonElement>('button', { name: '저장' }).disabled).toBe(true);
     expect(screen.getByRole<HTMLButtonElement>('button', { name: '발행' }).disabled).toBe(true);
     fireEvent.submit(screen.getByLabelText('글 제목').closest('form')!);
@@ -102,7 +104,7 @@ it.each(['success', 'reject', 'empty'] as const)(
       input: {
         expectedRevision: 0,
         title: '이미지 초안',
-        summary: '',
+        summary: '업로드 중 작성한 요약',
         content:
           outcome === 'success'
             ? expect.stringContaining('<img src="https://fixture.invalid/figure.png"')
