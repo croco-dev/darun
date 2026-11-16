@@ -328,7 +328,7 @@ function ScreenshotMetadataEditor({
           ))}
         </AdminSelect>
       </label>
-      <fieldset disabled={isSaving} aria-describedby={uiElementCountId} className="min-w-0">
+      <fieldset disabled={isSaving} aria-describedby={uiElementCountId} className="@container min-w-0">
         <legend className="text-2xs font-semibold text-dark-600">UI 요소</legend>
         <div className="flex flex-wrap items-center justify-between gap-x-2">
           <p id={uiElementCountId} role="status" className="text-2xs text-dark-600">
@@ -338,12 +338,12 @@ function ScreenshotMetadataEditor({
             type="button"
             onClick={() => setEditedUiElements([])}
             disabled={uiElements.length === 0}
-            className="min-h-8 rounded px-1 text-2xs font-medium text-dark-700 underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
+            className="min-h-8 max-w-full rounded px-1 text-2xs font-medium text-dark-700 underline [overflow-wrap:anywhere] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
           >
             전체 해제
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-x-2">
+        <div className="grid grid-cols-1 gap-x-2 @min-[14rem]:grid-cols-2">
           {VISUAL_UI_ELEMENTS.map(value => {
             const checked = uiElements.includes(value);
             return (
@@ -366,7 +366,7 @@ function ScreenshotMetadataEditor({
                   }}
                   className="shrink-0 accent-dark-900 focus-visible:outline-offset-2"
                 />
-                {UI_ELEMENT_LABELS[value]}
+                <span className="min-w-0 [overflow-wrap:anywhere]">{UI_ELEMENT_LABELS[value]}</span>
               </label>
             );
           })}
@@ -574,7 +574,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                     </button>
                   </span>
                 </div>
-                <p className="px-1 text-2xs text-dark-600">
+                <p className="px-1 text-2xs text-dark-600 [overflow-wrap:anywhere]">
                   {screenshot.uiElements.length
                     ? screenshot.uiElements.map(value => UI_ELEMENT_LABELS[value]).join(', ')
                     : 'UI 요소 미분류'}
