@@ -3,9 +3,11 @@
 import { gql } from '@apollo/client';
 import { useApolloClient, useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
 import {
+  PRODUCT_RESEARCH_FEATURE_EMOJI_MAX_LENGTH,
+  PRODUCT_RESEARCH_FEATURE_NAME_MAX_LENGTH,
   PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH,
   PRODUCT_RESEARCH_MAX_TAGS,
-  normalizeResearchFeatureSummary,
+  inspectReviewedResearchFeature,
   normalizeResearchRequestUrl,
   normalizeResearchTags,
 } from '@darun/products-domain/research';
@@ -325,12 +327,27 @@ export const ProductResearchSection = () => {
     tagCount > PRODUCT_RESEARCH_MAX_TAGS
       ? `현재 ${tagCount}개입니다. 태그를 ${PRODUCT_RESEARCH_MAX_TAGS}개 이내로 줄여 주세요.`
       : null;
-  const featureSummaryErrors = review.features.map(feature => {
-    const length = normalizeResearchFeatureSummary(feature.summary).length;
-    return length > PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH
-      ? `현재 ${length}자, ${length - PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 초과입니다. ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 줄여 주세요.`
-      : null;
+  const featureErrors = review.features.map(feature => {
+    if (feature.excluded === true) return null;
+    const inspected = inspectReviewedResearchFeature(feature);
+    let summaryError: string | null = null;
+    if (inspected.missingSummary) {
+      summaryError = '기능 설명을 입력해 주세요.';
+    } else if (inspected.summaryTooLong) {
+      const length = inspected.feature.summary.length;
+      summaryError = `현재 ${length}자, ${length - PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 초과입니다. ${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 줄여 주세요.`;
+    }
+    return {
+      name: inspected.invalidName
+        ? `기능 이름을 ${PRODUCT_RESEARCH_FEATURE_NAME_MAX_LENGTH}자 이내로 입력해 주세요.`
+        : null,
+      summary: summaryError,
+      emoji: inspected.emojiTooLong
+        ? `이모지를 ${PRODUCT_RESEARCH_FEATURE_EMOJI_MAX_LENGTH}자 이내로 줄여 주세요.`
+        : null,
+    };
   });
+  const hasFeatureErrors = featureErrors.some(errors => errors && (errors.name || errors.summary || errors.emoji));
   const categories = useMemo(() => categoryData?.categories ?? [], [categoryData]);
   const mutationError = actionError ?? (materializedSlug ? null : jobLookup.error) ?? null;
 
@@ -853,8 +870,8 @@ export const ProductResearchSection = () => {
       notifications.show({ message: tagsError, color: 'red' });
       return;
     }
-    if (featureSummaryErrors.some(Boolean)) {
-      notifications.show({ message: '기능 설명의 초과 길이를 확인해 주세요.', color: 'red' });
+    if (hasFeatureErrors) {
+      notifications.show({ message: '등록할 기능의 입력 오류를 확인해 주세요.', color: 'red' });
       return;
     }
     if (!jobId || job?.id !== jobId || job?.status !== 'completed' || !result) {
@@ -890,11 +907,13 @@ export const ProductResearchSection = () => {
             officialUrl: review.officialUrl.trim() || job.officialUrl,
             officialUrlConfirmed: isOfficialUrlConfirmed,
             categoryIds: review.categoryIds,
-            features: review.features.map(feature => ({
-              name: feature.name.trim(),
-              summary: feature.summary.trim(),
-              emoji: feature.emoji.trim() || '✨',
-            })),
+            features: review.features
+              .filter(feature => feature.excluded !== true)
+              .map(feature => ({
+                name: feature.name.trim(),
+                summary: feature.summary.trim(),
+                emoji: feature.emoji.trim() || '✨',
+              })),
             tags: review.tags,
           },
         },
@@ -1221,39 +1240,50 @@ export const ProductResearchSection = () => {
 
                 {review.features.map((feature, index) => (
                   <div key={`feature-${index}`} className="flex flex-col gap-2 rounded-lg bg-black/[0.02] p-2">
-                    <AdminField label={`기능 ${index + 1} 이름`}>
-                      <AdminInput
-                        value={feature.name}
-                        onChange={event => {
-                          const nextValue = event.currentTarget.value;
-                          updateFeature(index, { name: nextValue });
-                        }}
+                    <label className="flex flex-wrap items-center gap-2 text-sm text-dark-900">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 shrink-0"
+                        checked={feature.excluded !== true}
+                        onChange={event => updateFeature(index, { excluded: !event.currentTarget.checked })}
                       />
-                    </AdminField>
-                    <AdminField
-                      label={`기능 ${index + 1} 설명`}
-                      help={`${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 입력해 주세요.`}
-                      error={featureSummaryErrors[index]}
-                    >
-                      <AdminTextarea
-                        rows={3}
-                        value={feature.summary}
-                        onChange={event => {
-                          const nextValue = event.currentTarget.value;
-                          updateFeature(index, { summary: nextValue });
-                        }}
-                      />
-                    </AdminField>
-                    <AdminField label={`기능 ${index + 1} 이모지`}>
-                      <AdminInput
-                        value={feature.emoji}
-                        maxLength={30}
-                        onChange={event => {
-                          const nextValue = event.currentTarget.value;
-                          updateFeature(index, { emoji: nextValue });
-                        }}
-                      />
-                    </AdminField>
+                      <span>{`기능 ${index + 1} 등록에 포함`}</span>
+                    </label>
+                    <fieldset disabled={feature.excluded === true} className="flex min-w-0 flex-col gap-2">
+                      <AdminField label={`기능 ${index + 1} 이름`} error={featureErrors[index]?.name}>
+                        <AdminInput
+                          value={feature.name}
+                          onChange={event => {
+                            const nextValue = event.currentTarget.value;
+                            updateFeature(index, { name: nextValue });
+                          }}
+                        />
+                      </AdminField>
+                      <AdminField
+                        label={`기능 ${index + 1} 설명`}
+                        help={`${PRODUCT_RESEARCH_FEATURE_SUMMARY_MAX_LENGTH}자 이내로 입력해 주세요.`}
+                        error={featureErrors[index]?.summary}
+                      >
+                        <AdminTextarea
+                          rows={3}
+                          value={feature.summary}
+                          onChange={event => {
+                            const nextValue = event.currentTarget.value;
+                            updateFeature(index, { summary: nextValue });
+                          }}
+                        />
+                      </AdminField>
+                      <AdminField label={`기능 ${index + 1} 이모지`} error={featureErrors[index]?.emoji}>
+                        <AdminInput
+                          value={feature.emoji}
+                          maxLength={PRODUCT_RESEARCH_FEATURE_EMOJI_MAX_LENGTH}
+                          onChange={event => {
+                            const nextValue = event.currentTarget.value;
+                            updateFeature(index, { emoji: nextValue });
+                          }}
+                        />
+                      </AdminField>
+                    </fieldset>
                   </div>
                 ))}
 
@@ -1345,7 +1375,7 @@ export const ProductResearchSection = () => {
                       type="submit"
                       variant="contained"
                       color="primary"
-                      disabled={isMaterializing || job?.status !== 'completed' || featureSummaryErrors.some(Boolean)}
+                      disabled={isMaterializing || job?.status !== 'completed' || hasFeatureErrors}
                     >
                       {isMaterializing ? '생성 중...' : '검토 내용으로 미발행 생성'}
                     </Button>

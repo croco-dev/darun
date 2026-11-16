@@ -4,6 +4,7 @@ export type ResearchWorkspaceFeatureDraft = {
   name: string;
   summary: string;
   emoji: string;
+  excluded?: boolean;
 };
 
 export type ResearchWorkspaceReviewDraft = {

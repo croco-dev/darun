@@ -1053,6 +1053,82 @@ describe('admin research workspace flow', () => {
     });
   });
 
+  it.each([
+    { excludeAll: false, expectedFeatures: [{ name: '이슈 추적', summary: '빠른 이슈 관리', emoji: '✨' }] },
+    { excludeAll: true, expectedFeatures: [] },
+  ])(
+    '기능 제외를 새로고침과 재진입 뒤에도 유지해 등록한다 (전체 제외: $excludeAll)',
+    async ({ excludeAll, expectedFeatures }) => {
+      testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+      const scenario = newScenario();
+      const summary = '가'.repeat(256);
+      scenario.jobResponses = [
+        {
+          ...completedJob,
+          result: {
+            ...completedJob.result,
+            features: [
+              ...completedJob.result.features,
+              { ...completedJob.result.features[0], name: '프로젝트 보기', summary },
+            ],
+          },
+        },
+      ];
+      const mount = () =>
+        render(
+          <ApolloProvider client={makeClient(scenario)}>
+            <ProductResearchSection />
+          </ApolloProvider>
+        );
+      const inclusion = (index: number) =>
+        screen.getByRole('checkbox', { name: `기능 ${index} 등록에 포함` }) as HTMLInputElement;
+      const refresh = () => screen.getByRole('button', { name: '결과 새로고침' }) as HTMLButtonElement;
+      const submit = () => screen.getByRole('button', { name: '검토 내용으로 미발행 생성' }) as HTMLButtonElement;
+
+      const view = mount();
+      await screen.findByDisplayValue(summary);
+      expect(inclusion(1).checked).toBe(true);
+      expect(inclusion(2).checked).toBe(true);
+      expect(submit().disabled).toBe(true);
+      fireEvent.click(inclusion(2));
+      if (excludeAll) fireEvent.click(inclusion(1));
+      fireEvent.click(refresh());
+      await waitFor(() => expect(scenario.jobQueries).toEqual(['job-1', 'job-1']));
+      await waitFor(() => expect(refresh().disabled).toBe(false));
+      expect(inclusion(2).checked).toBe(false);
+
+      view.unmount();
+      mount();
+      const restored = (await screen.findByDisplayValue(summary)) as HTMLTextAreaElement;
+      expect(inclusion(1).checked).toBe(!excludeAll);
+      expect(inclusion(2).checked).toBe(false);
+      expect(restored.matches(':disabled')).toBe(true);
+      expect(submit().disabled).toBe(false);
+      fireEvent.click(inclusion(2));
+      expect(restored.value).toBe(summary);
+      expect(restored.getAttribute('aria-invalid')).toBe('true');
+      expect(submit().disabled).toBe(true);
+      if (!excludeAll) fireEvent.click(inclusion(1));
+      const secondName = screen.getByRole('textbox', { name: '기능 2 이름' });
+      fireEvent.change(secondName, { target: { value: '   ' } });
+      fireEvent.change(restored, { target: { value: '   ' } });
+      expect(secondName.getAttribute('aria-invalid')).toBe('true');
+      expect(restored.getAttribute('aria-invalid')).toBe('true');
+      expect(submit().disabled).toBe(true);
+      fireEvent.click(inclusion(2));
+      if (!excludeAll) fireEvent.click(inclusion(1));
+      fireEvent.change(document.querySelector('input[name="review-logo-url"]')!, {
+        target: { value: 'https://linear.app/logo.png' },
+      });
+      fireEvent.click(submit());
+      await waitFor(() => expect(navigated()).toEqual(['/products/linear']));
+      expect(scenario.materializeVars).toHaveLength(1);
+      expect((scenario.materializeVars[0] as { input: { features: unknown[] } }).input.features).toEqual(
+        expectedFeatures
+      );
+    }
+  );
+
   it('11개 태그의 원문과 초안을 보존하고 10개로 고친 뒤에만 업로드·등록한다', async () => {
     const { form, materializations, review } = await renderSubmissionReview();
     const tags = screen.getByRole('textbox', {
