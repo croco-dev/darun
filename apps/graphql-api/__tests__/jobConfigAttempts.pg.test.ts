@@ -287,6 +287,12 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     };
   }
 
+  it('리서치 작업 행이 없는 메시지는 SQS 처리 실패로 반환한다', async () => {
+    await expect(deliver(researchWorker, { jobId: randomUUID() })).rejects.toThrow('Research queue identity mismatch');
+    expect(transport.search).not.toHaveBeenCalled();
+    expect(transport.create).not.toHaveBeenCalled();
+  });
+
   describe('실제 worker의 인용문 교정과 저장 경계', () => {
     beforeEach(() => {
       Container.set(LlmClient, new LlmClient(Container.get(LlmSettingService)));

@@ -92,8 +92,9 @@ fi
 async function lambdaFlowSettings(value: string | undefined): Promise<string[]> {
   const environments: Array<Record<string, string>> = [];
   class Queue {
-    arn = 'synthetic-queue-arn';
+    arn = { apply: (project: (arn: string) => string) => project('synthetic-queue-arn') };
     url = 'synthetic-queue-url';
+    nodes = { queue: {} };
     subscribe() {}
   }
   const exports: { default?: { run: () => Promise<unknown> } } = {};
@@ -104,7 +105,19 @@ async function lambdaFlowSettings(value: string | undefined): Promise<string[]> 
   runInNewContext(compiled.outputText, {
     exports,
     process: { env: { VISUAL_FLOW_WRITES_ENABLED: value } },
+    $app: { stage: 'prod' },
     $config: (config: unknown) => config,
+    aws: {
+      sqs: {
+        RedriveAllowPolicy: class {
+          readonly redriveAllowPolicy: string;
+
+          constructor(_name: string, options: { redriveAllowPolicy: string }) {
+            this.redriveAllowPolicy = options.redriveAllowPolicy;
+          }
+        },
+      },
+    },
     sst: {
       aws: {
         Queue,

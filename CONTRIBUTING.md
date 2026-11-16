@@ -413,6 +413,32 @@ SST의 `JobRecoveryTick`은 `CronV2`로 매분 번역·AI 소개·리서치·상
 
 격리 PostgreSQL 주소를 `W4_DATABASE_URL`에 지정하고 `W4_PG=1 pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W4JobLeaseRecovery.pg.test.ts`로 lease 소유권과 만료된 실행의 확정 쓰기 거절을 검증합니다. 운영 DB를 이 회귀 검증에 사용하지 않습니다. 공개 GraphQL mutation 이름은 유지하며 내부 소개 생성 호환 alias는 사용하지 않습니다.
 
+### SQS 실패 메시지 조사와 재전송
+
+번역·AI 소개·리서치·상품 콘텐츠 동기화는 각각 전용 dead-letter queue(DLQ)를 사용합니다. Lambda에는 한 번에 메시지 하나를 전달합니다. Lambda가 성공 처리하지 못한 메시지는 원본 큐에서 5회 수신된 뒤 해당 DLQ로 이동합니다. 원본 큐 보존 기간은 4일, DLQ 보존 기간은 최초 원본 큐 등록 시점부터 14일입니다. 번역·소개·리서치 큐의 visibility timeout은 30분, 콘텐츠 동기화는 6분입니다.
+
+1. GitHub Actions의 성공한 `Production Deploy` 실행에서 `Deploy` 단계의 SST 출력 `jobQueues`를 찾습니다. 직접 실행한 배포에서는 `apps/graphql-api/.sst/outputs.json`에도 같은 값이 있습니다. 해당 작업의 `source`와 `deadLetter`에서 URL·ARN·보존 기간·redrive 정책을 확인합니다. 현재 설정과 적재 상태는 각 URL로 아래 명령을 실행해 확인합니다. 원본 큐의 `RedrivePolicy`는 해당 DLQ ARN과 수신 상한 5를 설정하고, DLQ의 `RedriveAllowPolicy`는 짝이 맞는 원본 큐 ARN만 허용해야 합니다. DLQ의 현재 적재량과 처리 중인 메시지 수는 `ApproximateNumberOfMessages`와 `ApproximateNumberOfMessagesNotVisible`에 표시됩니다.
+
+   ```bash
+   aws sqs get-queue-attributes --profile darun --region ap-northeast-2 \
+     --queue-url "$queue_url" --attribute-names All
+   ```
+
+2. 해당 Lambda의 CloudWatch 로그에서 `SQS job message failed`를 검색합니다. `queueArn`, `messageId`, `receiveCount`와 같은 호출의 예외를 대조합니다. 메시지 본문은 이 로그에 기록하지 않습니다. 포맷이나 식별자가 잘못된 메시지는 그대로 재전송해도 실패하므로 원인과 처리 대상을 먼저 확인합니다.
+3. 원인을 해결한 뒤 재전송이 승인된 경우, 대상 DLQ의 메시지가 모두 다시 처리 가능한지 확인합니다. SQS redrive는 개별 메시지를 선택할 수 없고 아래 속도는 초당 처리량만 제한합니다. 이미 실행 중인 작업이 없는지 확인하고, SQS가 기록한 원본 큐로 초당 1개를 이동합니다.
+
+   ```bash
+   aws sqs list-message-move-tasks --profile darun --region ap-northeast-2 --source-arn "$dlq_arn"
+   aws sqs start-message-move-task --profile darun --region ap-northeast-2 \
+     --source-arn "$dlq_arn" --max-number-of-messages-per-second 1
+   ```
+
+4. 같은 `list-message-move-tasks` 명령으로 이동 상태를 확인하고 원본 큐와 Lambda 실패 로그, DB 작업 상태를 대조합니다. 새 SQS 메시지 ID가 발급되며 본문의 job 또는 intent ID로 같은 업무를 추적합니다. 실패가 재발하면 작업이 `RUNNING`인 동안 `cancel-message-move-task --task-handle "$task_handle"`로 남은 이동을 중지할 수 있습니다. 이미 이동한 메시지는 원본 큐에 남습니다.
+
+SQS 수신 횟수와 DB 논리 작업의 시도 횟수는 별개입니다. 복구 스케줄이 같은 job을 새 메시지로 다시 전달할 수 있고, 완료된 job이나 intent는 같은 식별자로 다시 도착해도 기존 lease와 상태 검사로 업무 쓰기를 중복 적용하지 않습니다. 이미 최종 실패한 작업의 재실행은 해당 작업의 기존 재시도 절차를 사용합니다.
+
+worker 코드를 되돌려야 하면 DLQ 선언을 포함한 현재 설정을 유지한 채 worker 변경을 되돌립니다. DLQ 도입 전 revision을 배포하면 기존 운영 DLQ와 허용 정책은 AWS에 남지만 원본 큐의 DLQ 연결은 해제됩니다. 직전 배포의 `jobQueues`에서 이전 DLQ를 찾으면 보존 기간이 끝날 때까지 남은 메시지를 조사할 수 있습니다. 재전송하려면 승인된 SST 설정으로 원본 큐와 이전 DLQ의 연결을 복원한 뒤 1단계에서 실제 `RedrivePolicy`가 이전 DLQ ARN을 가리키는지 확인합니다. [AWS StartMessageMoveTask](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_StartMessageMoveTask.html)
+
 ## 대안 목록 교체 검증
 
 대안 목록 저장은 상품별 transaction advisory lock을 획득한 후 최신 목록을 읽고, 차집합 삭제·추가를 같은 트랜잭션에서 확정합니다. 유지된 행 ID는 보존하고 조회 캐시는 commit 후에만 비웁니다. 스키마 변경은 없습니다.
