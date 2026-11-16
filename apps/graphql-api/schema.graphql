@@ -613,6 +613,7 @@ type Screenshot {
   platform: VisualPlatform
   screenType: VisualScreenType
   title: String
+  uiElements: [VisualUiElement!]!
 }
 
 input SetVisualSaveInput {

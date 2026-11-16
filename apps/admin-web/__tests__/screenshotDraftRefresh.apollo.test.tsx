@@ -21,13 +21,14 @@ afterEach(() => {
 
 function mountSection() {
   const screenshots = ['A', 'B'].map(id => ({
-    __typename: 'ProductScreenshot',
+    __typename: 'Screenshot',
     id,
     imageUrl: `https://fixture.invalid/${id}.png`,
     imageAlt: `Saved alt ${id}`,
     title: `Saved title ${id}`,
     platform: 'WEB',
     screenType: 'HOME',
+    uiElements: id === 'A' ? ['BUTTON', 'CARD'] : [],
   }));
   const queries: ((fail?: boolean) => void)[] = [];
   const writes: Record<string, unknown>[] = [];
@@ -108,6 +109,36 @@ async function editA(queries: ((fail?: boolean) => void)[]) {
     target: { value: 'DETAIL' },
   });
 }
+
+it('shows saved UI elements, writes changes and explicitly clears the saved list', async () => {
+  const { queries, writes } = mountSection();
+  await finishQuery(queries);
+  const openEditor = () => fireEvent.click(within(card('A')).getByRole('button', { name: '메타데이터 수정' }));
+  const group = () => screen.getByRole('group', { name: 'UI 요소' });
+  const checked = () => within(group()).queryAllByRole('checkbox', { checked: true });
+  const save = () => fireEvent.click(screen.getByRole('button', { name: /^저장$/ }));
+
+  expect(within(card('A')).getByText('버튼, 카드')).toBeTruthy();
+  openEditor();
+  expect(checked().map(item => item.getAttribute('value'))).toEqual(['BUTTON', 'CARD']);
+  fireEvent.click(within(group()).getByRole('checkbox', { name: '버튼' }));
+  fireEvent.click(within(group()).getByRole('checkbox', { name: '검색 바' }));
+  save();
+  await finishQuery(queries);
+  expect(writes[0]).toMatchObject({ uiElements: ['CARD', 'SEARCH_BAR'] });
+  await waitFor(() => expect(screen.queryByRole('group', { name: 'UI 요소' })).toBeNull());
+
+  openEditor();
+  expect(checked().map(item => item.getAttribute('value'))).toEqual(['CARD', 'SEARCH_BAR']);
+  fireEvent.click(within(group()).getByRole('button', { name: '전체 해제' }));
+  save();
+  await finishQuery(queries);
+  expect(writes[1]).toMatchObject({ uiElements: [] });
+  await waitFor(() => expect(screen.queryByRole('group', { name: 'UI 요소' })).toBeNull());
+
+  openEditor();
+  expect(checked()).toEqual([]);
+});
 
 function expectDraft() {
   expect(screen.getByLabelText<HTMLInputElement>('제목').value).toBe('Unsaved title A');
