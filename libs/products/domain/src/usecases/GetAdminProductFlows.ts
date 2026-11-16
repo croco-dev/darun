@@ -1,6 +1,7 @@
 import { Inject, Service } from 'typedi';
 import type { Product } from '../entities/Product';
 import type { ProductFlow } from '../entities/ProductFlow';
+import { productInvalidArgs } from '../errors/productError';
 import type { ProductFlowRepository } from '../repositories/ProductFlowRepository';
 import { ProductFlowRepositoryToken } from '../repositories/ProductFlowRepository';
 import { GetProduct } from './GetProduct';
@@ -24,5 +25,14 @@ export class GetAdminProductFlows {
     }
     const flows = await this.productFlowRepository.findManyByProductId(product.id);
     return { product, flows };
+  }
+
+  async listSummaries({ productSlug, first, afterId }: { productSlug: string; first: number; afterId?: string }) {
+    if (!Number.isInteger(first) || first < 1 || first > 48) {
+      throw productInvalidArgs('플로는 한 번에 1~48개를 조회할 수 있습니다.');
+    }
+
+    const rows = await this.productFlowRepository.findAdminFlowSummaries(productSlug, first + 1, afterId);
+    return { flows: rows.slice(0, first), hasNextPage: rows.length > first };
   }
 }

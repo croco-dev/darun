@@ -23,7 +23,7 @@ export const productFlows = pgTable(
       .default(sql`CURRENT_TIMESTAMP`),
   },
   table => [
-    index('product_flows_product_id_idx').on(table.productId),
+    index('product_flows_product_id_flow_id_idx').on(table.productId, table.id),
     check('product_flows_platform_check', sql`${table.platform} IN ('WEB', 'IOS', 'ANDROID')`),
     check(
       'product_flows_flow_type_check',

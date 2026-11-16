@@ -1,4 +1,5 @@
 import {
+  type AdminProductFlowSummary,
   type VisualSaveCursor,
   ProductFlow,
   ProductScreenshot,
@@ -11,7 +12,7 @@ import {
   productFlowNotFound,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { and, asc, count, desc, eq, inArray, isNotNull, lt, ne, or, sql, type SQLWrapper } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, lt, ne, or, sql, type SQLWrapper } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { Inject, Service } from 'typedi';
 import { productFlowSteps, productFlows } from '../entities/ProductFlowsSchema';
@@ -103,9 +104,10 @@ const coverColumn = (column: CoverColumnName) => sql<string | null>`(
   LIMIT 1
 )`;
 
-const stepCountExpr = sql<number>`(
-  SELECT COUNT(*)::int FROM product_flow_steps step_count_join WHERE step_count_join.flow_id = ${productFlows.id}
+const stepCountForFlow = (flowId: SQLWrapper) => sql<number>`(
+  SELECT COUNT(*)::int FROM product_flow_steps step_count_join WHERE step_count_join.flow_id = ${flowId}
 )`;
+const stepCountExpr = stepCountForFlow(productFlows.id);
 
 /**
  * M1 인기순 ORDER BY 식.
@@ -330,6 +332,59 @@ export class PostgresqlProductFlowRepository implements ProductFlowRepository {
         )
       );
     });
+  }
+
+  findAdminFlowSummaries(productSlug: string, limit: number, afterId?: string): Promise<AdminProductFlowSummary[]> {
+    const productId = this.db.select({ id: products.id }).from(products).where(eq(products.slug, productSlug));
+    const page = this.db
+      .select({
+        id: productFlows.id,
+        productId: productFlows.productId,
+        title: productFlows.title,
+        platform: productFlows.platform,
+        flowType: productFlows.flowType,
+      })
+      .from(productFlows)
+      .where(
+        and(eq(productFlows.productId, productId), afterId === undefined ? undefined : gt(productFlows.id, afterId))
+      )
+      .orderBy(asc(productFlows.id))
+      .limit(limit)
+      .as('flow_page');
+
+    const cover = this.db
+      .select({
+        id: productScreenshots.id,
+        imageUrl: productScreenshots.imageUrl,
+        imageAlt: productScreenshots.imageAlt,
+      })
+      .from(productFlowSteps)
+      .innerJoin(
+        productScreenshots,
+        and(eq(productScreenshots.id, productFlowSteps.screenshotId), eq(productScreenshots.productId, page.productId))
+      )
+      .where(eq(productFlowSteps.flowId, page.id))
+      .orderBy(asc(productFlowSteps.position))
+      .limit(1)
+      .as('flow_cover');
+
+    return this.db
+      .select({
+        id: page.id,
+        title: page.title,
+        platform: page.platform,
+        flowType: page.flowType,
+        coverScreenshot: {
+          id: cover.id,
+          imageUrl: cover.imageUrl,
+          imageAlt: cover.imageAlt,
+        },
+        stepCount: stepCountForFlow(page.id),
+      })
+      .from(page)
+      .leftJoinLateral(cover, sql`true`)
+      .orderBy(asc(page.id))
+      .execute();
   }
 
   async findFlowIdsByScreenshotId(screenshotId: string): Promise<string[]> {

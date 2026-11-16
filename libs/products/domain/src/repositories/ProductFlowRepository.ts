@@ -27,6 +27,13 @@ export type VisualFlowSummary = {
 
 export type VisualScreenshotFlow = Pick<VisualFlowSummary, 'id' | 'title' | 'stepCount' | 'coverScreenshot'>;
 
+export type AdminProductFlowSummary = Pick<
+  VisualFlowSummary,
+  'id' | 'title' | 'platform' | 'flowType' | 'stepCount'
+> & {
+  coverScreenshot: VisualFlowSummary['coverScreenshot'] | null;
+};
+
 export type VisualFlowDetailStep = {
   position: number;
   caption: string;
@@ -67,6 +74,7 @@ export interface ProductFlowRepository {
   deleteById(id: string): Promise<void>;
   findById(id: string): Promise<ProductFlow | null>;
   findAdminFlowDetailById(id: string): Promise<VisualFlowDetail | null>;
+  findAdminFlowSummaries(productSlug: string, limit: number, afterId?: string): Promise<AdminProductFlowSummary[]>;
   findManyByProductId(productId: string): Promise<ProductFlow[]>;
   findFlowIdsByScreenshotId(screenshotId: string): Promise<string[]>;
   findManyVisualPublishedByFilterAndAfterIdAndLimit(
