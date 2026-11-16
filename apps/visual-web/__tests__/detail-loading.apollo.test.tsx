@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useAppDetail } from '../features/apps/useAppDetail';
 import { useFlowDetail } from '../features/flows/useFlowDetail';
+import { ScreenshotDetail } from '../features/screenshots/ScreenshotDetail';
 import { useScreenshotDetail } from '../features/screenshots/useScreenshotDetail';
+
+vi.mock('../features/saves/useVisualAccount', () => ({ useVisualAccount: () => null }));
 
 const product = {
   id: 'memo',
@@ -24,7 +27,6 @@ const screenshot = {
   platform: 'WEB' as const,
   screenType: 'SEARCH' as const,
   product,
-  flows: [],
 };
 const flow = {
   id: 'flow',
@@ -46,7 +48,11 @@ afterEach(() => {
 
 function fixture(primaryState: 'success' | 'missing' | 'error' = 'success') {
   const calls: string[] = [];
-  const pending: Array<{ succeed: () => void; fail: () => void }> = [];
+  const pending: Array<{
+    variables: Record<string, unknown>;
+    succeed: (data?: Record<string, unknown>) => void;
+    fail: () => void;
+  }> = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink(
@@ -89,12 +95,18 @@ function fixture(primaryState: 'success' | 'missing' | 'error' = 'success') {
               break;
             default:
               pending.push({
-                succeed: () =>
-                  send({
-                    visualScreenshot: { id: 'shot', flows: [] },
-                    visualScreenshots: { totalCount: 0, edges: [] },
-                    visualFlows: { totalCount: 0, edges: [] },
-                  }),
+                variables: operation.variables,
+                succeed: data =>
+                  send(
+                    data ?? {
+                      visualScreenshot: {
+                        id: operation.variables['id'],
+                        flows: { edges: [], pageInfo: { hasNextPage: false, endCursor: null } },
+                      },
+                      visualScreenshots: { totalCount: 0, edges: [] },
+                      visualFlows: { totalCount: 0, edges: [] },
+                    }
+                  ),
                 fail: () => observer.error(new Error('합성 연관 목록 실패')),
               });
           }
@@ -189,4 +201,62 @@ it('다른 상세로 이동하면 이전 연관 응답과 오류는 현재 상�
   await act(async () => f.pending[1].succeed());
   expect(result.current.relatedStatus).toBe('loaded');
   expect(result.current.detail?.title).toBe('new');
+});
+
+it('추가 플로 조회가 실패해도 카드를 유지하고 재시도 성공 후 새 카드에서 키보드 탐색을 이어간다', async () => {
+  const f = fixture();
+  render(<ScreenshotDetail id="shot" initialDetail={screenshot} />, { wrapper: f.wrapper });
+  const edge = (id: number) => ({
+    node: { ...flow, id: `flow-${id}`, title: `플로 ${id}` },
+  });
+  const firstEdges = Array.from({ length: 8 }, (_, index) => edge(index + 1));
+  await waitFor(() => expect(f.pending).toHaveLength(1));
+  await act(async () =>
+    f.pending[0].succeed({
+      visualScreenshot: {
+        id: 'shot',
+        flows: { edges: firstEdges, pageInfo: { hasNextPage: true, endCursor: 'opaque-first-page-cursor' } },
+      },
+      visualScreenshots: {
+        edges: [{ node: { ...screenshot, id: 'sibling', title: '채팅 화면' } }],
+        totalCount: 2,
+      },
+    })
+  );
+  const region = within(screen.getByRole('region', { name: '관련 플로' }));
+  const cards = () => region.getAllByRole('listitem').map(item => within(item).getByRole('link'));
+  const more = region.getByRole('button', { name: '관련 플로 더 보기' });
+  expect(cards()).toHaveLength(8);
+  more.focus();
+  fireEvent.click(more);
+  fireEvent.click(more);
+  expect(f.pending).toHaveLength(2);
+  expect(f.pending[1].variables).toMatchObject({ flowAfter: 'opaque-first-page-cursor', includeSiblings: false });
+  expect(region.getByRole('button', { name: '불러오는 중…' }).getAttribute('aria-disabled')).toBe('true');
+  expect(cards()).toHaveLength(8);
+  await act(async () => f.pending[1].fail());
+  expect(region.getByRole('alert')).toBeDefined();
+  expect(cards()).toHaveLength(8);
+  expect(screen.getByRole('link', { name: /채팅 화면/ }).getAttribute('href')).toBe('/screenshots/sibling');
+
+  const retry = region.getByRole('button', { name: '관련 플로 다시 시도' });
+  expect(document.activeElement).toBe(retry);
+  fireEvent.click(retry);
+  expect(f.pending[2].variables).toEqual(f.pending[1].variables);
+  await act(async () =>
+    f.pending[2].succeed({
+      visualScreenshot: {
+        id: 'shot',
+        flows: { edges: [edge(9)], pageInfo: { hasNextPage: false, endCursor: 'last' } },
+      },
+    })
+  );
+  expect(cards().map(card => card.getAttribute('href'))).toEqual(
+    Array.from({ length: 9 }, (_, index) => `/flows/flow-${index + 1}`)
+  );
+  expect(document.activeElement).toBe(cards()[8]);
+  expect(screen.getByRole('link', { name: /채팅 화면/ })).toBeDefined();
+  expect(region.queryByRole('button')).toBeNull();
+  expect(region.queryByRole('alert')).toBeNull();
+  expect(f.calls).not.toContain('VisualScreenshotOnDetail');
 });

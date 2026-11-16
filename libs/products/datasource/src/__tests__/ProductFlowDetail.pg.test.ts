@@ -205,7 +205,6 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
     ['관리자 상세', () => repo.findAdminFlowDetailById(flowId).then(flow => [flow]), 1],
     ['최신 목록', () => repo.findManyVisualPublishedByFilterAndAfterIdAndLimit({ query: '' }, 24), 1],
     ['인기 목록', () => repo.findManyVisualPublishedByFilterAndPageAndLimit({ query: '' }, 1, 24), 1],
-    ['화면의 연관 플로', () => repo.findManyVisualPublishedByScreenshotId(oldShot.id), 1],
     [
       '저장 목록',
       () =>

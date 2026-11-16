@@ -16,6 +16,7 @@ const urls = {
   TRANSLATION_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity',
   ALTERNATIVE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity',
   PRODUCT_DETAIL_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_detail_freshness',
+  RELATED_FLOW_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_related_flows',
   ATOMIC_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity',
   DESCRIPTION_EVIDENCE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity',
   W4_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity',
@@ -32,6 +33,7 @@ const groups = {
     '__tests__/translationIntegrity.pg.test.ts',
     '__tests__/alternativeReplacement.pg.test.ts',
     '__tests__/productDetailFreshness.pg.test.ts',
+    '__tests__/screenshotFlowPagination.pg.test.ts',
   ],
   products: [
     'src/__tests__/W3AtomicApplyMaterialize.pg.test.ts',
@@ -100,6 +102,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
     ['graphql', 'TRANSLATION_TEST_DATABASE_URL'],
     ['graphql', 'ALTERNATIVE_TEST_DATABASE_URL'],
     ['graphql', 'PRODUCT_DETAIL_TEST_DATABASE_URL'],
+    ['graphql', 'RELATED_FLOW_TEST_DATABASE_URL'],
     ['products', 'ATOMIC_TEST_DATABASE_URL'],
     ['products', 'DESCRIPTION_EVIDENCE_TEST_DATABASE_URL'],
     ['products', 'W4_DATABASE_URL'],

@@ -21,21 +21,35 @@ gql`
 `;
 
 gql`
-  query VisualSiblingScreenshotsOnDetail($id: String!, $productSlug: String!, $first: Int!) {
+  query VisualSiblingScreenshotsOnDetail(
+    $id: String!
+    $productSlug: String!
+    $first: Int!
+    $flowAfter: String
+    $includeSiblings: Boolean! = true
+  ) {
     visualScreenshot(id: $id) {
       id
-      flows {
-        id
-        title
-        stepCount
-        coverScreenshot {
-          id
-          imageUrl
-          imageAlt
+      flows(after: $flowAfter) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        edges {
+          node {
+            id
+            title
+            stepCount
+            coverScreenshot {
+              id
+              imageUrl
+              imageAlt
+            }
+          }
         }
       }
     }
-    visualScreenshots(first: $first, productSlug: $productSlug) {
+    visualScreenshots(first: $first, productSlug: $productSlug) @include(if: $includeSiblings) {
       totalCount
       edges {
         node {

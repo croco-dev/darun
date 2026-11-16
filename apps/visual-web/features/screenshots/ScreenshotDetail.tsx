@@ -3,7 +3,7 @@
 import { Button, Dialog, ExternalLink, RefreshCw } from '@darun/ui';
 import { Link, notFound } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { SaveButton } from '../collections/SaveButton';
 import { RelatedDetailStatus } from '../detail/RelatedDetailStatus';
 import { VISUAL_CARD_IMAGE_LOADING } from '../perf/imageLoading';
@@ -56,8 +56,34 @@ function CopyLinkButton() {
   );
 }
 
-const View = ({ status, detail, retry, relatedStatus, retryRelated }: ScreenshotDetailState) => {
+const View = ({
+  status,
+  detail,
+  retry,
+  relatedStatus,
+  retryRelated,
+  hasMoreFlows,
+  loadingMoreFlows,
+  loadMoreFlowsError,
+  loadMoreFlows,
+}: ScreenshotDetailState) => {
   const [zoomedScreenshotId, setZoomedScreenshotId] = useState<string | null>(null);
+  const [flowPageTrigger, setFlowPageTrigger] = useState<{ button: HTMLButtonElement; previousCount: number } | null>(
+    null
+  );
+  const flowList = useRef<HTMLUListElement>(null);
+  const flowCount = detail?.flows.length ?? 0;
+
+  useLayoutEffect(() => {
+    if (!flowPageTrigger || loadingMoreFlows) return;
+    const { button, previousCount } = flowPageTrigger;
+    if (document.activeElement === button && (flowCount > previousCount || !hasMoreFlows)) {
+      flowList.current?.children
+        .item(Math.min(previousCount, flowCount - 1))
+        ?.querySelector<HTMLAnchorElement>('a')
+        ?.focus();
+    }
+  }, [flowCount, flowPageTrigger, hasMoreFlows, loadingMoreFlows]);
 
   if (status === 'loading') {
     return (
@@ -122,7 +148,6 @@ const View = ({ status, detail, retry, relatedStatus, retryRelated }: Screenshot
     screenType,
     product,
     flows,
-    flowTotalCount,
     relatedScreenshots,
     relatedScreenshotTotalCount,
   } = detail;
@@ -254,7 +279,7 @@ const View = ({ status, detail, retry, relatedStatus, retryRelated }: Screenshot
           <section aria-labelledby="screenshot-flows-heading" className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3">
               <h2 id="screenshot-flows-heading" className="text-lg font-bold text-dark-900">
-                관련 플로 ({flowTotalCount})
+                관련 플로
               </h2>
               <Link
                 href={`/apps/${encodeURIComponent(product.slug)}`}
@@ -263,7 +288,7 @@ const View = ({ status, detail, retry, relatedStatus, retryRelated }: Screenshot
                 전체 보기 →
               </Link>
             </div>
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ul ref={flowList} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {flows.map(flow => (
                 <li key={flow.id}>
                   <Link
@@ -287,6 +312,37 @@ const View = ({ status, detail, retry, relatedStatus, retryRelated }: Screenshot
                 </li>
               ))}
             </ul>
+            <div role="status" className="sr-only">
+              {loadingMoreFlows ? '관련 플로를 불러오는 중이에요.' : `관련 플로 ${flows.length}개`}
+            </div>
+            {/* Keep the focused trigger mounted until the new card can take focus. */}
+            {(hasMoreFlows || flowPageTrigger) && (
+              <div className="flex flex-col items-center gap-2">
+                {loadMoreFlowsError && (
+                  <p role="alert" className="text-sm text-dark-600">
+                    다음 관련 플로를 불러오지 못했어요.
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  variant="shadow"
+                  color="secondary"
+                  size="sm"
+                  className="min-h-[44px] aria-disabled:cursor-wait aria-disabled:opacity-70"
+                  aria-disabled={loadingMoreFlows}
+                  onBlur={() => setFlowPageTrigger(null)}
+                  onClick={event => {
+                    if (!hasMoreFlows || loadingMoreFlows) return;
+                    if (document.activeElement === event.currentTarget) {
+                      setFlowPageTrigger({ button: event.currentTarget, previousCount: flows.length });
+                    }
+                    loadMoreFlows();
+                  }}
+                >
+                  {loadingMoreFlows ? '불러오는 중…' : loadMoreFlowsError ? '관련 플로 다시 시도' : '관련 플로 더 보기'}
+                </Button>
+              </div>
+            )}
           </section>
         )}
       </div>
