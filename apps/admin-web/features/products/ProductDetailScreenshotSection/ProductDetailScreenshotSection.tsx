@@ -331,9 +331,9 @@ function ScreenshotMetadataEditor({
       <fieldset disabled={isSaving} aria-describedby={uiElementCountId} className="@container min-w-0">
         <legend className="text-2xs font-semibold text-dark-600">UI 요소</legend>
         <div className="flex flex-wrap items-center justify-between gap-x-2">
-          <p id={uiElementCountId} role="status" className="text-2xs text-dark-600">
+          <output id={uiElementCountId} className="block text-2xs text-dark-600">
             {uiElements.length}개 선택 · 최대 {VISUAL_UI_ELEMENTS_MAX_COUNT}개
-          </p>
+          </output>
           <button
             type="button"
             onClick={() => setEditedUiElements([])}
