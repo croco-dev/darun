@@ -1322,6 +1322,9 @@ importers:
       '@mantine/notifications':
         specifier: 'catalog:'
         version: 9.5.1(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.6))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@mantine/hooks@9.5.1(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      dataloader:
+        specifier: 2.2.2
+        version: 2.2.2
       next:
         specifier: 16.4.1
         version: 16.4.1(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(@types/node@25.5.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3)

@@ -95,7 +95,10 @@ describe('공개 카테고리 상세의 실행 스키마 계약', () => {
                   },
                 };
               },
-              publishedMagazines: () => [],
+              publishedMagazines: () => ({
+                edges: [],
+                pageInfo: { hasNextPage: false, endCursor: null },
+              }),
             },
           }),
         })

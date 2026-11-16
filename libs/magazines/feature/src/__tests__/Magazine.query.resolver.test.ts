@@ -7,6 +7,8 @@ vi.mock('typedi', () => ({
 }));
 
 vi.mock('@darun/utils-apollo-server', () => ({
+  PageInfo: class PageInfo {},
+  Cursor: { encode: () => 'signed-cursor' },
   AuthRole: { Admin: 'Admin' },
 }));
 
@@ -72,18 +74,28 @@ function createResolver() {
 
 describe('MagazineQueryResolver', () => {
   describe('publishedMagazines', () => {
-    it('발행된 모든 매거진 목록을 반환한다', async () => {
+    it('발행된 매거진 페이지를 connection으로 반환한다', async () => {
       const { resolver, getPublishedMagazineList } = createResolver();
       const magazines = [
         createTestMagazine({ id: 'mag-1', slug: 'first' }),
         createTestMagazine({ id: 'mag-2', slug: 'second' }),
       ];
-      getPublishedMagazineList.execute.mockResolvedValue(magazines);
+      getPublishedMagazineList.execute.mockResolvedValue({
+        items: magazines.map(magazine => ({
+          magazine,
+          position: {
+            id: magazine.id,
+            publishedAt: '2026-01-01T00:00:00.000000',
+          },
+        })),
+        hasNextPage: false,
+      });
 
       const result = await resolver.publishedMagazines();
 
       expect(getPublishedMagazineList.execute).toHaveBeenCalled();
-      expect(result).toEqual(magazines);
+      expect(result.edges.map(edge => edge.node)).toEqual(magazines);
+      expect(result.pageInfo.hasNextPage).toBe(false);
     });
   });
 

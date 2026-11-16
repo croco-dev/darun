@@ -459,6 +459,16 @@ type PublishProductPayload {
   product: Product!
 }
 
+type PublishedMagazineConnection {
+  edges: [PublishedMagazineEdge!]!
+  pageInfo: PageInfo!
+}
+
+type PublishedMagazineEdge {
+  cursor: String!
+  node: Magazine!
+}
+
 type Query {
   adminProductFlow(id: String!): VisualFlow
   adminProductFlows(productSlug: String!): [VisualFlow!]!
@@ -487,7 +497,7 @@ type Query {
   productResearchJob(id: String!): ProductResearchJob
   productsByCategory(after: String, first: Int! = 24, locale: String! = "ko", slug: String!): ProductConnection!
   productsCount: Int!
-  publishedMagazines: [Magazine!]!
+  publishedMagazines(after: String, first: Int): PublishedMagazineConnection!
   publishedProductsForSitemap(after: String, first: Int! = 100, lowerBoundId: String, upperBoundId: String): [Product!]!
   rankedProducts(first: Int!, locale: String! = "ko"): [Product!]!
   recentProducts(first: Int!, locale: String! = "ko"): [Product!]!

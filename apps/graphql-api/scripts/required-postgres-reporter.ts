@@ -1,6 +1,9 @@
 import type { Reporter, TestModule } from 'vitest/node';
 
 const groups = {
+  magazines: {
+    '__tests__/magazinePagination.pg.test.ts': 'MAGAZINE_TEST_DATABASE_URL',
+  },
   llm: {
     '__tests__/llmSettingConcurrency.pg.test.ts': 'LLM_SETTING_TEST_DATABASE_URL',
   },

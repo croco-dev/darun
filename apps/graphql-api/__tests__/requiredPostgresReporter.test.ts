@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const vitestDirectory = dirname(require.resolve('vitest/package.json'));
 const reporter = resolve(__dirname, '../scripts/required-postgres-reporter.ts');
 const urls = {
+  MAGAZINE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_magazine_pagination',
   LLM_SETTING_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_llm_settings',
   DEDUPE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_tier_dedupe',
   JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts',
@@ -24,6 +25,7 @@ const urls = {
   RECOVERY_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_recovery',
 };
 const groups = {
+  magazines: ['__tests__/magazinePagination.pg.test.ts'],
   llm: ['__tests__/llmSettingConcurrency.pg.test.ts'],
   graphql: [
     '__tests__/jobConfigAttempts.pg.test.ts',
@@ -93,6 +95,7 @@ function expectFailure(result: ReturnType<typeof runFixture>, message?: string) 
 describe('required PostgreSQL CI reporter at the Vitest process boundary', () => {
   it.each([
     ['llm', 'LLM_SETTING_TEST_DATABASE_URL'],
+    ['magazines', 'MAGAZINE_TEST_DATABASE_URL'],
     ['graphql', 'JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL'],
     ['graphql', 'TRANSLATION_TEST_DATABASE_URL'],
     ['graphql', 'ALTERNATIVE_TEST_DATABASE_URL'],
@@ -129,6 +132,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
 
   it.each([
     ['tier', 'src/remove-duplicates.pg.test.ts'],
+    ['magazines', '__tests__/magazinePagination.pg.test.ts'],
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
     ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],
     ['products', 'src/__tests__/descriptionEvidence.postgresql.test.ts'],
@@ -145,6 +149,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
 
   describe.each([
     ['tier', 'src/remove-duplicates.pg.test.ts'],
+    ['magazines', '__tests__/magazinePagination.pg.test.ts'],
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
     ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],
     ['products', 'src/__tests__/descriptionEvidence.postgresql.test.ts'],

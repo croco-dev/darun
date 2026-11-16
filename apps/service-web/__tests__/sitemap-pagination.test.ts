@@ -16,7 +16,16 @@ beforeEach(() => {
     hasAlternatives: i === 5000,
   }));
   query.mockReset();
-  query.mockImplementation(async ({ variables }) => {
+  query.mockImplementation(async ({ query: document, variables }) => {
+    if (document.definitions[0].name.value === 'PublishedMagazinesForSitemap')
+      return {
+        data: {
+          publishedMagazines: {
+            edges: [],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        },
+      };
     if (variables?.first === 100) {
       const matches = products.filter(
         p =>
@@ -31,7 +40,14 @@ beforeEach(() => {
       };
     }
     if (variables?.locale) return { data: { categories: [] } };
-    return { data: { publishedMagazines: [] } };
+    return {
+      data: {
+        publishedMagazines: {
+          edges: [],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        },
+      },
+    };
   });
 });
 
@@ -194,14 +210,22 @@ describe('sitemap cursor partitions', () => {
   });
 
   it('rejects repeated or backwards cursors rather than looping', async () => {
-    query.mockImplementation(async ({ variables }) =>
-      variables?.first === 100
+    query.mockImplementation(async ({ query: document, variables }) =>
+      document.definitions[0].name.value === 'PublishedProductsForSitemap' && variables?.first === 100
         ? {
             data: {
               publishedProductsForSitemap: Array.from({ length: 100 }, () => products[0]),
             },
           }
-        : { data: { categories: [], publishedMagazines: [] } }
+        : {
+            data: {
+              categories: [],
+              publishedMagazines: {
+                edges: [],
+                pageInfo: { hasNextPage: false, endCursor: null },
+              },
+            },
+          }
     );
     await expect(discoverSitemapPartitions()).rejects.toThrow('did not advance');
   });
@@ -250,5 +274,34 @@ describe('sitemap cursor partitions', () => {
     expect(xml).toContain('<lastmod>2026-01-01T00:00:00.000Z</lastmod>');
     expect(xml).toContain('<changefreq>weekly</changefreq><priority>0.8</priority>');
     expect(xml).not.toContain('<tag>');
+  });
+  it('매거진 257개의 모든 URL을 보존하고 중간 페이지 실패는 XML 성공으로 숨기지 않는다', async () => {
+    const original = query.getMockImplementation()!;
+    let fail = false;
+    query.mockImplementation(async args => {
+      if (args.query.definitions[0].name.value !== 'PublishedMagazinesForSitemap') return original(args);
+      const start = Number(args.variables.after ?? 0);
+      if (fail && start === 100) throw new Error('magazine page failed');
+      const items = Array.from({ length: Math.min(100, 257 - start) }, (_, i) => ({
+        id: `m${start + i}`,
+        slug: `article-${start + i}`,
+      }));
+      return {
+        data: {
+          publishedMagazines: {
+            edges: items.map(node => ({ node })),
+            pageInfo: {
+              hasNextPage: start + 100 < 257,
+              endCursor: String(start + 100),
+            },
+          },
+        },
+      };
+    });
+    const entries = await getSitemapPartition('static~0');
+    expect(entries.filter(entry => /\/magazines\/article-/.test(entry.url))).toHaveLength(257);
+    expect(entries.some(entry => entry.url.endsWith('/magazines/article-256'))).toBe(true);
+    fail = true;
+    await expect(getSitemapPartition('static~0')).rejects.toThrow('magazine page failed');
   });
 });

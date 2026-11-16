@@ -739,6 +739,10 @@ HTML/Markdown 의미 전환의 공통 원문과 영어 기대값은 `libs/transl
 
 모델 선택 검사는 모델 ID가 표시되어 목록 로딩이 끝난 뒤 버튼의 접근성 역할·검색 필터·선택 결과를 확인합니다. 로딩을 기다리는 동안 접근성 트리 전체를 반복 탐색하지 않으며, 개별·전역 timeout은 늘리지 않습니다.
 
+공개 매거진 목록 `publishedMagazines(first, after)`는 배열 대신 `edges { cursor node }`와 `pageInfo`를 반환합니다. 기본 24건·최대 100건이며 `publishedAt DESC, id DESC` 순서의 서명된 커서를 사용합니다. 다음 페이지에는 응답의 `pageInfo.endCursor`를 그대로 전달하고 `hasNextPage`가 false이면 종료합니다. 기존 배열을 읽던 외부 소비자도 이 connection으로 이관해야 합니다. API와 소비자를 같은 릴리스로 조율합니다. 배포 버전이 어긋나는 동안 기존 배열 요청과 새 connection 요청은 서로의 서버 버전에서 실패하므로, 롤백할 때도 API와 소비자 버전을 함께 맞춥니다.
+
+목록의 기본 SQL은 본문을 읽지 않습니다. `content`와 `author`를 선택하면 요청 범위에서 각각 ID별로 모아 조회하며 다른 요청의 결과를 캐시하지 않습니다. 공개 웹 목록은 24건씩 이동하고 sitemap과 Markdown 목록은 모든 페이지를 순회합니다. 중간 조회 실패를 빈 목록이나 부분 성공으로 바꾸지 않습니다. 격리 로컬 `darun_magazine_pagination` DB를 `MAGAZINE_TEST_DATABASE_URL`로 지정해 `pnpm --filter graphql-api exec vitest run __tests__/magazinePagination.pg.test.ts`를 실행하면 동시 발행 시각·마이크로초 경계의 257개 글 순회, 초안 제외와 선택 필드별 SQL 수를 확인합니다. PR CI는 필수 PostgreSQL reporter로 skip 없이 실행합니다.
+
 포맷 자동 수정은 다음 명령을 사용합니다.
 
 ```bash

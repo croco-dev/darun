@@ -3,7 +3,7 @@ import { SchemaLink } from '@apollo/client/link/schema';
 import { ApolloProvider } from '@apollo/client/react';
 import React, { act, Suspense } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
@@ -61,10 +61,15 @@ const page = (after?: string, slug = 'design') => ({
   pageInfo: { hasNextPage: !after, endCursor: after ? 'end' : `${slug}-next` },
 });
 
+beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }));
 afterEach(async () => {
-  await act(async () => root?.unmount());
-  root = undefined;
-  document.body.replaceChildren();
+  try {
+    await act(async () => root?.unmount());
+    root = undefined;
+    document.body.replaceChildren();
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 describe('CategoryProductSection 단건 분류와 이어읽기', () => {
@@ -148,6 +153,7 @@ describe('CategoryProductSection 단건 분류와 이어읽기', () => {
       expect(host.querySelector('[role="alert"]')).toBeNull();
       expect(host.textContent).not.toContain('design tool');
       await act(async () => newPage.resolve(page('development-next', 'development')));
+      await act(async () => vi.advanceTimersByTimeAsync(0));
       expect(host.querySelectorAll('[role="group"] a')).toHaveLength(25);
       expect(host.textContent).toContain('development tool 25');
       expect(host.querySelector('button')).toBeNull();
@@ -219,6 +225,7 @@ describe('CategoryProductSection 단건 분류와 이어읽기', () => {
           edges: [{ node: product(24) }, { node: product(25) }],
         })
       );
+      await act(async () => vi.advanceTimersByTimeAsync(0));
       expect(host.querySelectorAll('[role="group"] a')).toHaveLength(25);
       expect(
         new Set(Array.from(host.querySelectorAll('[role="group"] a'), link => link.getAttribute('href'))).size
@@ -289,6 +296,7 @@ describe('CategoryProductSection 단건 분류와 이어읽기', () => {
     const more = host.querySelector<HTMLButtonElement>('button');
     expect(more?.textContent).toBe(locale === 'ko' ? '더 보기' : 'Load more');
     await act(async () => more?.click());
+    await act(async () => vi.advanceTimersByTimeAsync(0));
     expect(host.textContent).toContain('Newer tool');
     expect(host.textContent).toContain('Older tool');
     expect(host.querySelector('a[href$="/products/older?from=category"]')).not.toBeNull();

@@ -3,7 +3,7 @@ import { ApolloProvider } from '@apollo/client/react';
 import { NextIntlClientProvider } from 'next-intl';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ProductCard } from '../components/ProductCard/ProductCard';
 import { ProductVoteCount } from '../components/ProductVoteCount';
 
@@ -17,11 +17,22 @@ vi.mock('@darun/utils-router', () => ({
 }));
 let root: Root | undefined;
 let client: ApolloClient;
+beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }));
 afterEach(async () => {
-  await act(async () => root?.unmount());
-  client?.stop();
-  document.body.replaceChildren();
+  try {
+    await act(async () => root?.unmount());
+    client?.stop();
+    document.body.replaceChildren();
+  } finally {
+    vi.useRealTimers();
+  }
 });
+
+async function respond(reply: () => void) {
+  await act(async () => reply());
+  // Apollo schedules cache-only watcher notifications after the response promise.
+  await act(async () => vi.advanceTimersByTimeAsync(0));
+}
 
 function fixture(locale = 'ko') {
   const requests: Array<{
@@ -111,13 +122,13 @@ it.each(['ko', 'en'])('%s: 마지막 42표를 보존하고 실패한 조회만 �
   await retry();
   expect(requests).toHaveLength(1);
   expect(container.querySelector('button')!.getAttribute('aria-busy')).toBe('true');
-  await act(async () => requests[0].finish(null));
+  await respond(() => requests[0].finish(null));
   expect(container.textContent).toContain('42');
   await retry();
-  await act(async () => requests[1].fail());
+  await respond(() => requests[1].fail());
   expect(container.textContent).toContain('42');
   await retry();
-  await act(async () => requests[2].finish(43));
+  await respond(() => requests[2].finish(43));
   expect(container.textContent).toContain('43');
   expect(container.querySelector('button')).toBeNull();
   expect(cache.extract()['Product:notion']).toMatchObject({
@@ -137,7 +148,7 @@ it('처음 실패한 카드도 미조회 상태와 링크 밖 재조회 버튼�
   expect(container.querySelector('a button')).toBeNull();
   expect(container.querySelector('a')!.getAttribute('href')).toBe('/products/notion');
   await retry();
-  await act(async () => requests[0].finish(0));
+  await respond(() => requests[0].finish(0));
   expect(container.querySelector('[aria-label="추천 0"]')).not.toBeNull();
   expect(container.querySelector('button')).toBeNull();
 });
@@ -151,7 +162,7 @@ it('다른 상품으로 이동하고 되돌아와도 이전 요청은 현재 수
   await render(null);
   await retry();
   expect(requests).toHaveLength(1); // Apollo deduplicates identical in-flight read operations.
-  await act(async () => requests[0].finish(43));
+  await respond(() => requests[0].finish(43));
   expect(container.textContent).toContain('43');
   expect(container.querySelector('button')).toBeNull();
 });
@@ -161,7 +172,7 @@ it('비교표와 카드의 같은 상품 추천 수를 캐시 갱신으로 함�
   await render(null, 'notion', false, true);
   expect(container.querySelectorAll('button')).toHaveLength(2);
   await retry();
-  await act(async () => requests[0].finish(43));
+  await respond(() => requests[0].finish(43));
   expect(container.querySelectorAll('[aria-label="추천 43"]')).toHaveLength(2);
   expect(container.querySelectorAll('button')).toHaveLength(0);
 });
@@ -171,13 +182,47 @@ it('공유한 상품 조회가 null이어도 두 영역의 마지막 수치와 �
   await render(42, 'notion', false, true);
   await render(null, 'notion', false, true);
   await retry();
-  await act(async () => requests[0].finish(null));
+  await respond(() => requests[0].finish(null));
   await retry();
-  await act(async () => requests[1].finishMissing());
+  await respond(() => requests[1].finishMissing());
   expect(container.querySelectorAll('[aria-label="추천 42"]')).toHaveLength(2);
   expect(container.querySelectorAll('button')).toHaveLength(2);
   await retry();
-  await act(async () => requests[2].finish(43));
+  await respond(() => requests[2].finish(43));
   expect(container.querySelectorAll('[aria-label="추천 43"]')).toHaveLength(2);
   expect(container.querySelectorAll('button')).toHaveLength(0);
+});
+
+it('새로 받은 0표는 이전 재조회의 늦은 캐시 알림으로 덮이지 않는다', async () => {
+  const { container, requests, render, retry, cache } = fixture();
+  await render(null);
+  await retry();
+  await act(async () => requests[0].finish(43));
+  expect(cache.extract()['Product:notion']).toMatchObject({ voteCount: 43 });
+  await render(0);
+  expect(container.querySelector('[aria-label="추천 0"]')).not.toBeNull();
+  await act(async () => vi.advanceTimersByTimeAsync(0));
+  expect(container.querySelector('[aria-label="추천 0"]')).not.toBeNull();
+  expect(container.querySelector('button')).toBeNull();
+  await act(async () => cache.modify({ id: 'Product:notion', fields: { voteCount: () => 44 } }));
+  await act(async () => vi.advanceTimersByTimeAsync(0));
+  expect(container.querySelector('[aria-label="추천 44"]')).not.toBeNull();
+});
+
+it('공유 캐시의 낙관적 갱신과 취소도 두 영역에 반영한다', async () => {
+  const { container, requests, render, retry, cache } = fixture();
+  await render(null, 'notion', false, true);
+  await retry();
+  await respond(() => requests[0].finish(43));
+  await act(async () =>
+    cache.recordOptimisticTransaction(
+      cache => cache.modify({ id: 'Product:notion', fields: { voteCount: () => 44 } }),
+      'pending-vote'
+    )
+  );
+  await act(async () => vi.advanceTimersByTimeAsync(0));
+  expect(container.querySelectorAll('[aria-label="추천 44"]')).toHaveLength(2);
+  await act(async () => cache.removeOptimistic('pending-vote'));
+  await act(async () => vi.advanceTimersByTimeAsync(0));
+  expect(container.querySelectorAll('[aria-label="추천 43"]')).toHaveLength(2);
 });

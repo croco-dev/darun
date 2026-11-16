@@ -1,5 +1,6 @@
 import { gql } from '@apollo/client';
 import { MetadataRoute } from 'next';
+import { collectMagazinePages, type MagazinePage } from '../lib/magazines/collect-pages';
 import { getClient } from './getServerClient';
 import {
   buildSitemapEntries,
@@ -37,12 +38,20 @@ const categoriesQuery = gql`
 `;
 
 const publishedMagazinesQuery = gql`
-  query PublishedMagazinesForSitemap {
-    publishedMagazines {
-      id
-      slug
-      updatedAt
-      publishedAt
+  query PublishedMagazinesForSitemap($first: Int!, $after: String) {
+    publishedMagazines(first: $first, after: $after) {
+      edges {
+        node {
+          id
+          slug
+          updatedAt
+          publishedAt
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
     }
   }
 `;
@@ -88,14 +97,17 @@ async function fetchCategories(): Promise<SitemapCategory[]> {
 }
 
 async function fetchMagazines(): Promise<SitemapMagazine[]> {
-  const { data } = await getClient({ static: true }).query<{
-    publishedMagazines: SitemapMagazine[];
-  }>({
-    query: publishedMagazinesQuery,
-    fetchPolicy: 'no-cache',
+  return collectMagazinePages(async after => {
+    const { data } = await getClient({ static: true }).query<{
+      publishedMagazines: MagazinePage<SitemapMagazine>;
+    }>({
+      query: publishedMagazinesQuery,
+      variables: { first: 100, after },
+      fetchPolicy: 'no-cache',
+    });
+    if (!data?.publishedMagazines) throw new Error('Missing sitemap magazines');
+    return data.publishedMagazines;
   });
-  if (!data?.publishedMagazines) throw new Error('Missing sitemap magazines');
-  return data.publishedMagazines;
 }
 
 async function getStaticPartitions() {

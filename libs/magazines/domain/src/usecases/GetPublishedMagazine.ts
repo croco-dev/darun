@@ -10,6 +10,10 @@ export class GetPublishedMagazine {
     private readonly magazineRepository: MagazineRepository
   ) {}
 
+  contents(ids: readonly string[]) {
+    return this.magazineRepository.findPublishedContentsByIds(ids);
+  }
+
   async execute({ id, slug }: { id?: string; slug?: string }) {
     if (slug) {
       return this.magazineRepository.findPublishedOneBySlug(slug);

@@ -231,7 +231,11 @@
       "title": "Magazines",
       "empty": "No articles have been published yet.",
       "home": "Go to Home",
-      "search": "Search services"
+      "search": "Search services",
+      "emptyPage": "There are no articles on this page.",
+      "pagination": "Magazine pages",
+      "latest": "Back to latest articles",
+      "next": "Older articles"
     },
     "content": {
       "label": "‘{title}’ article",

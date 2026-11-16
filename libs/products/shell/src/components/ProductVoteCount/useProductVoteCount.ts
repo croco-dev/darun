@@ -16,10 +16,13 @@ void gql`
 export function useProductVoteCount(slug: string, count: number | null | undefined) {
   const locale = useLocale();
   const client = useApolloClient();
-  const { data: cached } = useQuery(ProductVoteCountDocument, {
+  useQuery(ProductVoteCountDocument, {
     variables: { slug, locale },
     fetchPolicy: 'cache-only',
   });
+  // Subscribe for rerenders, but read the live cache (including optimistic layers).
+  // A delayed useQuery snapshot must not overtake newly received props.
+  const cached = client.readQuery({ query: ProductVoteCountDocument, variables: { slug, locale } }, true);
   const cachedCount = cached?.productBySlug === null ? null : cached?.productBySlug?.voteCount;
   const identity = `${locale}:${slug}`;
   const [read, setRead] = useState({
