@@ -58,28 +58,26 @@ function deliver(worker: SQSHandler, body: string) {
   );
 }
 
-describe('job queue worker delivery', () => {
+describe('SQS 작업 메시지 처리', () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 
   it.each([
-    ['description', descriptionWorker, '{"jobId":"job"}', services.executeJob],
-    ['research', researchWorker, '{"jobId":42}', services.executeResearch],
-    [
-      'translation',
-      translationWorker,
-      '{"jobId":"job","entityType":"Product","entityId":42}',
-      services.executeTranslationJob,
-    ],
-    ['content sync', contentSyncWorker, '{"intentId":""}', services.executeSearch],
-  ] as const)('%s rejects an invalid identity before the business operation', async (_name, worker, body, execute) => {
-    await expect(deliver(worker, body)).rejects.toThrow(/payload|IDENTITY_INVALID/);
-    expect(execute).not.toHaveBeenCalled();
-  });
+    ['소개', descriptionWorker, '{"jobId":"job"}', services.executeJob],
+    ['리서치', researchWorker, '{"jobId":42}', services.executeResearch],
+    ['번역', translationWorker, '{"jobId":"job","entityType":"Product","entityId":42}', services.executeTranslationJob],
+    ['콘텐츠 동기화', contentSyncWorker, '{"intentId":""}', services.executeSearch],
+  ] as const)(
+    '%s worker는 식별자가 잘못된 메시지를 처리하기 전에 실패를 반환한다',
+    async (_name, worker, body, execute) => {
+      await expect(deliver(worker, body)).rejects.toThrow(/payload|IDENTITY_INVALID/);
+      expect(execute).not.toHaveBeenCalled();
+    }
+  );
 
-  it('fails a malformed delivery and logs its SQS identity without the message body', async () => {
+  it('본문이 잘못된 메시지에 실패를 반환하고 로그에는 SQS 식별 정보만 남긴다', async () => {
     const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
     const marker = 'private-fixture-body';
     await expect(deliver(contentSyncWorker, marker)).rejects.toThrow('Invalid SQS message body');
@@ -92,7 +90,7 @@ describe('job queue worker delivery', () => {
     expect(services.executeSearch).not.toHaveBeenCalled();
   });
 
-  it('lets a transport delivery retry after the business operation throws', async () => {
+  it('일시 오류 뒤 같은 메시지가 다시 전달되면 작업을 처리한다', async () => {
     services.executeSearch.mockRejectedValueOnce(new Error('temporary outage')).mockResolvedValueOnce(undefined);
     await expect(deliver(contentSyncWorker, '{"intentId":"pending-intent"}')).rejects.toThrow('temporary outage');
     await expect(deliver(contentSyncWorker, '{"intentId":"pending-intent"}')).resolves.toBeUndefined();
