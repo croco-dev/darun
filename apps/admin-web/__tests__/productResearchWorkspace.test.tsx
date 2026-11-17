@@ -627,6 +627,143 @@ function formInputs(): Array<Record<string, FormDataEntryValue>> {
   return testGlobal().researchUploadForms ?? [];
 }
 
+it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하고 입력을 따로 표시한다', async () => {
+  const scenario = newScenario();
+  const source = (id: string, hostname: string, relationToInput = 'EXTERNAL') => ({
+    id,
+    title: `${hostname} 안내`,
+    url: `https://${hostname}/guide`,
+    hostname,
+    relationToInput,
+  });
+  scenario.jobResponses = [
+    {
+      ...completedJob,
+      result: {
+        ...completedJob.result,
+        name: {
+          value: 'Linear',
+          anchors: [{ sourceId: 'host', excerpt: '이름을 뒷받침하는 문장' }],
+          evidenceType: 'INPUT_HOST',
+        },
+        summary: {
+          value: '조사 요약',
+          anchors: [{ sourceId: 'external', excerpt: '요약을 뒷받침하는 문장' }],
+          evidenceType: 'SINGLE_EXTERNAL',
+        },
+        features: [
+          {
+            ...completedJob.result.features[0],
+            name: '🗂️ 프로젝트 추적',
+            anchors: [
+              { sourceId: 'external', excerpt: '첫 기능을 설명하는 문장' },
+              { sourceId: 'other', excerpt: '첫 기능의 또 다른 문장' },
+            ],
+            evidenceType: 'MULTIPLE_EXTERNAL',
+          },
+          {
+            name: '이력',
+            summary: '변경 기록',
+            emoji: '✨',
+            anchors: [{ sourceId: 'subdomain', excerpt: '수정 이력을 다시 읽을 수 있습니다.' }],
+            evidenceType: 'NONE',
+          },
+          { name: '검색', summary: '전체 문서 검색', emoji: '✨', anchors: [], evidenceType: 'NONE' },
+        ],
+        categoryCandidates: [
+          { categoryId: 'work', reason: '팀의 작업을 관리하는 도구입니다.' },
+          { categoryId: 'work', reason: '동료에게 작업을 배정할 수 있습니다.' },
+        ],
+        sources: [
+          source('host', 'linear.app', 'INPUT_HOST_MATCH'),
+          source('external', 'docs.example'),
+          source('other', 'manual.example'),
+          source('subdomain', 'help.linear.app', 'INPUT_HOST_MATCH'),
+          { ...source('unrelated', 'unrelated.example'), url: 'javascript:alert(1)' },
+        ],
+      },
+    },
+  ];
+  scenario.categoryResponses = [[{ id: 'work', slug: 'work', labelKo: '업무 도구', labelEn: 'Work' }]];
+  testGlobal().researchSearchParams = { researchJobId: 'job-1' };
+  render(
+    <ApolloProvider client={makeClient(scenario)}>
+      <ProductResearchSection />
+    </ApolloProvider>
+  );
+
+  const nameToggle = await screen.findByText('서비스 이름 근거', { selector: 'summary' });
+  fireEvent.click(nameToggle);
+  const name = within(nameToggle.closest('details')!);
+  expect(name.getByText('이름을 뒷받침하는 문장')).toBeTruthy();
+  expect(name.queryByText('요약을 뒷받침하는 문장')).toBeNull();
+  expect(name.getByText('입력 사이트와 같은 호스트의 검색 근거')).toBeTruthy();
+
+  const summaryToggle = screen.getByText('요약 근거', { selector: 'summary' });
+  fireEvent.click(summaryToggle);
+  const summary = within(summaryToggle.closest('details')!);
+  fireEvent.change(screen.getByLabelText('요약', { selector: 'textarea' }), {
+    target: { value: '운영자가 고친 요약' },
+  });
+  expect(summary.getByText('조사 요약')).toBeTruthy();
+  expect(summary.getByText('운영자가 고친 요약')).toBeTruthy();
+  expect(summary.getByText('요약을 뒷받침하는 문장')).toBeTruthy();
+  expect(summary.queryByText('첫 기능을 설명하는 문장')).toBeNull();
+  expect(summary.getByText('외부 호스트 한 곳의 검색 근거')).toBeTruthy();
+  expect(summary.getByRole('link', { name: 'docs.example 안내' }).getAttribute('href')).toBe(
+    'https://docs.example/guide'
+  );
+
+  const sourceJump = summary.getByRole('link', { name: 'docs.example 안내의 인용 필드 보기' });
+  const sourceItem = document.getElementById(decodeURIComponent(sourceJump.getAttribute('href')!.slice(1)))!;
+  const citations = within(sourceItem)
+    .getAllByRole('link')
+    .filter(link => link.getAttribute('href')?.startsWith('#'));
+  expect(citations.map(link => link.textContent)).toEqual(['요약 근거', '기능 1 근거']);
+  expect(document.getElementById(decodeURIComponent((citations[0] as HTMLAnchorElement).hash.slice(1)))).toBe(
+    summaryToggle
+  );
+
+  const featureToggle = screen.getByText('기능 1 근거', { selector: 'summary' });
+  fireEvent.click(featureToggle);
+  const feature = within(featureToggle.closest('details')!);
+  expect(feature.getByText('첫 기능을 설명하는 문장')).toBeTruthy();
+  expect(feature.getByText('첫 기능의 또 다른 문장')).toBeTruthy();
+  expect(feature.getByText('여러 외부 호스트의 검색 근거')).toBeTruthy();
+  const featureName = screen.getByLabelText('기능 1 이름', { selector: 'input' });
+  const featureEmoji = screen.getByLabelText('기능 1 이모지', { selector: 'input' });
+  act(() => {
+    fireEvent.change(featureName, { target: { value: '프로젝트 추적' } });
+    fireEvent.change(featureEmoji, { target: { value: '✨ 🗂️' } });
+  });
+  expect(feature.getByText('현재 입력값')).toBeTruthy();
+  expect(feature.getByText('🗂️ 프로젝트 추적')).toBeTruthy();
+  expect(feature.getByText('프로젝트 추적', { exact: true })).toBeTruthy();
+
+  const unclassifiedToggle = screen.getByText('기능 2 근거', { selector: 'summary' });
+  fireEvent.click(unclassifiedToggle);
+  const unclassified = within(unclassifiedToggle.closest('details')!);
+  expect(unclassified.getByText('분류된 검색 근거 없음')).toBeTruthy();
+  expect(unclassified.getByText('수정 이력을 다시 읽을 수 있습니다.')).toBeTruthy();
+
+  const noEvidenceToggle = screen.getByText('기능 3 근거', { selector: 'summary' });
+  fireEvent.click(noEvidenceToggle);
+  expect(within(noEvidenceToggle.closest('details')!).getByText('연결된 발췌가 없습니다.')).toBeTruthy();
+
+  const category = screen.getByLabelText<HTMLInputElement>('업무 도구', { selector: 'input[type="checkbox"]' });
+  expect(category.checked).toBe(false);
+  const reasonList = document.getElementById(category.getAttribute('aria-describedby')!)!;
+  expect(
+    within(reasonList)
+      .getAllByRole('listitem')
+      .map(item => item.textContent)
+  ).toEqual(['팀의 작업을 관리하는 도구입니다.', '동료에게 작업을 배정할 수 있습니다.']);
+  const unrelatedTitle = screen.getByText('unrelated.example 안내');
+  expect(unrelatedTitle.closest('a')).toBeNull();
+  expect(within(unrelatedTitle.closest('li')!).queryByRole('list', { name: '인용한 필드' })).toBeNull();
+  expect(scenario.materializeVars).toEqual([]);
+});
+
 describe('research category query recovery with real Apollo', () => {
   const options = [{ id: 'cat-work', slug: 'work', labelKo: '업무 도구', labelEn: 'Work' }];
 
@@ -3827,7 +3964,7 @@ describe('review registration releases superseded lookup busy with real Apollo',
       expect(screen.getByRole('alert').textContent).toContain(failure.message);
       expect(screen.queryByText(/조사 작업을 찾을 수 없습니다/)).toBeNull();
       expect(screen.getByText(/작업 ID: job-1 · 상태: completed/)).toBeTruthy();
-      expect(screen.getByText('조사 요약')).toBeTruthy();
+      expect(screen.getByText('조사 요약', { selector: 'p' })).toBeTruthy();
       expect(screen.getByRole('link', { name: 'Linear' }).getAttribute('href')).toBe('https://linear.app/');
       expect((document.querySelector('[name="review-name"]') as HTMLInputElement).value).toBe(stored.review.name);
       expect((document.querySelector('[name="review-slug"]') as HTMLInputElement).value).toBe(stored.review.slug);
