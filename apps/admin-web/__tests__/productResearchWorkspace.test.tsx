@@ -702,7 +702,9 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
   const summaryToggle = screen.getByText('요약 근거', { selector: 'summary' });
   fireEvent.click(summaryToggle);
   const summary = within(summaryToggle.closest('details')!);
-  fireEvent.change(screen.getByRole('textbox', { name: '요약' }), { target: { value: '운영자가 고친 요약' } });
+  fireEvent.change(screen.getByLabelText('요약', { selector: 'textarea' }), {
+    target: { value: '운영자가 고친 요약' },
+  });
   expect(summary.getByText('조사 요약')).toBeTruthy();
   expect(summary.getByText('운영자가 고친 요약')).toBeTruthy();
   expect(summary.getByText('요약을 뒷받침하는 문장')).toBeTruthy();
@@ -728,8 +730,12 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
   expect(feature.getByText('첫 기능을 설명하는 문장')).toBeTruthy();
   expect(feature.getByText('첫 기능의 또 다른 문장')).toBeTruthy();
   expect(feature.getByText('여러 외부 호스트의 검색 근거')).toBeTruthy();
-  fireEvent.change(screen.getByRole('textbox', { name: '기능 1 이름' }), { target: { value: '프로젝트 추적' } });
-  fireEvent.change(screen.getByRole('textbox', { name: '기능 1 이모지' }), { target: { value: '✨ 🗂️' } });
+  const featureName = screen.getByLabelText('기능 1 이름', { selector: 'input' });
+  const featureEmoji = screen.getByLabelText('기능 1 이모지', { selector: 'input' });
+  act(() => {
+    fireEvent.change(featureName, { target: { value: '프로젝트 추적' } });
+    fireEvent.change(featureEmoji, { target: { value: '✨ 🗂️' } });
+  });
   expect(feature.getByText('현재 입력값')).toBeTruthy();
   expect(feature.getByText('🗂️ 프로젝트 추적')).toBeTruthy();
   expect(feature.getByText('프로젝트 추적', { exact: true })).toBeTruthy();
@@ -744,8 +750,7 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
   fireEvent.click(noEvidenceToggle);
   expect(within(noEvidenceToggle.closest('details')!).getByText('연결된 발췌가 없습니다.')).toBeTruthy();
 
-  expect(screen.getByText('팀의 작업을 관리하는 도구입니다.')).toBeTruthy();
-  const category = screen.getByRole<HTMLInputElement>('checkbox', { name: '업무 도구' });
+  const category = screen.getByLabelText<HTMLInputElement>('업무 도구', { selector: 'input[type="checkbox"]' });
   expect(category.checked).toBe(false);
   const reasonList = document.getElementById(category.getAttribute('aria-describedby')!)!;
   expect(
@@ -753,8 +758,8 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
       .getAllByRole('listitem')
       .map(item => item.textContent)
   ).toEqual(['팀의 작업을 관리하는 도구입니다.', '동료에게 작업을 배정할 수 있습니다.']);
-  expect(screen.queryByRole('link', { name: 'unrelated.example 안내' })).toBeNull();
   const unrelatedSource = screen.getByText('unrelated.example 안내').closest('li')!;
+  expect(screen.queryByText('unrelated.example 안내', { selector: 'a' })).toBeNull();
   expect(within(unrelatedSource).queryByRole('list', { name: '인용한 필드' })).toBeNull();
   expect(scenario.materializeVars).toEqual([]);
 });
