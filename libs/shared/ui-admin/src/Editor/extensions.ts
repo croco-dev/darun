@@ -42,7 +42,23 @@ export function createAdminEditorExtensions(onTableRejected?: (message: string) 
       },
     }),
     StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-    Image,
+    Image.extend({
+      addAttributes() {
+        return {
+          ...this.parent?.(),
+          // TipTap otherwise coerces numeric-looking HTML attributes when reopening the document.
+          ...Object.fromEntries(
+            ['src', 'alt', 'title'].map(name => [
+              name,
+              {
+                default: null,
+                parseHTML: (element: HTMLElement) => element.getAttribute(name),
+              },
+            ])
+          ),
+        };
+      },
+    }),
     Typography,
     Table,
     TableRow,
