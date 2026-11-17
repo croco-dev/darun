@@ -654,19 +654,28 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
         features: [
           {
             ...completedJob.result.features[0],
+            name: '🗂️ 프로젝트 추적',
             anchors: [
               { sourceId: 'external', excerpt: '첫 기능을 설명하는 문장' },
               { sourceId: 'other', excerpt: '첫 기능의 또 다른 문장' },
             ],
             evidenceType: 'MULTIPLE_EXTERNAL',
           },
-          { name: '이력', summary: '변경 기록', emoji: '✨', anchors: [], evidenceType: 'NONE' },
+          {
+            name: '이력',
+            summary: '변경 기록',
+            emoji: '✨',
+            anchors: [{ sourceId: 'subdomain', excerpt: '수정 이력을 다시 읽을 수 있습니다.' }],
+            evidenceType: 'NONE',
+          },
+          { name: '검색', summary: '전체 문서 검색', emoji: '✨', anchors: [], evidenceType: 'NONE' },
         ],
         categoryCandidates: [{ categoryId: 'work', reason: '팀의 작업을 관리하는 도구입니다.' }],
         sources: [
           source('host', 'linear.app', 'INPUT_HOST_MATCH'),
           source('external', 'docs.example'),
           source('other', 'manual.example'),
+          source('subdomain', 'help.linear.app', 'INPUT_HOST_MATCH'),
           { ...source('unrelated', 'unrelated.example'), url: 'javascript:alert(1)' },
         ],
       },
@@ -716,13 +725,27 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
   expect(feature.getByText('첫 기능을 설명하는 문장')).toBeTruthy();
   expect(feature.getByText('첫 기능의 또 다른 문장')).toBeTruthy();
   expect(feature.getByText('여러 외부 호스트의 검색 근거')).toBeTruthy();
-  const noEvidenceToggle = screen.getByText('기능 2 근거', { selector: 'summary' });
+  fireEvent.change(screen.getByRole('textbox', { name: '기능 1 이름' }), { target: { value: '프로젝트 추적' } });
+  fireEvent.change(screen.getByRole('textbox', { name: '기능 1 이모지' }), { target: { value: '✨ 🗂️' } });
+  expect(feature.getByText('현재 입력값')).toBeTruthy();
+  expect(feature.getByText('🗂️ 프로젝트 추적')).toBeTruthy();
+  expect(feature.getByText('프로젝트 추적', { exact: true })).toBeTruthy();
+
+  const unclassifiedToggle = screen.getByText('기능 2 근거', { selector: 'summary' });
+  fireEvent.click(unclassifiedToggle);
+  const unclassified = within(unclassifiedToggle.closest('details')!);
+  expect(unclassified.getByText('분류된 검색 근거 없음')).toBeTruthy();
+  expect(unclassified.getByText('수정 이력을 다시 읽을 수 있습니다.')).toBeTruthy();
+
+  const noEvidenceToggle = screen.getByText('기능 3 근거', { selector: 'summary' });
   fireEvent.click(noEvidenceToggle);
   expect(within(noEvidenceToggle.closest('details')!).getByText('연결된 발췌가 없습니다.')).toBeTruthy();
 
   expect(screen.getByText('팀의 작업을 관리하는 도구입니다.')).toBeTruthy();
   expect((screen.getByRole('checkbox', { name: '업무 도구' }) as HTMLInputElement).checked).toBe(false);
   expect(screen.queryByRole('link', { name: 'unrelated.example 안내' })).toBeNull();
+  const unrelatedSource = screen.getByText('unrelated.example 안내').closest('li')!;
+  expect(within(unrelatedSource).queryByRole('list', { name: '인용한 필드' })).toBeNull();
   expect(scenario.materializeVars).toEqual([]);
 });
 

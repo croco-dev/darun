@@ -103,19 +103,26 @@ export function ResearchFieldEvidence({
   );
 }
 
-export function ResearchProposalValues({ original, current }: { original?: string | null; current: string }) {
+export function ResearchProposalValues({
+  values,
+}: {
+  values: { label?: string; original?: string | null; current: string }[];
+}) {
+  const edited = values.some(({ original, current }) => current !== (original ?? ''));
+  const columns = edited ? (['original', 'current'] as const) : (['original'] as const);
   return (
     <dl className="flex flex-col gap-2">
-      <div>
-        <dt className="text-xs font-medium">조사 제안</dt>
-        <dd className="whitespace-pre-wrap">{original || '제안 없음'}</dd>
-      </div>
-      {current !== (original ?? '') && (
-        <div>
-          <dt className="text-xs font-medium">현재 입력값</dt>
-          <dd className="whitespace-pre-wrap">{current || '입력 없음'}</dd>
+      {columns.map(column => (
+        <div key={column}>
+          <dt className="text-xs font-medium">{column === 'original' ? '조사 제안' : '현재 입력값'}</dt>
+          {values.map(value => (
+            <dd key={value.label ?? column} className="whitespace-pre-wrap">
+              {value.label && <span className="mr-2 text-xs font-medium">{value.label}</span>}
+              <span>{value[column] || (column === 'original' ? '제안 없음' : '입력 없음')}</span>
+            </dd>
+          ))}
         </div>
-      )}
+      ))}
     </dl>
   );
 }

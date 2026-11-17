@@ -1178,7 +1178,7 @@ export const ProductResearchSection = () => {
                   />
                 </AdminField>
                 <ResearchFieldEvidence field={nameEvidence} sources={sources}>
-                  <ResearchProposalValues original={result.name?.value} current={review.name} />
+                  <ResearchProposalValues values={[{ original: result.name?.value, current: review.name }]} />
                 </ResearchFieldEvidence>
                 <AdminField label="slug">
                   <AdminInput
@@ -1202,7 +1202,7 @@ export const ProductResearchSection = () => {
                   />
                 </AdminField>
                 <ResearchFieldEvidence field={summaryEvidence} sources={sources}>
-                  <ResearchProposalValues original={result.summary?.value} current={review.summary} />
+                  <ResearchProposalValues values={[{ original: result.summary?.value, current: review.summary }]} />
                 </ResearchFieldEvidence>
                 <AdminField label="공식 URL">
                   <AdminInput
@@ -1331,11 +1331,11 @@ export const ProductResearchSection = () => {
                     </fieldset>
                     <ResearchFieldEvidence field={citation} sources={sources}>
                       <ResearchProposalValues
-                        original={
-                          citation.evidence &&
-                          `${citation.evidence.emoji} ${citation.evidence.name}\n${citation.evidence.summary}`
-                        }
-                        current={`${feature.emoji} ${feature.name}\n${feature.summary}`}
+                        values={[
+                          { label: '이름', original: citation.evidence?.name, current: feature.name },
+                          { label: '설명', original: citation.evidence?.summary, current: feature.summary },
+                          { label: '이모지', original: citation.evidence?.emoji, current: feature.emoji },
+                        ]}
                       />
                     </ResearchFieldEvidence>
                   </div>
