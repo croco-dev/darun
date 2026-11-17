@@ -758,9 +758,9 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
       .getAllByRole('listitem')
       .map(item => item.textContent)
   ).toEqual(['팀의 작업을 관리하는 도구입니다.', '동료에게 작업을 배정할 수 있습니다.']);
-  const unrelatedSource = screen.getByText('unrelated.example 안내').closest('li')!;
-  expect(screen.queryByText('unrelated.example 안내', { selector: 'a' })).toBeNull();
-  expect(within(unrelatedSource).queryByRole('list', { name: '인용한 필드' })).toBeNull();
+  const unrelatedTitle = screen.getByText('unrelated.example 안내');
+  expect(unrelatedTitle.closest('a')).toBeNull();
+  expect(within(unrelatedTitle.closest('li')!).queryByRole('list', { name: '인용한 필드' })).toBeNull();
   expect(scenario.materializeVars).toEqual([]);
 });
 
