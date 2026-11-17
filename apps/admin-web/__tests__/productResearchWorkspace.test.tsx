@@ -670,7 +670,10 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
           },
           { name: '검색', summary: '전체 문서 검색', emoji: '✨', anchors: [], evidenceType: 'NONE' },
         ],
-        categoryCandidates: [{ categoryId: 'work', reason: '팀의 작업을 관리하는 도구입니다.' }],
+        categoryCandidates: [
+          { categoryId: 'work', reason: '팀의 작업을 관리하는 도구입니다.' },
+          { categoryId: 'work', reason: '동료에게 작업을 배정할 수 있습니다.' },
+        ],
         sources: [
           source('host', 'linear.app', 'INPUT_HOST_MATCH'),
           source('external', 'docs.example'),
@@ -742,7 +745,14 @@ it('조사 검토에서 필드별 발췌와 출처의 인용 필드를 연결하
   expect(within(noEvidenceToggle.closest('details')!).getByText('연결된 발췌가 없습니다.')).toBeTruthy();
 
   expect(screen.getByText('팀의 작업을 관리하는 도구입니다.')).toBeTruthy();
-  expect((screen.getByRole('checkbox', { name: '업무 도구' }) as HTMLInputElement).checked).toBe(false);
+  const category = screen.getByRole<HTMLInputElement>('checkbox', { name: '업무 도구' });
+  expect(category.checked).toBe(false);
+  const reasonList = document.getElementById(category.getAttribute('aria-describedby')!)!;
+  expect(
+    within(reasonList)
+      .getAllByRole('listitem')
+      .map(item => item.textContent)
+  ).toEqual(['팀의 작업을 관리하는 도구입니다.', '동료에게 작업을 배정할 수 있습니다.']);
   expect(screen.queryByRole('link', { name: 'unrelated.example 안내' })).toBeNull();
   const unrelatedSource = screen.getByText('unrelated.example 안내').closest('li')!;
   expect(within(unrelatedSource).queryByRole('list', { name: '인용한 필드' })).toBeNull();

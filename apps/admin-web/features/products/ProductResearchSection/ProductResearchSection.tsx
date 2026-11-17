@@ -980,7 +980,6 @@ export const ProductResearchSection = () => {
       evidence: result?.features?.[index],
     },
   }));
-  const categoryReasons = new Map(result?.categoryCandidates?.map(({ categoryId, reason }) => [categoryId, reason]));
 
   // 회사/대안 후보는 읽기 전용 제안이다.
   const evidenceOfCandidate = (candidate: { anchors?: Array<{ sourceId: string }> | null }) =>
@@ -1258,7 +1257,11 @@ export const ProductResearchSection = () => {
                   ) : null}
                   <div className="flex flex-wrap gap-2">
                     {categories.map((category, index) => {
-                      const reason = categoryReasons.get(category.id);
+                      const reasons = new Set(
+                        result.categoryCandidates?.flatMap(({ categoryId, reason }) =>
+                          categoryId === category.id && reason ? [reason] : []
+                        )
+                      );
                       const reasonId = `${evidenceId}-category-${index}`;
                       return (
                         <div key={category.id} className="min-w-0 rounded-md bg-surface-100 p-2 text-xs text-dark-700">
@@ -1268,14 +1271,19 @@ export const ProductResearchSection = () => {
                               className="h-4 w-4 shrink-0"
                               checked={review.categoryIds.includes(category.id)}
                               onChange={() => toggleCategory(category.id)}
-                              aria-describedby={reason ? reasonId : undefined}
+                              aria-describedby={reasons.size > 0 ? reasonId : undefined}
                             />
                             {category.labelKo}
                           </label>
-                          {reason && (
-                            <p id={reasonId} className="mt-1 [overflow-wrap:anywhere]">
-                              <span className="font-medium">추천 이유</span> {reason}
-                            </p>
+                          {reasons.size > 0 && (
+                            <div id={reasonId} className="mt-1 [overflow-wrap:anywhere]">
+                              <p className="font-medium">추천 이유</p>
+                              <ul className="list-disc pl-4">
+                                {Array.from(reasons, reason => (
+                                  <li key={reason}>{reason}</li>
+                                ))}
+                              </ul>
+                            </div>
                           )}
                         </div>
                       );
