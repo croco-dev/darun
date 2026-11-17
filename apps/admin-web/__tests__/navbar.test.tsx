@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '../layouts/AppShell/AppShell';
 import { isNavItemActive, Navbar, navItems } from '../layouts/Navbar/Navbar';
 
 const mockUsePathname = vi.fn();
@@ -11,8 +12,14 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@darun/utils-router', () => ({
-  Link: ({ children, href, 'aria-current': ariaCurrent, className }: React.ComponentProps<'a'>) => (
-    <a href={href} aria-current={ariaCurrent} className={className}>
+  Link: ({ children, onNavigate, ...props }: React.ComponentProps<'a'> & { onNavigate?: () => void }) => (
+    <a
+      {...props}
+      onClick={event => {
+        event.preventDefault();
+        onNavigate?.();
+      }}
+    >
       {children}
     </a>
   ),
@@ -102,5 +109,48 @@ describe('Navbar Component', () => {
 
     const productsLink = screen.getByText('서비스').closest('a');
     expect(productsLink?.getAttribute('aria-current')).toBe('page');
+  });
+});
+
+describe('AppShell 메뉴', () => {
+  afterEach(cleanup);
+
+  it('Escape로 닫으면 메뉴 버튼에, 링크를 선택하면 본문에 초점을 둔다', () => {
+    mockUsePathname.mockReturnValue('/companies/new');
+    render(<AppShell>기업 등록 폼</AppShell>);
+
+    const toggle = screen.getByRole('button', { name: '메뉴' });
+    const menu = screen.getByRole('navigation', { name: '관리자 사이드 메뉴' });
+    const destination = screen.getByRole('link', { name: '기업 관리' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle.getAttribute('aria-controls')).toBe(menu.id);
+
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    destination.focus();
+    fireEvent.keyDown(destination, { key: 'Escape' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
+
+    fireEvent.click(toggle);
+    fireEvent.click(destination);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(screen.getByRole('main'));
+  });
+
+  it('인증 페이지에서는 메뉴를 숨기고 관리자 페이지 복귀 시 닫힌 상태로 시작한다', () => {
+    mockUsePathname.mockReturnValue('/companies/new');
+    const { rerender } = render(<AppShell>기업 등록 폼</AppShell>);
+    fireEvent.click(screen.getByRole('button', { name: '메뉴' }));
+
+    mockUsePathname.mockReturnValue('/auth/login');
+    rerender(<AppShell>로그인 폼</AppShell>);
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(screen.queryByRole('button', { name: '메뉴' })).toBeNull();
+    expect(screen.getByText('로그인 폼')).toBeDefined();
+
+    mockUsePathname.mockReturnValue('/companies/new');
+    rerender(<AppShell>기업 등록 폼</AppShell>);
+    expect(screen.getByRole('button', { name: '메뉴' }).getAttribute('aria-expanded')).toBe('false');
   });
 });

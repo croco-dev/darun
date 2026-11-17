@@ -5,6 +5,12 @@ import { Logo } from '@darun/ui-admin';
 import { Link, usePathname } from '@darun/utils-router';
 import { LogoutButton } from '../../features/auth/LogoutButton';
 
+interface NavbarProps {
+  id?: string;
+  mobileOpen?: boolean;
+  onNavigate?: () => void;
+}
+
 export const navItems = [
   { link: '/', label: '대시보드', icon: Home },
   { link: '/products', label: '서비스', icon: Archive },
@@ -24,18 +30,20 @@ export function isNavItemActive(pathname: string | null | undefined, itemLink: s
   return pathname === itemLink || pathname.startsWith(`${itemLink}/`);
 }
 
-export function Navbar() {
+export function Navbar({ id, mobileOpen = false, onNavigate }: NavbarProps) {
   const pathname = usePathname();
 
   return (
     <nav
+      id={id}
       aria-label="관리자 사이드 메뉴"
-      className="h-screen w-[280px] p-5 flex flex-col shrink-0 border-r border-dark-200 bg-white shadow-sm"
+      className={`${mobileOpen ? 'flex' : 'hidden'} max-h-[60dvh] flex-col overflow-y-auto overscroll-contain border-b border-dark-200 bg-white p-5 shadow-sm lg:flex lg:h-screen lg:max-h-none lg:w-[280px] lg:overflow-hidden lg:border-r lg:border-b-0`}
     >
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+      <div className="flex shrink-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         <div className="pb-5 mb-6 border-b border-dark-200 flex items-center justify-between shrink-0">
           <Link
             href="/"
+            onNavigate={onNavigate}
             className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/40"
           >
             <div className="flex items-center gap-2 px-1 hover:opacity-85 transition">
@@ -63,6 +71,7 @@ export function Navbar() {
                     : 'text-dark-600 visited:text-dark-600 hover:bg-surface-100 hover:text-dark-900 hover:visited:text-dark-900'
                 }`}
                 href={item.link}
+                onNavigate={onNavigate}
               >
                 <item.icon
                   aria-hidden="true"
