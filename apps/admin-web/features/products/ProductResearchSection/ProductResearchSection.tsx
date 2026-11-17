@@ -25,7 +25,14 @@ import {
 import { useImageUpload } from '@darun/utils-image-upload';
 import { Link, useNavigate, useSearchParams } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  ResearchFieldEvidence,
+  ResearchProposalValues,
+  ResearchSourceList,
+  type ResearchEvidence,
+  type ResearchSource,
+} from './ResearchFieldEvidence';
 import {
   clearWorkspacePendingResearch,
   listWorkspaceDrafts,
@@ -174,13 +181,13 @@ type ResearchJobPayload = {
     materializedProductId?: string | null;
     result?: {
       originalUrl: string;
-      name?: { value?: string; anchors?: { sourceId: string; excerpt: string }[]; evidenceType?: string } | null;
+      name?: (ResearchEvidence & { value?: string }) | null;
       suggestedSlug?: string;
-      summary?: { value?: string; anchors?: { sourceId: string; excerpt: string }[]; evidenceType?: string } | null;
-      features?: { name: string; summary: string; emoji: string; anchors?: { sourceId: string }[] }[] | null;
+      summary?: (ResearchEvidence & { value?: string }) | null;
+      features?: (ResearchEvidence & { name: string; summary: string; emoji: string })[] | null;
       tags?: string[] | null;
       warnings?: string[] | null;
-      sources?: { id: string; title: string; url: string; hostname: string; relationToInput?: string }[] | null;
+      sources?: ResearchSource[] | null;
       categoryCandidates?: { categoryId?: string | null; reason?: string | null }[] | null;
       companyCandidate?: {
         name?: string | null;
@@ -244,6 +251,7 @@ function readStoredWorkspace(targetJobId?: string | null): ResearchWorkspacePers
 }
 
 export const ProductResearchSection = () => {
+  const evidenceId = useId();
   const navigate = useNavigate();
   const researchJobIdParam = useSearchParams().get('researchJobId');
   const client = useApolloClient();
@@ -955,11 +963,29 @@ export const ProductResearchSection = () => {
     }));
   };
 
-  // 회사/대안 후보는 근거(출처)를 함께 보여주는 읽기 전용 제안으로만 제공한다.
-  const sourceByAnchor = (sourceId: string) => (result?.sources ?? []).find(source => source.id === sourceId);
+  const sources = new Map(
+    (result?.sources ?? []).map((source, index) => [
+      source.id,
+      { ...source, targetId: `${evidenceId}-source-${index}` },
+    ])
+  );
+  const nameEvidence = { targetId: `${evidenceId}-name`, label: '서비스 이름', evidence: result?.name };
+  const summaryEvidence = { targetId: `${evidenceId}-summary`, label: '요약', evidence: result?.summary };
+  // 기능 초안은 조사 결과와 같은 순서를 유지하며 포함 여부만 바뀐다.
+  const featureReviews = review.features.map((draft, index) => ({
+    draft,
+    citation: {
+      targetId: `${evidenceId}-feature-${index}`,
+      label: `기능 ${index + 1}`,
+      evidence: result?.features?.[index],
+    },
+  }));
+  const categoryReasons = new Map(result?.categoryCandidates?.map(({ categoryId, reason }) => [categoryId, reason]));
+
+  // 회사/대안 후보는 읽기 전용 제안이다.
   const evidenceOfCandidate = (candidate: { anchors?: Array<{ sourceId: string }> | null }) =>
-    Array.from(new Set((candidate.anchors ?? []).map(anchor => sourceByAnchor(anchor.sourceId))))
-      .filter((source): source is NonNullable<ReturnType<typeof sourceByAnchor>> => Boolean(source))
+    Array.from(new Set((candidate.anchors ?? []).map(anchor => sources.get(anchor.sourceId))))
+      .filter(source => source !== undefined)
       .map(source => source.hostname);
   const companyCandidate = result?.companyCandidate
     ? {
@@ -1151,6 +1177,9 @@ export const ProductResearchSection = () => {
                     }}
                   />
                 </AdminField>
+                <ResearchFieldEvidence field={nameEvidence} sources={sources}>
+                  <ResearchProposalValues original={result.name?.value} current={review.name} />
+                </ResearchFieldEvidence>
                 <AdminField label="slug">
                   <AdminInput
                     name="review-slug"
@@ -1172,6 +1201,9 @@ export const ProductResearchSection = () => {
                     }}
                   />
                 </AdminField>
+                <ResearchFieldEvidence field={summaryEvidence} sources={sources}>
+                  <ResearchProposalValues original={result.summary?.value} current={review.summary} />
+                </ResearchFieldEvidence>
                 <AdminField label="공식 URL">
                   <AdminInput
                     name="review-official-url"
@@ -1198,7 +1230,8 @@ export const ProductResearchSection = () => {
                   </label>
                 )}
 
-                <AdminField label="카테고리 (선택, 비워둘 수 있음)">
+                <fieldset className="flex min-w-0 flex-col gap-1.5">
+                  <legend className="mb-1.5 text-sm font-medium text-dark-900">카테고리 (선택, 비워둘 수 있음)</legend>
                   {categoriesLoading ? (
                     <p role="status" className="text-xs text-dark-500">
                       카테고리를 불러오는 중입니다.
@@ -1224,21 +1257,33 @@ export const ProductResearchSection = () => {
                     </p>
                   ) : null}
                   <div className="flex flex-wrap gap-2">
-                    {categories.map(category => (
-                      <label key={category.id} className="flex items-center gap-1 text-xs text-dark-700">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={review.categoryIds.includes(category.id)}
-                          onChange={() => toggleCategory(category.id)}
-                        />
-                        {category.labelKo}
-                      </label>
-                    ))}
+                    {categories.map((category, index) => {
+                      const reason = categoryReasons.get(category.id);
+                      const reasonId = `${evidenceId}-category-${index}`;
+                      return (
+                        <div key={category.id} className="min-w-0 rounded-md bg-surface-100 p-2 text-xs text-dark-700">
+                          <label className="flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 shrink-0"
+                              checked={review.categoryIds.includes(category.id)}
+                              onChange={() => toggleCategory(category.id)}
+                              aria-describedby={reason ? reasonId : undefined}
+                            />
+                            {category.labelKo}
+                          </label>
+                          {reason && (
+                            <p id={reasonId} className="mt-1 [overflow-wrap:anywhere]">
+                              <span className="font-medium">추천 이유</span> {reason}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                </AdminField>
+                </fieldset>
 
-                {review.features.map((feature, index) => (
+                {featureReviews.map(({ draft: feature, citation }, index) => (
                   <div key={`feature-${index}`} className="flex flex-col gap-2 rounded-lg bg-black/[0.02] p-2">
                     <label className="flex flex-wrap items-center gap-2 text-sm text-dark-900">
                       <input
@@ -1284,6 +1329,15 @@ export const ProductResearchSection = () => {
                         />
                       </AdminField>
                     </fieldset>
+                    <ResearchFieldEvidence field={citation} sources={sources}>
+                      <ResearchProposalValues
+                        original={
+                          citation.evidence &&
+                          `${citation.evidence.emoji} ${citation.evidence.name}\n${citation.evidence.summary}`
+                        }
+                        current={`${feature.emoji} ${feature.name}\n${feature.summary}`}
+                      />
+                    </ResearchFieldEvidence>
                   </div>
                 ))}
 
@@ -1388,19 +1442,10 @@ export const ProductResearchSection = () => {
             </form>
 
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold text-dark-700">근거 출처</p>
-              <ul className="list-disc pl-5 text-xs text-dark-600">
-                {(result.sources ?? []).map(source => (
-                  <li key={source.id}>
-                    <a href={source.url} target="_blank" rel="noreferrer" className="underline">
-                      {source.title}
-                    </a>{' '}
-                    <span className="text-dark-500">
-                      ({source.hostname} · {source.relationToInput ?? 'EXTERNAL'})
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <ResearchSourceList
+                sources={sources}
+                fields={[nameEvidence, summaryEvidence, ...featureReviews.map(({ citation }) => citation)]}
+              />
               {companyCandidate && (
                 <p className="text-xs text-dark-500">
                   회사 후보(읽기 전용 제안): {companyCandidate.label}
