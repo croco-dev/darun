@@ -36,8 +36,11 @@ import { ProductConnection } from './graphs/ProductPagination';
 import { Screenshot } from './graphs/Screenshot';
 import { Tag } from './graphs/Tag';
 
-type ProductWithLocale = Product & {
+const adminProductRead = Symbol('adminProductRead');
+
+type ProductRead = Product & {
   locale?: string;
+  [adminProductRead]?: true;
 };
 
 type PublishedProduct = DomainProduct;
@@ -110,7 +113,7 @@ export class ProductQueryResolver {
     return locale === 'en' ? 'en' : 'ko';
   }
 
-  private async translateProduct(product: PublishedProduct, locale: string): Promise<ProductWithLocale> {
+  private async translateProduct(product: PublishedProduct, locale: string): Promise<ProductRead> {
     const [translatedProduct] = await this.translateProducts([product], locale);
 
     return translatedProduct;
@@ -120,7 +123,7 @@ export class ProductQueryResolver {
     products: PublishedProduct[],
     locale: string,
     includeDescription = true
-  ): Promise<ProductWithLocale[]> {
+  ): Promise<ProductRead[]> {
     const normalizedLocale = this.normalizeLocale(locale);
 
     if (products.length === 0) {
@@ -310,19 +313,16 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Link])
-  public async links(@Root() product: ProductWithLocale) {
+  public async links(@Root() product: ProductRead) {
     return this.getProductLinksUseCase
       .execute({
         productId: product.id,
       })
-      .catch(error => {
-        console.error('Product links lookup failed', product.id, error);
-        return [];
-      });
+      .catch(() => this.handleRelationReadFailure(product, 'links'));
   }
 
   @FieldResolver(() => [Tag])
-  public async tags(@Root() product: ProductWithLocale): Promise<Tag[]> {
+  public async tags(@Root() product: ProductRead): Promise<Tag[]> {
     const productTag = await this.getProductTagsUseCase.execute({
       productId: product.id,
     });
@@ -331,19 +331,17 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Screenshot])
-  public async screenshots(@Root() product: ProductWithLocale) {
-    return this.getProductScreenshotsUseCase.execute({ productId: product.id }).catch(error => {
-      console.error('Product screenshots lookup failed', product.id, error);
-      return [];
-    });
+  public async screenshots(@Root() product: ProductRead) {
+    return this.getProductScreenshotsUseCase
+      .execute({ productId: product.id })
+      .catch(() => this.handleRelationReadFailure(product, 'screenshots'));
   }
 
   @FieldResolver(() => [Feature])
-  public async features(@Root() product: ProductWithLocale) {
-    const features = await this.getProductFeaturesUseCase.execute({ productId: product.id }).catch(error => {
-      console.error('Product features lookup failed', product.id, error);
-      return [];
-    });
+  public async features(@Root() product: ProductRead) {
+    const features = await this.getProductFeaturesUseCase
+      .execute({ productId: product.id })
+      .catch(() => this.handleRelationReadFailure(product, 'features'));
 
     const locale = this.normalizeLocale(product.locale ?? 'ko');
 
@@ -375,6 +373,16 @@ export class ProductQueryResolver {
       console.error('Product feature translations lookup failed', product.id, error);
       return features;
     }
+  }
+
+  private handleRelationReadFailure(product: ProductRead, field: 'links' | 'screenshots' | 'features'): [] {
+    const message = `Product ${field} lookup failed`;
+    if (product[adminProductRead]) {
+      // Keep driver messages and parameters out of GraphQL errors and their telemetry.
+      throw new Error(message);
+    }
+    console.error(message, product.id);
+    return [];
   }
 
   @FieldResolver(() => Company, { nullable: true })
@@ -418,7 +426,7 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => [Product])
-  public async alternatives(@Root() product: ProductWithLocale) {
+  public async alternatives(@Root() product: ProductRead) {
     const alternativeProducts = await this.getAlternativeProductsUseCase.execute({
       productId: product.id,
     });
@@ -431,7 +439,7 @@ export class ProductQueryResolver {
   }
 
   @FieldResolver(() => Int, { nullable: true })
-  public async voteCount(@Root() product: ProductWithLocale) {
+  public async voteCount(@Root() product: ProductRead) {
     return this.getVoteCountUseCase.execute({ productId: product.id }).catch(error => {
       console.error('Product vote count lookup failed', product.id, error);
       return null;
@@ -528,6 +536,7 @@ export class ProductQueryResolver {
       return product;
     }
 
-    return this.translateProduct(product as PublishedProduct, locale);
+    // The error policy follows this authorized root even in an operation with public reads.
+    return { ...(await this.translateProduct(product, locale)), [adminProductRead]: true } satisfies ProductRead;
   }
 }

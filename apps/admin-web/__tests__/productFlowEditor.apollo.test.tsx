@@ -28,7 +28,7 @@ const screenshots = ['첫 화면', '둘째 화면', '추가 화면'].map((title,
 function renderScreenshotRecovery(mode: 'create' | 'update') {
   const reads: Array<{
     succeed: (shots: typeof screenshots) => void;
-    fail: () => void;
+    fail: (kind: 'graphql' | 'transport') => void;
   }> = [];
   const writes: Record<string, unknown>[] = [];
   const onSaved = vi.fn();
@@ -51,7 +51,17 @@ function renderScreenshotRecovery(mode: 'create' | 'update') {
                 });
                 observer.complete();
               },
-              fail: () => observer.error(new Error('synthetic screenshot read failure')),
+              fail: kind => {
+                if (kind === 'transport') {
+                  observer.error(new Error('synthetic screenshot read failure'));
+                  return;
+                }
+                observer.next({
+                  data: { tempProductBySlug: null },
+                  errors: [{ message: 'Internal server error', path: ['tempProductBySlug', 'screenshots'] }],
+                });
+                observer.complete();
+              },
             });
           } else if (operation.operationName === 'GetProductFlowOnEditor') {
             observer.next({
@@ -125,7 +135,7 @@ it.each(['create', 'update'] as const)('recovers the %s screenshot read without 
     });
     fireEvent.click(screen.getByLabelText('단계 2 위로 이동'));
   }
-  await act(async () => reads[0].fail());
+  await act(async () => reads[0].fail('graphql'));
   await screen.findByText('스크린샷을 불러오지 못했습니다.');
   expect(screen.getByRole('button', { name: '단계 추가' }).matches(':disabled')).toBe(true);
   expect(screen.queryByText('이 플랫폼에 등록된 스크린샷이 없습니다.')).toBeNull();
@@ -140,7 +150,7 @@ it.each(['create', 'update'] as const)('recovers the %s screenshot read without 
     expect(screen.getByRole('img', { name: '첫 화면' })).toBeTruthy();
   }
   // A second failure must remain retryable, without an unhandled refetch rejection.
-  await act(async () => reads[1].fail());
+  await act(async () => reads[1].fail('transport'));
   fireEvent.click(await screen.findByRole('button', { name: '스크린샷 다시 불러오기' }));
   await waitFor(() => expect(reads).toHaveLength(3));
   await act(async () => reads[2].succeed(screenshots));
