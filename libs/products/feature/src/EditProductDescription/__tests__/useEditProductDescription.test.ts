@@ -1,9 +1,18 @@
 import type { OperationVariables } from '@apollo/client';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { notifications } from '@mantine/notifications';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createHash, webcrypto } from 'node:crypto';
 import { useEditProductDescription } from '../useEditProductDescription';
+
+vi.stubGlobal('crypto', webcrypto);
+const hash = (description: string) => createHash('sha256').update(description).digest('hex');
+const saveRequest = (draft: string, base: string | null) => ({
+  variables: { slug: 'product-1', input: { description: draft } },
+  fetchPolicy: 'no-cache',
+  context: { darunExpectedDescriptionHash: base === null ? null : hash(base) },
+});
 
 vi.mock('@apollo/client/react', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
@@ -16,20 +25,23 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 const mutate = vi.fn();
+const client = { query: vi.fn(), readQuery: vi.fn(), writeQuery: vi.fn() };
 let description: string | null | undefined;
 let descriptionError: Error | undefined;
 
 beforeEach(() => {
   vi.clearAllMocks();
   mutate.mockReset();
+  client.query.mockResolvedValue({ data: undefined });
   description = undefined;
   descriptionError = undefined;
   vi.mocked(useQuery).mockImplementation(
     () =>
       ({
+        client,
         data: description === undefined ? undefined : { tempProductBySlug: { id: 'product-1', description } },
         error: descriptionError,
-      }) as useQuery.Result<
+      }) as unknown as useQuery.Result<
         unknown,
         OperationVariables,
         'empty' | 'complete' | 'streaming',
@@ -95,12 +107,7 @@ describe('description form synchronization', () => {
       },
     });
     await act(async () => result.current.overwriteWithDraft());
-    expect(mutate).toHaveBeenLastCalledWith({
-      variables: {
-        slug: 'product-1',
-        input: { description: '<p>Human draft</p>' },
-      },
-    });
+    expect(mutate).toHaveBeenLastCalledWith(saveRequest('<p>Human draft</p>', '<p>Accepted AI candidate</p>'));
     expect(result.current.form.isDirty()).toBe(false);
     expect(result.current.hasServerChange).toBe(false);
     expect(result.current.saveError).toBeNull();
@@ -148,6 +155,7 @@ describe('description form synchronization', () => {
     act(() => {
       saving = result.current.overwriteWithDraft();
     });
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     rerender({ slug: 'product-2' });
     expect(result.current.form.getValues().description).toBe(description);
     expect(result.current.hasServerChange).toBe(false);
@@ -182,12 +190,8 @@ describe('description form synchronization', () => {
       await act(async () => {
         await result.current.form.onSubmit(result.current.submit)();
       });
-      expect(mutate).toHaveBeenCalledWith({
-        variables: {
-          slug: 'product-1',
-          input: { description: editedDescription },
-        },
-      });
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
+      expect(mutate).toHaveBeenCalledWith(saveRequest(editedDescription, loadedDescription));
       expect(notifications.show).not.toHaveBeenCalled();
     }
   );
@@ -238,11 +242,13 @@ describe('description validation', () => {
     let complete!: (value: unknown) => void;
     mutate.mockReturnValueOnce(new Promise(resolve => (complete = resolve)));
     const onSubmit = vi.fn();
-    const { result, unmount } = renderHook(() => useEditProductDescription({ slug: 'product-1', onSubmit }));
+    const onSaved = vi.fn();
+    const { result, unmount } = renderHook(() => useEditProductDescription({ slug: 'product-1', onSubmit, onSaved }));
     let saving!: Promise<void>;
     act(() => {
       saving = result.current.submit({ description: '<p>기존 상품</p>' });
     });
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     unmount();
     await act(async () => {
       complete({
@@ -256,6 +262,7 @@ describe('description validation', () => {
     });
     expect(onSubmit).not.toHaveBeenCalled();
     expect(notifications.show).not.toHaveBeenCalled();
+    expect(onSaved).toHaveBeenCalledWith('product-1');
   });
 
   it('너무 큰 표는 직접 submit에서도 전송하지 않고 원문을 유지한다', async () => {
@@ -275,9 +282,8 @@ describe('description validation', () => {
     act(() => result.current.form.getInputProps('description').onChange(value));
     await act(async () => result.current.form.onSubmit(result.current.submit)());
 
-    expect(mutate).toHaveBeenCalledExactlyOnceWith({
-      variables: { slug: 'product-1', input: { description: '' } },
-    });
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
+    expect(mutate).toHaveBeenCalledExactlyOnceWith(saveRequest('', '<p>기존 소개</p>'));
   });
 
   it('기존 설명을 읽기 전에는 빈 편집 값을 전송하지 않는다', async () => {
@@ -307,15 +313,13 @@ describe('description validation', () => {
 
     act(() => result.current.form.getInputProps('description').onChange(emptyParagraph));
     await act(async () => result.current.form.onSubmit(result.current.submit)());
-    expect(result.current.saveError).toBe('저장 실패');
+    await waitFor(() => expect(result.current.saveError).toBe('저장 실패'));
     expect(result.current.form.getValues().description).toBe(emptyParagraph);
     expect(onSubmit).not.toHaveBeenCalled();
 
     await act(async () => result.current.form.onSubmit(result.current.submit)());
-    expect(mutate.mock.calls).toEqual([
-      [{ variables: { slug: 'product-1', input: { description: '' } } }],
-      [{ variables: { slug: 'product-1', input: { description: '' } } }],
-    ]);
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(mutate.mock.calls).toEqual([[saveRequest('', '<p>기존 소개</p>')], [saveRequest('', '<p>기존 소개</p>')]]);
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
@@ -325,9 +329,7 @@ describe('description validation', () => {
       description = null;
       const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
       await act(async () => result.current.submit({ description: draft }));
-      expect(mutate).toHaveBeenCalledExactlyOnceWith({
-        variables: { slug: 'product-1', input: { description: draft } },
-      });
+      expect(mutate).toHaveBeenCalledExactlyOnceWith(saveRequest(draft, null));
       expect(notifications.show).not.toHaveBeenCalled();
     }
   );

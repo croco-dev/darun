@@ -5,6 +5,8 @@ import {
   PostgresqlProductFeatureRepository,
   PostgresqlProductFeatureScreenshotRepository,
   PostgresqlProductDescriptionJobRepository,
+  PostgresqlProductDescriptionApplyStore,
+  PostgresqlProductDescriptionEvidenceAssembler,
   PostgresqlProductFlowRepository,
   PostgresqlProductLinkRepository,
   PostgresqlProductRepository,
@@ -12,6 +14,7 @@ import {
 } from '@darun/products-datasource';
 import {
   AddProductLink,
+  ApplyProductDescriptionCandidate,
   CreateProduct,
   EditProduct,
   GetAllProducts,
@@ -42,7 +45,7 @@ import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-da
 import { SearchableProduct, SearchProduct } from '@darun/search-domain';
 import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
 import { TranslationService, computeSourceHash } from '@darun/translation-domain';
-import { createAuthChecker, createServer } from '@darun/utils-apollo-server';
+import { createAuthChecker } from '@darun/utils-apollo-server';
 import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -51,7 +54,7 @@ import postgres, { type Sql } from 'postgres';
 import { buildSchemaSync } from 'type-graphql';
 import { Container } from 'typedi';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
@@ -60,6 +63,8 @@ import {
   type AllProductsOnProductListTableQuery,
   type AllProductsOnProductListTableQueryVariables,
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
+  EditProductOnEditProductDescriptionDocument,
+  TempProductBySlugOnEditProductDescriptionDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
 } from '../../../libs/__generated__/graphql';
@@ -70,6 +75,7 @@ import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRan
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
 import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
 import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
+import { createGraphQLDescriptionPrecondition } from '../src/app/graphqlDescriptionPrecondition';
 
 const { execute, graphql, print } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
@@ -483,7 +489,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   });
 
   describe('관리자 상품 목록의 양방향 페이지 경계', () => {
-    let server: ReturnType<typeof createServer>;
+    let server: ApolloServer;
     beforeEach(() => vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'product-pagination-test-secret'));
     beforeAll(async () => {
       const unused = undefined!;
@@ -579,34 +585,61 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     );
   });
 
-  describe('상품 기본 정보의 문자 수 경계와 공개 GraphQL 오류', () => {
+  describe('상품 편집 검증과 공개 GraphQL 오류', () => {
     const slugs: string[] = [];
-    let server: ReturnType<typeof createServer>;
+    let server: ApolloServer;
     const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
       ? Container.get(ProductContentSyncRegistrarToken)
       : undefined;
-    beforeAll(async () => {
-      Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
-      const repository = new PostgresqlProductRepository(db);
-      const resolver = new ProductCoreMutationResolver(
+    let holdRegistration: (() => Promise<void>) | undefined;
+    const run = async (
+      query: string,
+      variables: Record<string, unknown>,
+      target = server,
+      extensions?: Record<string, unknown>
+    ) => {
+      const result = await target.executeOperation(
+        { query, variables, extensions },
+        { contextValue: { getRoles: async () => ['admin'] } }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+      return result.body.singleResult;
+    };
+    const editingServer = (database: Drizzle) => {
+      const repository = new PostgresqlProductRepository(database);
+      const getProduct = new GetProduct(repository);
+      const mutations = new ProductCoreMutationResolver(
         new CreateProduct(repository),
         new EditProduct(repository),
         undefined as never,
-        new GetProduct(repository),
+        getProduct,
         undefined as never
       );
-      server = createServer({
-        options: {
+      const queries = Object.assign(Object.create(ProductQueryResolver.prototype), { getProductUseCase: getProduct });
+      return new ApolloServer({
+        schema: buildSchemaSync({
           resolvers: [ProductMutationResolver, ProductQueryResolver],
           authChecker: createAuthChecker(),
-          container: { get: () => resolver },
-        },
-        config: { playground: false },
+          container: { get: type => (type === ProductQueryResolver ? queries : mutations) },
+          skipCheck: true,
+        }),
+        formatError: (formatted, error) => formatServerError(formatted, error, false),
+        plugins: [createGraphQLDescriptionPrecondition()],
       });
+    };
+    beforeAll(async () => {
+      Container.set(ProductContentSyncRegistrarToken, {
+        register: async (...args: Parameters<typeof registerProductContentSync>) => {
+          await registerProductContentSync(...args);
+          await holdRegistration?.();
+        },
+      });
+      server = editingServer(db);
       await server.start();
     });
     afterEach(async () => {
       for (const slug of slugs.splice(0)) {
+        await writer`delete from product_description_jobs where product_id in (select id from products where slug = ${slug})`;
         await writer`delete from translation_jobs where entity_id in (select id from products where slug = ${slug})`;
         await writer`delete from product_content_sync_intents where product_id in (select id from products where slug = ${slug})`;
         await writer`delete from products where slug = ${slug}`;
@@ -617,6 +650,140 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       if (previousRegistrar) Container.set(ProductContentSyncRegistrarToken, previousRegistrar);
       else Container.remove(ProductContentSyncRegistrarToken);
     });
+
+    it.each(['manual', 'candidate'] as const)(
+      '%s 저장 이후 오래된 소개 초안을 거절하고 revision과 동기화 기록을 보존한다',
+      async firstWriter => {
+        const id = randomUUID().slice(0, 26);
+        const slug = `description-${id}`;
+        slugs.push(slug);
+        const original = '<p>Original introduction</p>';
+        const savedDescription = '<p>Newer introduction</p>';
+        await writer`insert into products (id, slug, name, summary, description, logo_url, published_at)
+          values (${id}, ${slug}, 'Description fixture', '', ${original}, '', now())`;
+        const mutation = print(EditProductOnEditProductDescriptionDocument);
+        const query = print(TempProductBySlugOnEditProductDescriptionDocument);
+        const readDescription = async (target = server) => {
+          const result = await run(query, { slug }, target);
+          expect(result.errors).toBeUndefined();
+          return (result.data?.tempProductBySlug as { description: string | null }).description;
+        };
+        const base = await readDescription();
+        expect(base).toBe(original);
+        const save = (description: string, expected: string | null, target = server) =>
+          run(
+            mutation,
+            {
+              slug,
+              input: { description },
+            },
+            target,
+            {
+              darunExpectedDescriptionHash:
+                expected === null ? null : createHash('sha256').update(expected).digest('hex'),
+            }
+          );
+        const staleDraft = '<p>Stale draft</p>';
+        let staleSave;
+
+        if (firstWriter === 'candidate') {
+          const candidateDb = drizzle(writer);
+          const evidence = await new PostgresqlProductDescriptionEvidenceAssembler(candidateDb).assemble(id);
+          const jobs = new PostgresqlProductDescriptionJobRepository(candidateDb);
+          const job = await jobs.createJob({ productId: id });
+          const lease = {
+            jobId: job.id,
+            leaseToken: id,
+            leaseUntil: new Date(Date.now() + 60_000),
+          };
+          await jobs.claimJobLease(lease);
+          await jobs.completeJobLease(job.id, lease.leaseToken, 'completed', {
+            candidateHtml: savedDescription,
+            evidenceHash: evidence.evidenceHash,
+            evidenceHashVersion: evidence.evidenceHashVersion,
+            baseDescriptionHash: evidence.baseDescriptionHash,
+          });
+          const apply = new ApplyProductDescriptionCandidate(new PostgresqlProductDescriptionApplyStore(candidateDb));
+          expect((await apply.execute({ jobId: job.id })).product.description).toBe(savedDescription);
+          staleSave = await save(staleDraft, base);
+        } else {
+          const applicationName = 'darun-description-competing-editor';
+          const secondConnection = await openFixtureConnection({
+            connect_timeout: 5,
+            connection: { application_name: applicationName },
+          });
+          const registration = Promise.withResolvers<void>();
+          const commit = Promise.withResolvers<void>();
+          let secondServer: ReturnType<typeof editingServer> | undefined;
+          let firstRequest: ReturnType<typeof save> | undefined;
+          let secondRequest: ReturnType<typeof save> | undefined;
+          try {
+            secondServer = editingServer(drizzle(secondConnection));
+            await secondServer.start();
+            const secondBase = await readDescription(secondServer);
+            expect(secondBase).toBe(original);
+            holdRegistration = () => {
+              registration.resolve();
+              return commit.promise;
+            };
+            firstRequest = save(savedDescription, base);
+            await Promise.race([
+              registration.promise,
+              firstRequest.then(result => {
+                throw new Error(`First save ended before registering sync: ${result.errors?.[0]?.message}`);
+              }),
+            ]);
+            secondRequest = save(staleDraft, secondBase, secondServer);
+            await expect
+              .poll(async () => {
+                const [row] = await writer`select wait_event_type from pg_stat_activity
+                  where application_name = ${applicationName}`;
+                return row?.wait_event_type;
+              })
+              .toBe('Lock');
+            commit.resolve();
+            const firstSave = await firstRequest;
+            expect(firstSave.errors).toBeUndefined();
+            expect(firstSave.data?.editProduct).toMatchObject({ product: { description: savedDescription } });
+            staleSave = await secondRequest;
+          } finally {
+            commit.resolve();
+            await Promise.allSettled([firstRequest, secondRequest]);
+            holdRegistration = undefined;
+            try {
+              await secondServer?.stop();
+            } finally {
+              await secondConnection.end({ timeout: 5 });
+            }
+          }
+        }
+
+        const product = () => writer`select description, content_revision from products where id = ${id}`;
+        const intents = () => writer`select kind, source_revision, status from product_content_sync_intents
+          where product_id = ${id} order by source_revision, kind`;
+        const jobs = () => writer`select id, status from translation_jobs where entity_id = ${id} order by id`;
+        expect(staleSave.errors?.[0]?.extensions?.code).toBe('DESCRIPTION_EDIT_CONFLICT');
+        expect(await product()).toEqual([{ description: savedDescription, content_revision: '1' }]);
+        expect(await intents()).toEqual([
+          { kind: 'search', source_revision: '1', status: 'pending' },
+          { kind: 'translation', source_revision: '1', status: 'pending' },
+        ]);
+        expect(await jobs()).toEqual([{ id: expect.any(String), status: 'pending' }]);
+        const malformed = await run(mutation, { slug, input: { description: staleDraft } }, server, {
+          darunExpectedDescriptionHash: { unexpected: true },
+        });
+        expect(malformed.errors?.[0]?.extensions?.code).toBe('INVALID_DESCRIPTION_EDIT_PRECONDITION');
+        expect(await product()).toEqual([{ description: savedDescription, content_revision: '1' }]);
+
+        const cleared = await save('', savedDescription);
+        expect(cleared.errors).toBeUndefined();
+        expect(cleared.data?.editProduct).toMatchObject({
+          product: { description: '' },
+        });
+        expect(await product()).toEqual([{ description: '', content_revision: '2' }]);
+      }
+    );
+
     it.each(['a', '한', '😀'])(
       '255개의 %s 문자를 저장하고 초과 입력은 원문·revision·intent를 보존한다',
       async character => {
@@ -624,14 +791,6 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         slugs.push(slug);
         const name = character.repeat(255);
         const summary = character.repeat(255);
-        const run = async (query: string, variables: Record<string, unknown>) => {
-          const result = await server.executeOperation(
-            { query, variables },
-            { contextValue: { getRoles: async () => ['admin'] } }
-          );
-          if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
-          return result.body.singleResult;
-        };
         const create =
           'mutation($input: CreateProductInput!) { createProduct(input: $input) { product { id name summary } } }';
         const edit =

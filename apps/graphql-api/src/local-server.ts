@@ -4,12 +4,13 @@ import { HeaderMap } from '@apollo/server';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { GetAccount } from '@darun/accounts-domain';
 import { createAuthChecker, createServer } from '@darun/utils-apollo-server';
-import { createSentryApolloLogPlugin } from '@darun/utils-sentry';
 import bodyParser from 'body-parser';
 import { GraphQLISODateTime } from 'type-graphql';
 import { Container } from 'typedi';
 import http from 'http';
 import { parse as urlParse } from 'url';
+import { createGraphQLDescriptionPrecondition } from './app/graphqlDescriptionPrecondition';
+import { createGraphQLDiagnostics } from './app/graphqlDiagnostics';
 import { resolvers } from './app/resolvers';
 import { createPostgresConnection } from './config/database';
 import { IS_LOCAL } from './config/environment';
@@ -64,7 +65,8 @@ async function bootstrap() {
     config: {
       playground: IS_LOCAL,
       plugins: [
-        createSentryApolloLogPlugin(),
+        createGraphQLDescriptionPrecondition(),
+        createGraphQLDiagnostics(),
         screenshotRegistrationPlugin,
         ApolloServerPluginDrainHttpServer({ httpServer }),
       ],

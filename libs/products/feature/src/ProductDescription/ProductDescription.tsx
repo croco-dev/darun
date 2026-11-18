@@ -8,7 +8,7 @@ import { useProductDescription } from './useProductDescription';
 
 type DOMPurify = typeof import('dompurify').default;
 
-export const ProductDescription = bind(useProductDescription, ({ description, loading, error, refetch }) => {
+export function SavedProductDescription({ description }: Readonly<{ description?: string | null }>) {
   const [domPurify, setDomPurify] = useState<DOMPurify | null>(null);
 
   useEffect(() => {
@@ -33,24 +33,6 @@ export const ProductDescription = bind(useProductDescription, ({ description, lo
     };
   }, [domPurify]);
 
-  if (loading) {
-    return <AdminLoadingState />;
-  }
-
-  if (error) {
-    return (
-      <AdminErrorState
-        title="설명을 불러오지 못했습니다."
-        error={error}
-        action={
-          <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
-            다시 시도
-          </Button>
-        }
-      />
-    );
-  }
-
   if (!description || !description.trim()) {
     return <p className="text-xs text-dark-500">설명이 없습니다.</p>;
   }
@@ -74,4 +56,57 @@ export const ProductDescription = bind(useProductDescription, ({ description, lo
       }}
     />
   );
-});
+}
+
+export function ProductDescriptionVerification({
+  pending,
+  error,
+  onRetry,
+}: Readonly<{ pending: boolean; error?: Error; onRetry: () => void }>) {
+  return (
+    <>
+      <output aria-atomic="true" className="block">
+        {pending && '최신 본문을 확인하는 중입니다.'}
+      </output>
+      {error && (
+        <AdminErrorState
+          title="최신 본문을 확인하지 못했습니다."
+          error={error}
+          action={
+            <Button type="button" variant="contained" color="secondary" onClick={onRetry}>
+              최신 본문 다시 불러오기
+            </Button>
+          }
+        />
+      )}
+    </>
+  );
+}
+
+export const ProductDescription = bind(
+  useProductDescription,
+  ({ description, loading, error, refetch, verificationError, verificationPending }) => {
+    if (loading) return <AdminLoadingState />;
+
+    if (error) {
+      return (
+        <AdminErrorState
+          title="설명을 불러오지 못했습니다."
+          error={error}
+          action={
+            <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
+              다시 시도
+            </Button>
+          }
+        />
+      );
+    }
+
+    return (
+      <>
+        <SavedProductDescription description={description} />
+        <ProductDescriptionVerification pending={verificationPending} error={verificationError} onRetry={refetch} />
+      </>
+    );
+  }
+);

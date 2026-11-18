@@ -3,7 +3,10 @@ import { ApolloProvider } from '@apollo/client/react';
 import { notifications } from '@mantine/notifications';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { webcrypto } from 'node:crypto';
 import { EditProductDescription } from '../EditProductDescription';
+
+vi.stubGlobal('crypto', webcrypto);
 
 const { upload } = vi.hoisted(() => ({ upload: vi.fn() }));
 vi.mock('@darun/utils-image-upload', () => ({

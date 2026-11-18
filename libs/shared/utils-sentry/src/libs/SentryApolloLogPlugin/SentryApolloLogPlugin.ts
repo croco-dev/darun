@@ -414,12 +414,21 @@ export const sentryRequestRedaction = {
   beforeSendTransaction: redactSentryRequestCredentials,
 };
 
-export const createSentryApolloLogPlugin = (): ApolloServerPlugin => ({
+export const createSentryApolloLogPlugin = ({
+  ignoredDomainErrorCodes = [],
+}: { ignoredDomainErrorCodes?: readonly string[] } = {}): ApolloServerPlugin => ({
   requestDidStart: async () => ({
     didEncounterErrors: async ctx => {
       if (!ctx.operation || !ctx.document) {
         return;
       }
+
+      const reportableErrors = ctx.errors.filter(error => {
+        const original = error.originalError;
+        const code = original && 'code' in original ? original.code : undefined;
+        return typeof code !== 'string' || !ignoredDomainErrorCodes.includes(code);
+      });
+      if (!reportableErrors.length) return;
 
       // Use Apollo's parsed document, not variable names or field aliases supplied by clients.
       const redacted = redactSensitiveArguments(ctx.document, ctx.request.variables);
@@ -428,7 +437,7 @@ export const createSentryApolloLogPlugin = (): ApolloServerPlugin => ({
         redacted.propertyNames
       );
 
-      for (const err of ctx.errors) {
+      for (const err of reportableErrors) {
         // Add scoped report details and send to Sentry
         Sentry.withScope(scope => {
           // Annotate whether failing operation was query/mutation/subscription

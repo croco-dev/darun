@@ -29,17 +29,19 @@ describe('useGenerateProductDescriptionButton', () => {
   let generateMutateFn: ReturnType<typeof vi.fn>;
   let applyMutateFn: ReturnType<typeof vi.fn>;
   let lazyQueryFn: ReturnType<typeof vi.fn>;
-  let refetchQueriesFn: ReturnType<typeof vi.fn>;
+  let writeQuery: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     generateMutateFn = vi.fn();
     applyMutateFn = vi.fn();
     lazyQueryFn = vi.fn();
-    refetchQueriesFn = vi.fn().mockResolvedValue([]);
+    writeQuery = vi.fn();
 
     vi.mocked(useApolloClient).mockReturnValue({
-      refetchQueries: refetchQueriesFn,
+      query: vi.fn().mockResolvedValue({}),
+      readQuery: vi.fn(),
+      writeQuery,
     } as unknown as ReturnType<typeof useApolloClient>);
 
     vi.mocked(useMutation).mockImplementation((document: unknown) => {
@@ -128,7 +130,7 @@ describe('useGenerateProductDescriptionButton', () => {
       message: 'AI 소개를 생성했어요.',
     });
     expect(result.current.isPreviewOpen).toBe(true);
-    expect(refetchQueriesFn).not.toHaveBeenCalled();
+    expect(writeQuery).not.toHaveBeenCalled();
   });
 
   it('handles immediate failure when job status is failed', async () => {
@@ -376,7 +378,17 @@ describe('useGenerateProductDescriptionButton', () => {
     );
     expect(result.current.isPreviewOpen).toBe(false);
     expect(result.current.candidateJob).toBeNull();
-    expect(refetchQueriesFn).toHaveBeenCalled();
+    expect(writeQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: { slug: defaultSlug },
+        data: {
+          tempProductBySlug: expect.objectContaining({
+            id: 'prod-1',
+            description: '<p>적용할 내용</p>',
+          }),
+        },
+      })
+    );
   });
 
   it('handles error when applying candidate fails', async () => {

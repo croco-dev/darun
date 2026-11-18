@@ -3,6 +3,8 @@ import { createDomainError, type DomainError } from '@darun/utils-error';
 export enum ProductDescriptionError {
   EvidenceReadFailed = 'EVIDENCE_READ_FAILED',
   StaleCandidate = 'STALE_CANDIDATE',
+  EditConflict = 'DESCRIPTION_EDIT_CONFLICT',
+  InvalidEditPrecondition = 'INVALID_DESCRIPTION_EDIT_PRECONDITION',
 }
 
 /**
@@ -30,3 +32,9 @@ export const productDescriptionStaleCandidate = (): DomainError =>
     ProductDescriptionError.StaleCandidate,
     '제품 정보가 생성 이후 변경되어 이 초안을 적용할 수 없습니다. 다시 생성해 주세요.'
   );
+
+export const productDescriptionEditConflict = (): DomainError =>
+  createDomainError(ProductDescriptionError.EditConflict, '편집을 시작한 뒤 저장된 소개가 변경되었습니다.');
+
+export const productDescriptionInvalidEditPrecondition = (): DomainError =>
+  createDomainError(ProductDescriptionError.InvalidEditPrecondition, '상품 소개의 편집 기준이 올바르지 않습니다.');

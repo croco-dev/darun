@@ -7,11 +7,10 @@ import {
   ApplyProductDescriptionCandidateDocument,
   GenerateProductDescriptionDocument,
   GetProductDescriptionJobDocument,
-  TempProductBySlugOnEditProductDescriptionDocument,
-  TempProductBySlugOnProductDescriptionDocument,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef, useState } from 'react';
+import { beginProductDescriptionSave } from '../ProductDescription/useSavedProductDescription';
 import { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } from '../productDescriptionRequests';
 
 gql(`
@@ -87,7 +86,8 @@ export function useGenerateProductDescriptionButton(
 ) {
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
-  const [candidateJob, setCandidateJob] = useState<CandidateJobInfo | null>(null);
+  const [candidate, setCandidate] = useState<{ job: CandidateJobInfo; slug: string } | null>(null);
+  const candidateJob = candidate?.job ?? null;
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [jobIdInput, setJobIdInput] = useState('');
   const [reopening, setReopening] = useState(false);
@@ -99,21 +99,12 @@ export function useGenerateProductDescriptionButton(
   const generateBaseAddressRef = useRef<{ jobId?: string; slug: string } | null>(null);
   const reopenRequestRef = useRef(0);
   const apolloClient = useApolloClient();
-  const [generateDescriptionMutation] = useMutation(GenerateProductDescriptionDocument);
-  const [applyCandidateMutation] = useMutation(ApplyProductDescriptionCandidateDocument);
+  // Generation only creates a candidate. Its response can carry an older saved description.
+  const [generateDescriptionMutation] = useMutation(GenerateProductDescriptionDocument, { fetchPolicy: 'no-cache' });
+  const [applyCandidateMutation] = useMutation(ApplyProductDescriptionCandidateDocument, { fetchPolicy: 'no-cache' });
   const [getProductDescriptionJob] = useLazyQuery(GetProductDescriptionJobDocument, {
     fetchPolicy: 'network-only',
   });
-
-  const refetchProductQueries = async () => {
-    try {
-      await apolloClient.refetchQueries({
-        include: [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument],
-      });
-    } catch (refetchErr) {
-      console.warn('[useGenerateProductDescriptionButton] Refetch queries failed:', refetchErr);
-    }
-  };
 
   const openPreview = () => setIsPreviewOpen(true);
   const closePreview = () => setIsPreviewOpen(false);
@@ -126,13 +117,16 @@ export function useGenerateProductDescriptionButton(
     candidateHtml?: string | null;
     message?: string | null;
   }) => {
-    setCandidateJob({
-      id: job.id,
-      productId: job.productId ?? null,
-      status: job.status ?? null,
-      appliedAt: job.appliedAt ?? null,
-      candidateHtml: job.candidateHtml,
-      message: job.message,
+    setCandidate({
+      slug,
+      job: {
+        id: job.id,
+        productId: job.productId ?? null,
+        status: job.status ?? null,
+        appliedAt: job.appliedAt ?? null,
+        candidateHtml: job.candidateHtml,
+        message: job.message,
+      },
     });
   };
 
@@ -232,7 +226,7 @@ export function useGenerateProductDescriptionButton(
       setJobIdInput(descriptionJobId);
       setReopening(true);
       setStaleApplyNotice(null);
-      setCandidateJob(null);
+      setCandidate(null);
       setIsPreviewOpen(false);
       try {
         while (reopenRequestRef.current === requestId) {
@@ -243,7 +237,7 @@ export function useGenerateProductDescriptionButton(
           if (job.productId !== response.data?.tempProductBySlug?.id)
             throw new Error('다른 제품의 소개 후보입니다. 해당 제품에서 다시 열어 주세요.');
           if (job.status === 'completed' && job.candidateHtml) {
-            setCandidateJob(job);
+            setCandidate({ job, slug });
             setIsPreviewOpen(true);
             return;
           }
@@ -275,17 +269,17 @@ export function useGenerateProductDescriptionButton(
   }, [descriptionJobId, slug, getProductDescriptionJob]);
 
   const handleApply = async () => {
-    if (!candidateJob || isApplyingRef.current || applying) return;
+    if (!candidate || isApplyingRef.current || applying) return;
     const applyRequest = ++applyRequestRef.current;
 
     try {
       isApplyingRef.current = true;
       setApplying(true);
 
-      const result = await applyCandidateMutation({
-        variables: { jobId: candidateJob.id },
-      });
+      const confirmSave = beginProductDescriptionSave(apolloClient, candidate.slug);
+      const result = await applyCandidateMutation({ variables: { jobId: candidate.job.id } });
       const applied = result.data?.applyProductDescriptionCandidate;
+      if (applied?.product.id && applied.product.id === candidate.job.productId) confirmSave(applied.product);
       if (applied?.product.id && !applied.alreadyApplied) onSaved?.(applied.product.id);
       if (applyRequestRef.current !== applyRequest) return;
 
@@ -299,9 +293,8 @@ export function useGenerateProductDescriptionButton(
           color: 'teal',
         });
         setIsPreviewOpen(false);
-        setCandidateJob(null);
+        setCandidate(null);
         setStaleApplyNotice(null);
-        await refetchProductQueries();
       } else {
         notifications.show({
           title: '적용 실패',

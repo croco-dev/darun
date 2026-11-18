@@ -59,6 +59,7 @@ export {
 export {
   ProductDescriptionError,
   productDescriptionEvidenceReadFailed,
+  productDescriptionInvalidEditPrecondition,
   productDescriptionStaleCandidate,
 } from './errors/productDescriptionError';
 export type { ProductFeatureRepository } from './repositories/ProductFeatureRepository';

@@ -1,8 +1,7 @@
 import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
 import { TempProductBySlugOnProductDescriptionDocument } from '@darun/provider-graphql';
+import { useSavedProductDescription } from './useSavedProductDescription';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnProductDescription($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -17,13 +16,16 @@ type ProductDescriptionProps = {
 };
 
 export function useProductDescription({ slug }: ProductDescriptionProps) {
-  const { data, loading, error, refetch } = useQuery(TempProductBySlugOnProductDescriptionDocument, {
-    variables: { slug },
-  });
+  const { data, loading, error, refetch, verificationError, verificationPending } = useSavedProductDescription(
+    TempProductBySlugOnProductDescriptionDocument,
+    slug
+  );
   return {
     description: data?.tempProductBySlug?.description,
     loading,
     error,
     refetch,
+    verificationError,
+    verificationPending,
   };
 }

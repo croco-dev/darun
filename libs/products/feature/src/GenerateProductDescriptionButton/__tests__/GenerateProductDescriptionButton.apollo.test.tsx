@@ -1,5 +1,6 @@
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
+import { TempProductBySlugOnEditProductDescriptionDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { useEffect, useState } from 'react';
@@ -18,6 +19,7 @@ interface Request {
 }
 
 interface Fixture {
+  client: ApolloClient;
   unmount: () => void;
   remount: (address: string) => void;
   jobChanges: string[];
@@ -160,6 +162,7 @@ function setup(address = '/products/sample?descriptionJobId=A'): Fixture {
     );
   let view = mount();
   return {
+    client,
     unmount: () => view.unmount(),
     remount(address: string) {
       window.history.replaceState(null, '', address);
@@ -1080,6 +1083,24 @@ describe('candidate reopen authority through the shared component and real Apoll
       expectCandidate('manual-recovery');
     }
   );
+
+  it('a candidate retained on another product route changes only its own saved introduction', async () => {
+    const fixture = setup();
+    const query = TempProductBySlugOnEditProductDescriptionDocument;
+    const other = { __typename: 'Product', id: 'product-2', description: '<p>다른 제품 소개</p>' };
+    fixture.client.writeQuery({ query, variables: { slug: 'other' }, data: { tempProductBySlug: other } });
+    await flush(() => fixture.take('GetProductDescriptionJob', 'A').resolve(lookup('A')));
+    await navigate('/products/other');
+    expectCandidate('A');
+
+    const apply = await startApply(fixture, 'A');
+    await flush(() => finishApply(apply, 'success'));
+    expect(fixture.client.readQuery({ query, variables: { slug: 'other' } })?.tempProductBySlug).toEqual(other);
+    expect(fixture.client.readQuery({ query, variables: { slug: 'sample' } })?.tempProductBySlug).toMatchObject({
+      id: 'product-1',
+      description: '<p>A 적용된 소개</p>',
+    });
+  });
 
   it('ignores old A stale failure after switching products with another candidate ID', async () => {
     const fixture = setup();

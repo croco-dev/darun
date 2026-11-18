@@ -1,0 +1,159 @@
+'use client';
+
+import { makeVar, type ApolloClient, type ReactiveVar } from '@apollo/client';
+import { useQuery, useReactiveVar } from '@apollo/client/react';
+import {
+  TempProductBySlugOnEditProductDescriptionDocument,
+  type TempProductBySlugOnEditProductDescriptionQuery,
+} from '@darun/provider-graphql';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+type DescriptionResult = TempProductBySlugOnEditProductDescriptionQuery;
+type DescriptionProduct = NonNullable<DescriptionResult['tempProductBySlug']>;
+type DescriptionQuery = typeof TempProductBySlugOnEditProductDescriptionDocument;
+type DescriptionRead = Promise<DescriptionResult | undefined>;
+type ReadPurpose = 'load' | 'conflict' | 'verify';
+type Verification = { status: 'loading' } | { status: 'failed'; error: Error };
+type DescriptionRequests = {
+  publication?: { sequence: number; source: 'read' | 'save' };
+  pending?: DescriptionRead;
+  verification: ReactiveVar<Verification | undefined>;
+};
+
+const requestsByClient = new WeakMap<ApolloClient, Map<string, DescriptionRequests>>();
+let requestCount = 0;
+
+function requestsFor(client: ApolloClient, slug: string) {
+  let products = requestsByClient.get(client);
+  if (!products) {
+    products = new Map();
+    requestsByClient.set(client, products);
+  }
+  let requests = products.get(slug);
+  if (!requests) {
+    requests = { verification: makeVar<Verification | undefined>(undefined) };
+    products.set(slug, requests);
+  }
+  return requests;
+}
+
+function descriptionReadError(error: unknown) {
+  return error instanceof Error ? error : new Error('설명을 불러오지 못했습니다.');
+}
+
+export function beginProductDescriptionSave(client: ApolloClient, slug: string) {
+  const requests = requestsFor(client, slug);
+  const request = ++requestCount;
+  const query = TempProductBySlugOnEditProductDescriptionDocument;
+  const variables = { slug };
+  return (product: DescriptionProduct) => {
+    const current = client.readQuery({ query, variables })?.tempProductBySlug;
+    const observedDuringSave = requests.publication && requests.publication.sequence > request;
+    const differentProduct = current?.id !== product.id;
+    const disagrees = differentProduct || current?.description !== product.description;
+    if ((current && differentProduct) || (observedDuringSave && disagrees)) {
+      // Request timing alone cannot establish which of two different responses reflects the latest commit.
+      requests.verification({ status: 'loading' });
+      void readSavedProductDescription(client, slug, query, 'verify').catch(() => {});
+      return current?.id === product.id ? current : product;
+    }
+    requests.pending = undefined;
+    requests.publication = { sequence: ++requestCount, source: 'save' };
+    const savedProduct = { ...product, __typename: 'Product' };
+    client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
+    if (requests.verification()?.status === 'failed') requests.verification({ status: 'loading' });
+    // A different administrator can save between this commit and the arrival of its response.
+    void readSavedProductDescription(client, slug, query, 'verify').catch(() => {});
+    return product;
+  };
+}
+
+export function readSavedProductDescription(
+  client: ApolloClient,
+  slug: string,
+  query: DescriptionQuery,
+  purpose: ReadPurpose = 'load'
+) {
+  const requests = requestsFor(client, slug);
+  if (requests.pending && purpose === 'load') return requests.pending;
+
+  const request = ++requestCount;
+  const variables = { slug };
+  const supersedingResult = async () => {
+    if (purpose !== 'conflict') return undefined;
+    if (requests.pending) await requests.pending;
+    const publication = requests.publication;
+    if (!publication || publication.sequence <= request) return undefined;
+    if (publication.source === 'save') {
+      // The delayed read might precede or follow the actual commit. Read again after its acknowledgement.
+      return readSavedProductDescription(client, slug, query, 'conflict');
+    }
+    return client.readQuery({ query, variables }) ?? undefined;
+  };
+  const read: DescriptionRead = client
+    .query({ query, variables, fetchPolicy: 'no-cache', context: { queryDeduplication: false } })
+    .then(
+      ({ data }) => {
+        // A confirmed save or an independent conflict read supersedes older requests for this slug.
+        if (requests.pending !== read) return supersedingResult();
+        if (data) {
+          const sequence = ++requestCount;
+          requests.publication = { sequence, source: 'read' };
+          client.writeQuery({ query, variables, data });
+          requests.verification(undefined);
+        }
+        return data;
+      },
+      (error: unknown) => {
+        if (requests.pending !== read) return supersedingResult();
+        if (purpose === 'verify' || requests.verification()?.status === 'loading') {
+          requests.verification({ status: 'failed', error: descriptionReadError(error) });
+        }
+        throw error;
+      }
+    )
+    .finally(() => {
+      if (requests.pending === read) requests.pending = undefined;
+    });
+  requests.pending = read;
+  return read;
+}
+
+export function useSavedProductDescription(query: DescriptionQuery, slug: string) {
+  const { client, data, error: cacheError } = useQuery(query, { variables: { slug }, fetchPolicy: 'cache-only' });
+  const verification = useReactiveVar(requestsFor(client, slug).verification);
+  const [failure, setFailure] = useState<{ slug: string; error: Error }>();
+  const latestAttempt = useRef(0);
+
+  const load = useCallback(async () => {
+    const attempt = ++latestAttempt.current;
+    try {
+      await readSavedProductDescription(client, slug, query);
+    } catch (error) {
+      if (attempt === latestAttempt.current) {
+        setFailure({ slug, error: descriptionReadError(error) });
+      }
+    }
+  }, [client, slug, query]);
+
+  useEffect(() => {
+    if (!data && !cacheError) void load();
+  }, [data, cacheError, load]);
+
+  const verificationError = verification?.status === 'failed' ? verification.error : undefined;
+  const error = cacheError ?? (!data && failure?.slug === slug ? failure.error : undefined);
+  const refetch = () => {
+    setFailure(undefined);
+    if (verification?.status === 'failed') requestsFor(client, slug).verification({ status: 'loading' });
+    return load();
+  };
+  return {
+    client,
+    data,
+    error,
+    verificationError,
+    loading: !data && !error && !verificationError,
+    verificationPending: verification?.status === 'loading',
+    refetch,
+  };
+}

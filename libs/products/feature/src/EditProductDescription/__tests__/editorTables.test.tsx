@@ -2,7 +2,10 @@ import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/cli
 import { ApolloProvider } from '@apollo/client/react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { webcrypto } from 'node:crypto';
 import { EditProductDescription } from '../EditProductDescription';
+
+vi.stubGlobal('crypto', webcrypto);
 
 vi.mock('@darun/utils-image-upload', () => ({
   useImageUpload: () => ({ upload: vi.fn() }),
