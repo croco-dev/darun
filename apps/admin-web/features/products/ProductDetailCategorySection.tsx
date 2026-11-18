@@ -5,7 +5,6 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import {
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
-  ProductAlternativeManagementDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
 } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
@@ -18,6 +17,7 @@ import {
   AdminSectionHeader,
 } from '@darun/ui-admin';
 import { useEffect, useRef, useState } from 'react';
+import { refreshProductAlternativeManagement } from './ProductDetailAlternativeSection/refreshProductAlternativeManagement';
 
 gql`
   query AdminProductCategorySelectionOnProductDetailCategorySection($slug: String!) {
@@ -105,7 +105,7 @@ export function ProductDetailCategorySection({ slug }: { readonly slug: string }
       if (!result) throw new Error('Missing category update result');
       setDraft(null);
       setSaved(true);
-      void client.refetchQueries({ include: [ProductAlternativeManagementDocument] }).catch(() => {});
+      void refreshProductAlternativeManagement(client, slug).catch(() => {});
     } catch (cause) {
       if (
         CombinedGraphQLErrors.is(cause) &&
