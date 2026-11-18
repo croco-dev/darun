@@ -1,6 +1,6 @@
 'use client';
 
-import { NewProductLinkForm, ProductLinkRoleField } from '@darun/products-feature';
+import { NewProductLinkForm, ProductLinkRoleField, productLinkIconOptions } from '@darun/products-feature';
 import { Button } from '@darun/ui';
 import { AdminField, AdminInput, AdminSelect, AdminActions } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
@@ -44,7 +44,7 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
         <AdminField label="아이콘" error={form.errors.iconUrl}>
           <AdminSelect disabled={loading} key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
             <option value="">아이콘을 선택해 주세요</option>
-            {iconData.map(icon => (
+            {productLinkIconOptions.map(icon => (
               <option key={icon.value} value={icon.value}>
                 {icon.label}
               </option>
@@ -79,22 +79,3 @@ export const NewProductLinkSection = ({ productSlug }: NewProductLinkSectionProp
     )}
   </NewProductLinkForm>
 );
-
-const iconData = [
-  {
-    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
-    label: '지구본 (흰색)',
-  },
-  {
-    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/hdo1rx06frvuhf5q0gio.svg',
-    label: '인스타그램 (그레이)',
-  },
-  {
-    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/i9ea1d250oskdzvu7iby.svg',
-    label: 'X(Twitter) (그레이)',
-  },
-  {
-    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304776/images/icons/links/kiezpv3buqv7w8xajhw4.svg',
-    label: 'GitHub (검정)',
-  },
-];

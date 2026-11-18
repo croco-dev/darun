@@ -37,6 +37,14 @@ for (const [locale, width, groupName, labels] of [
 ] as const) {
   test(`${locale} product links use the designated link and role label`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
+    await page.route(
+      'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
+      route =>
+        route.fulfill({
+          contentType: 'image/svg+xml',
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"><circle cx="11" cy="11" r="8" fill="white"/></svg>',
+        })
+    );
     const errors: string[] = [];
     const unapprovedIconRequests: string[] = [];
     page.on('request', request => {
@@ -53,6 +61,9 @@ for (const [locale, width, groupName, labels] of [
     await expect(links).toHaveText([...labels]);
     await expect(links.first()).toHaveAttribute('href', 'https://example.com/docs');
     await expect(links.first().locator('span').first()).toHaveClass(/bg-dark-900/);
+    const globe = links.first().locator('img');
+    await expect(globe).toBeVisible();
+    await expect(globe.locator('..')).toHaveCSS('background-color', 'rgb(17, 17, 17)');
     await expect(links.nth(1).locator('img')).toHaveCount(0);
     await expect(links.nth(2).locator('img')).toHaveAttribute('src', '/images/default-product-icon.svg');
     await expect(links.nth(1).locator('span').first()).toHaveClass(/bg-white/);

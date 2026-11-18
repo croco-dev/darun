@@ -1419,6 +1419,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         register: registerProductContentSync,
       });
       try {
+        await writer`update product_links set icon_url = 'https://example.com/a-new.svg' where id = 'a-new'`;
         const vars = {
           id: 'a-new',
           input: { role: 'documentation', makePrimary: true },
@@ -1434,9 +1435,21 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           select l.kind, l.source_revision, p.content_revision
           from product_content_sync_intents l join products p on l.product_id = p.id
           where p.id = 'link-parent-a' order by l.source_revision`;
+        const readMetadata = () =>
+          writer`select title, link, display_link, icon_url from product_links where id = 'a-new'`;
+        const originalMetadata = [
+          {
+            title: 'a-new',
+            link: 'https://example.com/a-new',
+            display_link: 'a-new',
+            icon_url: 'https://example.com/a-new.svg',
+          },
+        ];
         expect((await run(update, { ...vars, input: { role: 'documentation' } })).errors).toBeUndefined();
+        expect(await readMetadata()).toEqual(originalMetadata);
         expect(await loadIntents()).toEqual([{ kind: 'search', source_revision: '1', content_revision: '1' }]);
         expect((await run(update, { ...vars, input: { makePrimary: true } })).errors).toBeUndefined();
+        expect(await readMetadata()).toEqual(originalMetadata);
         expect(await loadIntents()).toEqual([
           { kind: 'search', source_revision: '1', content_revision: '2' },
           { kind: 'search', source_revision: '2', content_revision: '2' },
@@ -1514,6 +1527,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     });
 
     it('서로 다른 요청이 대표를 바꿔도 대표는 하나이며 동기화 실패 시 기존 대표와 역할을 보존한다', async () => {
+      await writer`update product_links set is_designated_primary = true where id = 'b-new'`;
       const writeLink = new UpdateProductLink(new PostgresqlProductLinkRepository(drizzle(writer)));
       const readLink = new UpdateProductLink(new PostgresqlProductLinkRepository(db));
       await Promise.all([
@@ -1531,8 +1545,10 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       const rows = await writer`select id, role, is_designated_primary from product_links order by id`;
       expect(rows).toHaveLength(6);
       const designated = rows.filter(row => row.is_designated_primary);
-      expect(designated).toHaveLength(1);
-      expect(['a-new', 'a-tie-z']).toContain(designated[0].id);
+      expect(designated).toContainEqual({ id: 'b-new', role: null, is_designated_primary: true });
+      const designatedA = designated.filter(row => row.id !== 'b-new');
+      expect(designatedA).toHaveLength(1);
+      expect(['a-new', 'a-tie-z']).toContain(designatedA[0].id);
       await expect(
         writer`update product_links set is_designated_primary = true where id = 'a-tie-a'`
       ).rejects.toMatchObject({ code: '23505' });

@@ -68,4 +68,17 @@ describe('실제 Mantine 상품 링크 폼 검증', () => {
     expect(mutate).toHaveBeenCalledTimes(2);
     for (const [request] of mutate.mock.calls) expect(request.variables.input.link).toBe(link);
   });
+
+  it('사용자 지정 이름을 비워도 역할, 주소, 아이콘으로 새 링크를 등록한다', async () => {
+    const { result } = renderHook(useForms);
+    act(() => result.current.create.form.setValues({ ...values, title: '', role: 'download' }));
+    await act(async () => result.current.create.form.onSubmit(result.current.create.submit)());
+
+    expect(mutate).toHaveBeenCalledExactlyOnceWith({
+      variables: {
+        slug: 'test',
+        input: { ...values, title: '', role: 'download' },
+      },
+    });
+  });
 });

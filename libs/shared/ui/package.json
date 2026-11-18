@@ -8,6 +8,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./icons": "./src/components/icons.tsx",
+    "./image-origins": {
+      "types": "./image-origins.d.cts",
+      "default": "./image-origins.cjs"
+    },
     "./lib/utils": "./src/lib/utils.ts"
   },
   "scripts": {

@@ -1,3 +1,5 @@
+import { darunImageRemotePatterns } from '@darun/ui/image-origins';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
@@ -10,29 +12,12 @@ const nextConfig = {
       : {}),
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        port: '',
-      },
-      {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-        port: '',
-      },
-    ],
+    remotePatterns: darunImageRemotePatterns,
   },
   redirects: () => [],
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.externals = [
-        ...(config.externals || []),
-        'vitest',
-        'jsdom',
-        '@vitest/runner',
-        '@vitest/utils',
-      ];
+      config.externals = [...(config.externals || []), 'vitest', 'jsdom', '@vitest/runner', '@vitest/utils'];
     }
     return config;
   },

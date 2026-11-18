@@ -1,6 +1,11 @@
 'use client';
 
-import { getProductLinkIconSource, getProductLinkLabel, orderPublicProductLinks } from '@darun/products-feature';
+import {
+  getProductLinkIconSource,
+  getProductLinkLabel,
+  orderPublicProductLinks,
+  productLinkIconNeedsDarkBackground,
+} from '@darun/products-feature';
 import { Button, ExternalLink, Globe, Link2 } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
@@ -67,7 +72,11 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
                 ) : (
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md p-0.5 shadow-2xs ${
-                      isPrimary ? 'border border-white/20 bg-white' : 'border border-dark-150/70 bg-surface-100'
+                      productLinkIconNeedsDarkBackground(iconSrc)
+                        ? 'border border-dark-800 bg-dark-900'
+                        : isPrimary
+                          ? 'border border-white/20 bg-white'
+                          : 'border border-dark-150/70 bg-surface-100'
                     }`}
                   >
                     <Image

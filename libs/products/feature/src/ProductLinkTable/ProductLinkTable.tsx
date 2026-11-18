@@ -7,7 +7,12 @@ import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-a
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
-import { getProductLinkIconSource, getProductLinkLabel, productLinkRoleLabels } from '../productLinkPresentation';
+import {
+  getProductLinkIconSource,
+  getProductLinkLabel,
+  productLinkIconNeedsDarkBackground,
+  productLinkRoleLabels,
+} from '../productLinkPresentation';
 import { useProductLinkTable } from './useProductLinkTable';
 
 gql`
@@ -47,7 +52,10 @@ function LinkIcon({ iconUrl, role, isPrimary }: Pick<EditProductLinkItemFragment
       referrerPolicy="no-referrer"
       loading="lazy"
       onError={() => setHasError(true)}
-      className="h-6 w-6 object-contain"
+      className={cn(
+        'h-6 w-6 object-contain',
+        productLinkIconNeedsDarkBackground(src) && 'rounded-md bg-dark-900 p-0.5'
+      )}
     />
   );
 }

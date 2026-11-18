@@ -1,4 +1,28 @@
 import type { ProductLinkRole } from '@darun/provider-graphql';
+import { isDarunImageRemoteUrl } from '@darun/ui/image-origins';
+
+const whiteGlobeUrl =
+  'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg';
+
+export const productLinkIconOptions = [
+  { value: whiteGlobeUrl, label: '지구본 (흰색)' },
+  {
+    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/hdo1rx06frvuhf5q0gio.svg',
+    label: '인스타그램 (그레이)',
+  },
+  {
+    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/i9ea1d250oskdzvu7iby.svg',
+    label: 'X(Twitter) (그레이)',
+  },
+  {
+    value: 'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304776/images/icons/links/kiezpv3buqv7w8xajhw4.svg',
+    label: 'GitHub (검정)',
+  },
+];
+
+export function productLinkIconNeedsDarkBackground(src: string) {
+  return src === whiteGlobeUrl;
+}
 
 export const productLinkRoleLabels = {
   official: { ko: '공식 사이트', en: 'Official website' },
@@ -35,14 +59,7 @@ export function getProductLinkIconSource(iconUrl: string | null | undefined) {
       return url.pathname + url.search;
     }
     // These images load directly in the browser. Use the apps' configured image origins.
-    if (
-      url.protocol === 'https:' &&
-      !url.username &&
-      !url.password &&
-      (url.origin === 'https://res.cloudinary.com' || url.origin === 'https://via.placeholder.com')
-    ) {
-      return url.href;
-    }
+    if (isDarunImageRemoteUrl(url)) return url.href;
   } catch {
     // Fall back for malformed persisted icon URLs.
   }

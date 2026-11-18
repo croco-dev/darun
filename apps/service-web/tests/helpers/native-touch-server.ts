@@ -69,7 +69,8 @@ const productWithDesignatedLink = {
       title: '',
       link: 'https://example.com/docs',
       displayLink: '',
-      iconUrl: '',
+      iconUrl:
+        'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
       isPrimary: true,
       role: 'documentation',
     },

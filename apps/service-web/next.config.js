@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+const { darunImageRemotePatterns } = require('@darun/ui/image-origins');
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.BUNDLE_ANALYZE === 'true',
 });
@@ -19,18 +20,7 @@ const nextConfig = {
     return config;
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        port: '',
-      },
-      {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-        port: '',
-      },
-    ],
+    remotePatterns: darunImageRemotePatterns,
   },
   experimental: {
     viewTransition: true,

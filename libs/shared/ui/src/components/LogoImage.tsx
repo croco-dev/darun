@@ -2,6 +2,7 @@
 
 import Image, { type ImageProps } from 'next/image';
 import { useState } from 'react';
+import { isDarunImageRemoteUrl } from '../../image-origins.cjs';
 
 type LogoImageProps = Pick<ImageProps, 'alt' | 'width' | 'height' | 'className' | 'aria-hidden'> & {
   src?: string | null;
@@ -11,15 +12,7 @@ type LogoImageProps = Pick<ImageProps, 'alt' | 'width' | 'height' | 'className' 
 function canOptimizeLogo(src: string): boolean {
   if (src.startsWith('/') && !src.startsWith('//')) return true;
   try {
-    const url = new URL(src);
-    // Match the existing service/admin remotePatterns without admitting other hosts to the optimizer.
-    return (
-      url.protocol === 'https:' &&
-      url.port === '' &&
-      !url.username &&
-      !url.password &&
-      (url.hostname === 'res.cloudinary.com' || url.hostname === 'via.placeholder.com')
-    );
+    return isDarunImageRemoteUrl(new URL(src));
   } catch {
     return false;
   }
