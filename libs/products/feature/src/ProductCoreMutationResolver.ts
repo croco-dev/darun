@@ -1,5 +1,5 @@
 import { CreateProduct, EditProduct, GetProduct, GetProductTags, UpdateProductTag } from '@darun/products-domain';
-import { productNotFound } from '@darun/products-domain';
+import { productDescriptionInvalidEditPrecondition, productNotFound } from '@darun/products-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';
 import { CreateProductInput } from './graphs/CreateProduct';
@@ -90,8 +90,15 @@ export class ProductCoreMutationResolver {
   async editProduct(
     @Arg('slug') slug: string,
     @Arg('input') input: EditProductInput,
-    @Ctx() context?: { expectedDescriptionHash?: string | null }
+    @Ctx() context?: { expectedDescriptionHash?: unknown }
   ): Promise<EditProductPayload> {
+    const expectedDescriptionHash = input.description === undefined ? undefined : context?.expectedDescriptionHash;
+    if (
+      expectedDescriptionHash != null &&
+      (typeof expectedDescriptionHash !== 'string' || !/^[0-9a-f]{64}$/.test(expectedDescriptionHash))
+    ) {
+      throw productDescriptionInvalidEditPrecondition();
+    }
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
@@ -101,7 +108,7 @@ export class ProductCoreMutationResolver {
     const updatedProduct = await this.editProductUseCase.execute({
       ...input,
       id: product.id,
-      expectedDescriptionHash: context?.expectedDescriptionHash,
+      expectedDescriptionHash,
     });
 
     return {

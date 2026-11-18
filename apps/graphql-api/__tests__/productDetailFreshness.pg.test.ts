@@ -765,7 +765,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         const malformed = await run(mutation, { slug, input: { description: staleDraft } }, server, {
           darunExpectedDescriptionHash: { unexpected: true },
         });
-        expect(malformed.errors?.[0]?.extensions?.code).toBe('BAD_USER_INPUT');
+        expect(malformed.errors?.[0]?.extensions?.code).toBe('INVALID_DESCRIPTION_EDIT_PRECONDITION');
         expect(await product()).toEqual([{ description: savedDescription, content_revision: '1' }]);
 
         const cleared = await save('', savedDescription);

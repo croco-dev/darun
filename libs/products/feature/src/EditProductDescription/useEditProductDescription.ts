@@ -55,22 +55,31 @@ export function normalizeProductDescriptionDraft(draft: string) {
 
 export type UseEditProductDescriptionProps = {
   slug: string;
+  active?: boolean;
   onSaved?: (productId: string) => void;
   onSubmit?: () => void;
   onCancel?: () => void;
 };
 
-export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }: UseEditProductDescriptionProps) {
-  const [previousSlug, setPreviousSlug] = useState(slug);
+export function useEditProductDescription({
+  slug,
+  active = true,
+  onSaved,
+  onSubmit,
+  onCancel,
+}: UseEditProductDescriptionProps) {
+  const [previousForm, setPreviousForm] = useState({ slug, active });
   const [saveError, setSaveError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<DescriptionConflict | null>(null);
   const [acceptedConflict, setAcceptedConflict] = useState(false);
   const [loading, setLoading] = useState(false);
-  if (previousSlug !== slug) {
-    setPreviousSlug(slug);
-    setConflict(null);
-    setAcceptedConflict(false);
-    setLoading(false);
+  if (previousForm.slug !== slug || previousForm.active !== active) {
+    setPreviousForm({ slug, active });
+    if (previousForm.slug !== slug) {
+      setConflict(null);
+      setLoading(false);
+    }
+    if (!active || previousForm.slug !== slug) setAcceptedConflict(false);
   }
   const savePending = useRef(false);
   const imageUploadPending = useRef(false);
@@ -141,17 +150,25 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     }
   }, [slug, description, descriptionReady, loading, conflict, acceptedConflict, getValues, resetDraft]);
 
-  const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument, {
-    refetchQueries: ({ data }) => {
-      const productId = data?.editProduct?.product?.id;
-      if (productId) onSaved?.(productId);
-      return [
-        { query: TempProductBySlugOnEditProductDescriptionDocument, variables: { slug } },
-        { query: TempProductBySlugOnProductDescriptionDocument, variables: { slug } },
-      ];
-    },
-    awaitRefetchQueries: true,
-  });
+  const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument);
+
+  const refreshAfterSave = async () => {
+    const queries = [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument];
+    const targets = queries.map(query => ({
+      query,
+      watches: [...client.getObservableQueries([query])].filter(watch => watch.variables.slug === slug),
+    }));
+    const earlierReads = targets.flatMap(({ watches }) => watches.filter(watch => watch.getCurrentResult().loading));
+    // An older watched result may populate the cache after the successful mutation.
+    await Promise.allSettled(earlierReads.map(query => query.refetch()));
+    await Promise.allSettled(
+      targets.flatMap<Promise<unknown>>(({ query, watches }) =>
+        watches.length > 0
+          ? watches.map(watch => watch.refetch())
+          : [client.query({ query, variables: { slug }, fetchPolicy: 'network-only' })]
+      )
+    );
+  };
 
   const refreshAfterConflict = async () => {
     const productSession = productSessionRef.current;
@@ -206,6 +223,11 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
       if (product?.id) {
         resetDraft(product.description ?? null);
         setConflict(null);
+        setAcceptedConflict(true);
+        void refreshAfterSave().finally(() => {
+          if (productSessionRef.current === productSession) setAcceptedConflict(false);
+        });
+        onSaved?.(product.id);
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         onSubmit?.();
       }

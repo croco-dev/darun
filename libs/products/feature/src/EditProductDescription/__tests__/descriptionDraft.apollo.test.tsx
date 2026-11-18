@@ -1,5 +1,6 @@
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
+import { TempProductBySlugOnEditProductDescriptionDocument } from '@darun/provider-graphql';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -130,6 +131,9 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
     ...hook,
     operations,
     savedDescription: () => savedDescription,
+    cachedDescription: () =>
+      client.readQuery({ query: TempProductBySlugOnEditProductDescriptionDocument, variables: { slug: 'sample' } })
+        ?.tempProductBySlug?.description,
     writeElsewhere: (description: string) => {
       savedDescription = description;
     },
@@ -228,6 +232,8 @@ it.each([false, true])(
     const releaseRead = fixture.holdNextEditorRead();
     act(() => fixture.result.current.editor.retryDescription());
     await waitFor(() => expect(reads()).toBe(previousReads + 1));
+    const revised = '<p>최신 본문을 이어서 수정</p>';
+    let readsBeforeRelease = 0;
     try {
       fixture.writeElsewhere(latest);
       await act(async () => fixture.result.current.editor.submit({ description: '' }));
@@ -238,13 +244,24 @@ it.each([false, true])(
       act(() => fixture.result.current.editor.acceptLatestDescription());
       expect(fixture.result.current.editor.hasServerChange).toBe(false);
       expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+      await act(async () => fixture.result.current.editor.submit({ description: revised }));
+      expect(fixture.savedDescription()).toBe(revised);
+      expect(fixture.result.current.editor.form.getValues().description).toBe(revised);
+      expect(fixture.result.current.editor.saveError).toBeNull();
+      readsBeforeRelease = reads();
     } finally {
       await act(async () => releaseRead(failEarlierRead));
     }
+    await waitFor(() => {
+      expect(reads()).toBeGreaterThan(readsBeforeRelease);
+      expect(fixture.cachedDescription()).toBe(revised);
+    });
     expect(fixture.result.current.editor.hasServerChange).toBe(false);
     expect(fixture.result.current.editor.descriptionReady).toBe(true);
-    expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
-    await act(async () => fixture.result.current.editor.submit({ description: '<p>최신 본문을 이어서 수정</p>' }));
-    expect(fixture.savedDescription()).toBe('<p>최신 본문을 이어서 수정</p>');
+    expect(fixture.result.current.editor.form.getValues().description).toBe(revised);
+    await act(async () => fixture.result.current.candidate.handleApply());
+    await waitFor(() =>
+      expect(fixture.result.current.editor.form.getValues().description).toBe('<p>Accepted AI candidate</p>')
+    );
   }
 );

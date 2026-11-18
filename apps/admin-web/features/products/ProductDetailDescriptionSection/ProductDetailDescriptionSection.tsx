@@ -68,6 +68,7 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="설명 수정">
         <EditProductDescription
           slug={slug}
+          active={isEditModalOpened}
           onSaved={refreshProductTranslation}
           onSubmit={closeEditModal}
           onCancel={closeEditModal}

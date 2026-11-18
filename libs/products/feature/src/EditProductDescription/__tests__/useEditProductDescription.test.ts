@@ -35,9 +35,10 @@ beforeEach(() => {
   vi.mocked(useQuery).mockImplementation(
     () =>
       ({
+        client: { getObservableQueries: () => new Set(), query: vi.fn() },
         data: description === undefined ? undefined : { tempProductBySlug: { id: 'product-1', description } },
         error: descriptionError,
-      }) as useQuery.Result<
+      }) as unknown as useQuery.Result<
         unknown,
         OperationVariables,
         'empty' | 'complete' | 'streaming',
