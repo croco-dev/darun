@@ -51,20 +51,26 @@ export const productLinkSchemaCompatibility = new ErrorLink(({ error, operation,
   if (!root) return;
   const isMutation = operation.operationType === 'mutation';
   const input = operation.variables.input;
-  if (isMutation && (input?.role !== undefined || input?.makePrimary !== undefined)) return;
+  if (isMutation && (input?.role !== undefined || input?.makePrimary !== undefined || input?.title === '')) return;
   if (!isMissingLinkRole(error)) return;
 
-  operation.query = {
-    ...operation.query,
-    definitions: operation.query.definitions.map(definition =>
-      definition.kind === 'OperationDefinition' || definition.kind === 'FragmentDefinition'
-        ? { ...definition, selectionSet: withoutRole(definition.selectionSet) }
-        : definition
-    ),
+  const retry = {
+    ...operation,
+    client: operation.client,
+    getContext: operation.getContext,
+    setContext: operation.setContext,
+    query: {
+      ...operation.query,
+      definitions: operation.query.definitions.map(definition =>
+        definition.kind === 'OperationDefinition' || definition.kind === 'FragmentDefinition'
+          ? { ...definition, selectionSet: withoutRole(definition.selectionSet) }
+          : definition
+      ),
+    },
   };
 
   return new Observable(observer => {
-    const subscription = forward(operation).subscribe({
+    const subscription = forward(retry).subscribe({
       next: result => {
         const data = result.data;
         const product = isMutation ? data?.[root]?.product : data?.[root];

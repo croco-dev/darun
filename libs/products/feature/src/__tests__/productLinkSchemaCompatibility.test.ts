@@ -1,4 +1,6 @@
 import { ApolloClient, ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
+import { ServerError } from '@apollo/client/errors';
+import { RetryLink } from '@apollo/client/link/retry';
 import {
   ProductOnProductLinksDocument,
   TempProductBySlugOnProductLinkTableDocument,
@@ -29,7 +31,7 @@ function response(data: unknown, status = 200, contentType = 'application/json')
   return new Response(JSON.stringify(data), { status, headers: { 'content-type': contentType } });
 }
 
-function createClient(responses: Response[]) {
+function createClient(responses: Response[], links: ApolloLink[] = []) {
   const requests: Array<{ operationName: string; query: string; variables: unknown }> = [];
   const fetch = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
     requests.push(JSON.parse(String(init?.body)));
@@ -40,7 +42,11 @@ function createClient(responses: Response[]) {
   const cache = new InMemoryCache();
   const client = new ApolloClient({
     cache,
-    link: ApolloLink.from([productLinkSchemaCompatibility, new HttpLink({ fetch, uri: 'http://localhost/graphql' })]),
+    link: ApolloLink.from([
+      ...links,
+      productLinkSchemaCompatibility,
+      new HttpLink({ fetch, uri: 'http://localhost/graphql' }),
+    ]),
   });
   clients.push(client);
   return { client, cache, requests };
@@ -88,7 +94,7 @@ describe('이전 GraphQL API의 상품 링크 호환성', () => {
     expect(cache.extract()['Link:visit-link']).toMatchObject({ role: null, isPrimary: true, title: 'Updated' });
   });
 
-  it.each([{ role: 'official' }, { makePrimary: true }] as const)(
+  it.each([{ role: 'official' }, { makePrimary: true }, { title: '' }] as const)(
     '새로운 변경 의도 %j를 이전 API로 재전송하지 않는다',
     async input => {
       const { client, requests } = createClient([response({ errors: [missingRole] }, 400)]);
@@ -101,6 +107,32 @@ describe('이전 GraphQL API의 상품 링크 호환성', () => {
       expect(requests).toHaveLength(1);
     }
   );
+
+  it('나중에 성공한 조회는 폴백의 전송 실패 뒤에도 새 역할을 읽는다', async () => {
+    const newLink = { ...link, title: '', role: 'documentation' };
+    const retry = new RetryLink({
+      delay: { initial: 0, jitter: false },
+      attempts: {
+        max: 2,
+        retryIf: (error, operation) =>
+          operation.operationType === 'query' && ServerError.is(error) && error.statusCode === 503,
+      },
+    });
+    const { client, requests } = createClient(
+      [
+        response({ errors: [missingRole] }, 400),
+        response({}, 503),
+        response({ data: { productBySlug: { ...product, links: [newLink] } } }),
+      ],
+      [retry]
+    );
+    const result = await client.query({
+      query: ProductOnProductLinksDocument,
+      variables: { slug: 'product', locale: 'en' },
+    });
+    expect(requests.map(request => /\brole\b/.test(request.query))).toEqual([true, false, true]);
+    expect(result.data?.productBySlug?.links).toEqual([newLink]);
+  });
 
   it('일반 조회 오류는 이전 API 응답으로 판단하지 않는다', async () => {
     const { client, requests } = createClient([
