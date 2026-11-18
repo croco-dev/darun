@@ -1,5 +1,9 @@
 import { type ApolloCache, type DocumentNode } from '@apollo/client';
 import { useApolloClient, useMutation, useQuery, type MutationHookOptions } from '@apollo/client/react';
+import {
+  TempProductBySlugOnProductFeatureTableDocument,
+  UpdateProductFeatureOnEditProductFeatureItemDocument,
+} from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -35,20 +39,12 @@ describe('useEditProductFeatureItem', () => {
   const defaultProps = { featureId: 'feature-1' };
   type MockMutationOptions = MutationHookOptions<unknown, Record<string, unknown>, unknown, ApolloCache>;
   let mutateFn: ReturnType<typeof vi.fn>;
-  let mutationOptions: { onCompleted?: (data: unknown) => Promise<void> | void; onError?: (e: Error) => void };
-  let resolveRefetch: (() => void) | undefined;
-  const mockRefetchQueries = vi.fn(
-    () =>
-      new Promise<void>(resolve => {
-        resolveRefetch = resolve;
-      })
-  );
+  let mutationOptions: MockMutationOptions;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mutateFn = vi.fn();
     mutationOptions = {};
-    resolveRefetch = undefined;
 
     vi.mocked(useQuery).mockReturnValue({
       data: {
@@ -63,13 +59,11 @@ describe('useEditProductFeatureItem', () => {
     } as ReturnType<typeof useQuery>);
 
     vi.mocked(useMutation).mockImplementation(((_document?: DocumentNode, options?: MockMutationOptions) => {
-      mutationOptions =
-        (options as { onCompleted?: (data: unknown) => Promise<void> | void; onError?: (e: Error) => void }) || {};
+      mutationOptions = options ?? {};
       return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
     }) as typeof useMutation);
 
     vi.mocked(useApolloClient).mockReturnValue({
-      refetchQueries: mockRefetchQueries,
       cache: { evict: vi.fn() },
     } as unknown as ReturnType<typeof useApolloClient>);
   });
@@ -79,35 +73,30 @@ describe('useEditProductFeatureItem', () => {
     renderHook(() => useEditProductFeatureItem({ ...defaultProps, onSubmit }));
 
     act(() => {
-      mutationOptions.onCompleted?.({ updateProductFeature: { feature: { id: 'feature-1' } } });
+      mutationOptions.onCompleted?.({ updateProductFeature: { feature: { id: 'feature-1' } } }, undefined);
     });
 
     expect(notifications.show).toHaveBeenCalledWith({ message: '수정되었습니다.', color: 'teal' });
     expect(onSubmit).toHaveBeenCalled();
   });
 
-  it('should pass correct refetch document and awaitRefetchQueries to useMutation', () => {
-    const capturedDocuments: DocumentNode[] = [];
-    vi.mocked(useMutation).mockImplementation(((document?: DocumentNode, options?: MockMutationOptions) => {
-      capturedDocuments.push(document as DocumentNode);
-      mutationOptions =
-        (options as { onCompleted?: (data: unknown) => Promise<void> | void; onError?: (e: Error) => void }) || {};
-      return [mutateFn, { loading: false }] as unknown as ReturnType<typeof useMutation>;
-    }) as typeof useMutation);
-
-    renderHook(() => useEditProductFeatureItem(defaultProps));
-
-    expect(capturedDocuments).toHaveLength(1);
-    expect(capturedDocuments[0]).toBeDefined();
-    const mutationOptionsTyped = mutationOptions as unknown as MockMutationOptions;
-    expect(mutationOptionsTyped?.awaitRefetchQueries).toBe(true);
+  it('notifies the caller of the saved feature and refreshes the feature table', () => {
+    const onSaved = vi.fn();
+    renderHook(() => useEditProductFeatureItem({ ...defaultProps, onSaved }));
+    expect(useMutation).toHaveBeenCalledWith(UpdateProductFeatureOnEditProductFeatureItemDocument, expect.any(Object));
+    const { refetchQueries } = mutationOptions;
+    if (typeof refetchQueries !== 'function') throw new Error('Expected a refresh for the saved feature');
+    expect(refetchQueries({ data: { updateProductFeature: { feature: { id: 'feature-1' } } } })).toEqual([
+      TempProductBySlugOnProductFeatureTableDocument,
+    ]);
+    expect(onSaved).toHaveBeenCalledExactlyOnceWith('feature-1');
   });
 
   it('should show error notification via onError', () => {
     renderHook(() => useEditProductFeatureItem(defaultProps));
 
     act(() => {
-      mutationOptions.onError?.(new Error('GraphQL error'));
+      mutationOptions.onError?.(new Error('GraphQL error'), undefined);
     });
 
     expect(notifications.show).toHaveBeenCalledWith({ message: 'GraphQL error', color: 'red' });

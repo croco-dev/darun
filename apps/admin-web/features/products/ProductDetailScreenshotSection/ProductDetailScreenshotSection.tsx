@@ -394,14 +394,27 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const { data, loading, error, observable, refetch } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
+  const { client, data, loading, error, observable, refetch } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
     variables: { slug },
   });
 
-  const refreshScreenshots = async () => {
-    if (observable.variables.slug !== slug) return;
-    // The query displays refresh errors alongside the existing cards.
-    await refetch().catch(() => undefined);
+  const refreshScreenshots = async (afterSave = false) => {
+    if (observable.variables.slug !== slug) {
+      // The edit may have committed after the mounted list switched products.
+      if (afterSave) {
+        await client
+          .query({
+            query: GetProductScreenshotsOnDetailSectionDocument,
+            variables: { slug },
+            fetchPolicy: 'network-only',
+          })
+          .catch(() => undefined);
+      }
+      return;
+    }
+    // The list reports its own error. A committed edit refreshes its cache even after navigation.
+    const request = refetch();
+    await (afterSave ? request.retain() : request).catch(() => undefined);
   };
 
   const [deleteScreenshot] = useMutation(DeleteProductScreenshotOnDetailSectionDocument, {
@@ -574,7 +587,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                 {editingId === screenshot.id && (
                   <ScreenshotMetadataEditor
                     screenshot={screenshot}
-                    refreshScreenshots={refreshScreenshots}
+                    refreshScreenshots={() => refreshScreenshots(true)}
                     onClose={() => setEditingId(current => (current === screenshot.id ? null : current))}
                   />
                 )}

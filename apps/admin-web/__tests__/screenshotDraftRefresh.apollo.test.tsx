@@ -23,7 +23,7 @@ afterEach(() => {
 
 type ReadFailure = boolean | 'graphql';
 
-function mountSection(ids = ['A', 'B']) {
+function mountSection(ids = ['A', 'B'], deferSave = false) {
   const screenshots = ids.map(id => ({
     __typename: 'Screenshot',
     id,
@@ -35,6 +35,8 @@ function mountSection(ids = ['A', 'B']) {
     uiElements: id === 'A' ? ['BUTTON', 'CARD'] : [],
   }));
   const queries: ((fail?: ReadFailure) => void)[] = [];
+  const readSlugs: string[] = [];
+  const pendingSaves: (() => void)[] = [];
   const writes: Record<string, unknown>[] = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
@@ -42,6 +44,8 @@ function mountSection(ids = ['A', 'B']) {
       operation =>
         new Observable(observer => {
           if (operation.operationName === 'GetProductScreenshotsOnDetailSection') {
+            const slug = operation.variables.slug;
+            readSlugs.push(slug);
             queries.push(fail => {
               if (fail === 'graphql') {
                 observer.next({
@@ -56,8 +60,8 @@ function mountSection(ids = ['A', 'B']) {
                 data: {
                   tempProductBySlug: {
                     __typename: 'Product',
-                    id: 'product',
-                    screenshots: structuredClone(screenshots),
+                    id: slug,
+                    screenshots: slug === 'fixture-product' ? structuredClone(screenshots) : [],
                   },
                 },
               });
@@ -74,26 +78,34 @@ function mountSection(ids = ['A', 'B']) {
             observer.complete();
           } else if (operation.operationName === 'UpdateProductScreenshotOnDetailSection') {
             writes.push(structuredClone(operation.variables));
-            const screenshot = screenshots.find(item => item.id === operation.variables.id)!;
-            Object.assign(screenshot, operation.variables);
-            observer.next({
-              data: {
-                updateProductScreenshot: { screenshot: { ...screenshot } },
-              },
-            });
-            observer.complete();
+            const completeSave = () => {
+              const screenshot = screenshots.find(item => item.id === operation.variables.id)!;
+              Object.assign(screenshot, operation.variables);
+              const { __typename, id, imageUrl, imageAlt, title, platform, screenType } = screenshot;
+              observer.next({
+                data: {
+                  updateProductScreenshot: {
+                    screenshot: { __typename, id, imageUrl, imageAlt, title, platform, screenType },
+                  },
+                },
+              });
+              observer.complete();
+            };
+            if (deferSave) pendingSaves.push(completeSave);
+            else completeSave();
           } else observer.error(new Error(`Unexpected operation: ${operation.operationName}`));
         })
     ),
   });
   clients.push(client);
-  render(
+  const section = (slug = 'fixture-product') => (
     <ApolloProvider client={client}>
-      <ProductDetailScreenshotSection slug="fixture-product" />
+      <ProductDetailScreenshotSection slug={slug} />
     </ApolloProvider>
   );
+  const view = render(section());
   vi.spyOn(window, 'confirm').mockReturnValue(true);
-  return { client, queries, writes };
+  return { client, pendingSaves, queries, readSlugs, section, view, writes };
 }
 
 async function finishQuery(queries: ((fail?: ReadFailure) => void)[], fail: ReadFailure = false) {
@@ -250,3 +262,30 @@ it('shows only the lookup error when refreshing a cached empty screenshot list f
   await finishQuery(queries);
   await screen.findByText(emptyTitle);
 });
+
+it.each(['leaving the route', 'switching products'])(
+  'refreshes the saved product metadata after %s',
+  async navigation => {
+    const { pendingSaves, queries, readSlugs, section, view, writes } = mountSection(undefined, true);
+    await finishQuery(queries);
+    fireEvent.click(within(card('A')).getByRole('button', { name: '메타데이터 수정' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: '검색 바' }));
+    fireEvent.click(screen.getByRole('button', { name: /^저장$/ }));
+    await waitFor(() => expect(pendingSaves).toHaveLength(1));
+
+    if (navigation === 'switching products') {
+      view.rerender(section('other-product'));
+      await finishQuery(queries);
+    }
+    await act(async () => pendingSaves[0]());
+    await waitFor(() => expect(queries).toHaveLength(1));
+    expect(readSlugs.at(-1)).toBe('fixture-product');
+    if (navigation === 'leaving the route') view.unmount();
+    await finishQuery(queries);
+
+    if (navigation === 'leaving the route') render(section());
+    else view.rerender(section());
+    await screen.findByText('버튼, 카드, 검색 바');
+    expect(writes).toHaveLength(1);
+  }
+);
