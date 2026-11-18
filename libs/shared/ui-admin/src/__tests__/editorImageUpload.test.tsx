@@ -23,7 +23,7 @@ describe('편집기 이미지 업로드 수명', () => {
     upload.mockReturnValueOnce(new Promise<string>(resolve => (complete = resolve)));
     let content = '<p>기존 본문</p>';
     const states: { uploading: boolean; content: string }[] = [];
-    render(
+    const view = render(
       <Editor
         value={content}
         onChange={html => (content = html)}
@@ -31,6 +31,8 @@ describe('편집기 이미지 업로드 수명', () => {
       />
     );
     const input = await screen.findByLabelText('본문 이미지 업로드');
+    const linkButton = screen.getByRole<HTMLButtonElement>('button', { name: '본문 링크 편집' });
+    expect(linkButton.disabled).toBe(false);
     act(() => {
       fireEvent.change(input, { target: { files: [file] } });
     });
@@ -44,6 +46,9 @@ describe('편집기 이미지 업로드 수명', () => {
     fireEvent.click(insert);
     expect(upload).toHaveBeenCalledTimes(1);
     expect(states).toEqual([{ uploading: true, content: '<p>기존 본문</p>' }]);
+    expect(linkButton.disabled).toBe(true);
+    fireEvent.keyDown(view.container.querySelector('.ProseMirror')!, { key: 'k', ctrlKey: true });
+    expect(screen.queryByRole('dialog', { name: '본문 링크 편집' })).toBeNull();
     await act(async () => complete('https://example.com/inserted.png'));
     expect(states).toHaveLength(2);
     expect(states[1].uploading).toBe(false);
