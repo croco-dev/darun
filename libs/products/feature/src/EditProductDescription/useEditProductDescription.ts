@@ -71,6 +71,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     setLoading(false);
   }
   const savePending = useRef(false);
+  const acceptedConflict = useRef(false);
   const imageUploadPending = useRef(false);
   const [imageUploading, setImageUploading] = useState(false);
   const onImageUploadingChange = useCallback((uploading: boolean) => {
@@ -100,6 +101,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   useEffect(
     () => () => {
       savePending.current = false;
+      acceptedConflict.current = false;
       productSessionRef.current = { slug };
     },
     [slug]
@@ -125,7 +127,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   );
 
   useEffect(() => {
-    if (!descriptionReady || loading || conflict) return;
+    if (!descriptionReady || loading || conflict || acceptedConflict.current) return;
     const lastObserved = lastObservedSourceRef.current;
     if (lastObserved.slug === slug && lastObserved.description === description) return;
     lastObservedSourceRef.current = { slug, description };
@@ -195,7 +197,9 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
       const expectedDescriptionHash = await hashDescription(expectedDescription);
       if (productSessionRef.current !== productSession) return;
       const result = await editDescription({
-        variables: { slug, input: { description: descriptionToSave, expectedDescriptionHash } },
+        variables: { slug, input: { description: descriptionToSave } },
+        // Older API deployments accept the existing mutation while ignoring this extension.
+        context: { darunExpectedDescriptionHash: expectedDescriptionHash },
       });
       if (productSessionRef.current !== productSession) return;
       const product = result.data?.editProduct?.product;
@@ -244,6 +248,8 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     conflictRefresh: conflict?.status === 'ready' ? null : (conflict?.status ?? null),
     refreshAfterConflict,
     acceptLatestDescription: () => {
+      // Requests begun before conflict recovery can still update the shared cache.
+      if (conflict?.status === 'ready') acceptedConflict.current = true;
       lastObservedSourceRef.current = { slug, description };
       resetDraft(latestDescription);
       setConflict(null);

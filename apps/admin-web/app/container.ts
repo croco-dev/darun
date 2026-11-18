@@ -6,6 +6,7 @@ import { RetryLink } from '@apollo/client/link/retry';
 import { productLinkSchemaCompatibility } from '@darun/products-feature';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
+import { descriptionPreconditionLink } from './descriptionPreconditionLink';
 
 const httpErrorLink = new ErrorLink(({ error }) => {
   if (CombinedGraphQLErrors.is(error)) {
@@ -73,6 +74,7 @@ const apolloClient = new ApolloClient({
     createTimeoutLink(),
     productLinkSchemaCompatibility,
     screenshotRegistrationLink,
+    descriptionPreconditionLink,
     httpLink,
   ]),
 });

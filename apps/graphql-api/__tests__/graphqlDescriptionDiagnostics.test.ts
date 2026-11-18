@@ -1,10 +1,51 @@
 import 'reflect-metadata';
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer, HeaderMap } from '@apollo/server';
 import * as Sentry from '@sentry/node';
 import { expect, it, vi } from 'vitest';
 import { productDescriptionEditConflict } from '../../../libs/products/domain/src/errors/productDescriptionError';
 import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
+import { createGraphQLDescriptionPrecondition } from '../src/app/graphqlDescriptionPrecondition';
 import { createGraphQLDiagnostics } from '../src/app/graphqlDiagnostics';
+
+it.each([false, true])('새 요청은 구·신 API에서 처리되고 배치 내 편집 기준은 요청마다 격리된다 (%s)', async enabled => {
+  const server = new ApolloServer({
+    typeDefs: 'type Query { health: Boolean } type Mutation { save: String }',
+    resolvers: {
+      Mutation: {
+        save: (_root: unknown, _args: unknown, context: { expectedDescriptionHash?: string | null }) =>
+          context.expectedDescriptionHash === null ? 'absent description' : (context.expectedDescriptionHash ?? 'none'),
+      },
+    },
+    allowBatchedHttpRequests: true,
+    plugins: enabled ? [createGraphQLDescriptionPrecondition()] : [],
+  });
+  const query = 'mutation { save }';
+  const hash = 'a'.repeat(64);
+  try {
+    await server.start();
+    const response = await server.executeHTTPGraphQLRequest({
+      context: async () => ({}),
+      httpGraphQLRequest: {
+        method: 'POST',
+        headers: new HeaderMap([['content-type', 'application/json']]),
+        search: '',
+        body: [
+          { query, extensions: { darunExpectedDescriptionHash: hash } },
+          { query },
+          { query, extensions: { darunExpectedDescriptionHash: null } },
+        ],
+      },
+    });
+    if (response.body.kind !== 'complete') throw new Error('Expected a complete batch response');
+    expect(JSON.parse(response.body.string)).toEqual([
+      { data: { save: enabled ? hash : 'none' } },
+      { data: { save: 'none' } },
+      { data: { save: enabled ? 'absent description' : 'none' } },
+    ]);
+  } finally {
+    await server.stop();
+  }
+});
 
 it('소개 편집 충돌은 응답으로만 전달하고 예상 밖 오류는 진단에 남긴다', async () => {
   const sent = vi.fn(async () => ({}));

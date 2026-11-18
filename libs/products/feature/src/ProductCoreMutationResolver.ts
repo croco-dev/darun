@@ -1,7 +1,7 @@
 import { CreateProduct, EditProduct, GetProduct, GetProductTags, UpdateProductTag } from '@darun/products-domain';
 import { productNotFound } from '@darun/products-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
-import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';
 import { CreateProductInput } from './graphs/CreateProduct';
 import { CreateProductPayload } from './graphs/CreateProduct';
 import { EditProductInput } from './graphs/EditProduct';
@@ -87,7 +87,11 @@ export class ProductCoreMutationResolver {
 
   @Authorized([AuthRole.Admin])
   @Mutation(() => EditProductPayload)
-  async editProduct(@Arg('slug') slug: string, @Arg('input') input: EditProductInput): Promise<EditProductPayload> {
+  async editProduct(
+    @Arg('slug') slug: string,
+    @Arg('input') input: EditProductInput,
+    @Ctx() context?: { expectedDescriptionHash?: string | null }
+  ): Promise<EditProductPayload> {
     const product = await this.getProductUseCase.execute({ slug });
 
     if (!product) {
@@ -97,6 +101,7 @@ export class ProductCoreMutationResolver {
     const updatedProduct = await this.editProductUseCase.execute({
       ...input,
       id: product.id,
+      expectedDescriptionHash: context?.expectedDescriptionHash,
     });
 
     return {

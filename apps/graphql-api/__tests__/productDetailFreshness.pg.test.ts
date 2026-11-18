@@ -75,6 +75,7 @@ import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRan
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
 import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
 import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
+import { createGraphQLDescriptionPrecondition } from '../src/app/graphqlDescriptionPrecondition';
 
 const { execute, graphql, print } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
 
@@ -586,14 +587,19 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
   describe('상품 편집 검증과 공개 GraphQL 오류', () => {
     const slugs: string[] = [];
-    let server: ReturnType<typeof createServer>;
+    let server: ApolloServer;
     const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
       ? Container.get(ProductContentSyncRegistrarToken)
       : undefined;
     let holdRegistration: (() => Promise<void>) | undefined;
-    const run = async (query: string, variables: Record<string, unknown>, target = server) => {
+    const run = async (
+      query: string,
+      variables: Record<string, unknown>,
+      target = server,
+      extensions?: Record<string, unknown>
+    ) => {
       const result = await target.executeOperation(
-        { query, variables },
+        { query, variables, extensions },
         { contextValue: { getRoles: async () => ['admin'] } }
       );
       if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
@@ -618,6 +624,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           skipCheck: true,
         }),
         formatError: (formatted, error) => formatServerError(formatted, error, false),
+        plugins: [createGraphQLDescriptionPrecondition()],
       });
     };
     beforeAll(async () => {
@@ -668,12 +675,13 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
             mutation,
             {
               slug,
-              input: {
-                description,
-                expectedDescriptionHash: expected === null ? null : createHash('sha256').update(expected).digest('hex'),
-              },
+              input: { description },
             },
-            target
+            target,
+            {
+              darunExpectedDescriptionHash:
+                expected === null ? null : createHash('sha256').update(expected).digest('hex'),
+            }
           );
         const staleDraft = '<p>Stale draft</p>';
         let staleSave;
@@ -754,6 +762,11 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           { kind: 'translation', source_revision: '1', status: 'pending' },
         ]);
         expect(await jobs()).toEqual([{ id: expect.any(String), status: 'pending' }]);
+        const malformed = await run(mutation, { slug, input: { description: staleDraft } }, server, {
+          darunExpectedDescriptionHash: { unexpected: true },
+        });
+        expect(malformed.errors?.[0]?.extensions?.code).toBe('BAD_USER_INPUT');
+        expect(await product()).toEqual([{ description: savedDescription, content_revision: '1' }]);
 
         const cleared = await save('', savedDescription);
         expect(cleared.errors).toBeUndefined();

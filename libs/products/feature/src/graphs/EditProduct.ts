@@ -20,7 +20,4 @@ export class EditProductInput {
 
   @Field({ nullable: true })
   description?: string;
-
-  @Field(() => String, { nullable: true })
-  expectedDescriptionHash?: string | null;
 }

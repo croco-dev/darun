@@ -77,7 +77,7 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
                 };
                 break;
               case 'EditProductOnEditProductDescription':
-                if (operation.variables.input.expectedDescriptionHash !== hash(savedDescription)) {
+                if (operation.getContext().darunExpectedDescriptionHash !== hash(savedDescription)) {
                   observer.next({
                     errors: [
                       {
@@ -133,9 +133,11 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
       failNextRead = true;
     },
     holdNextEditorRead: () => {
-      const { promise, resolve } = Promise.withResolvers<void>();
-      waitForRead = promise;
-      return resolve;
+      let release!: () => void;
+      waitForRead = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      return release;
     },
   };
 }
@@ -216,6 +218,7 @@ it('빈 초안을 저장하다 충돌하면 진행 중이던 조회가 끝나도
   const reads = () => fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length;
   await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
   const previousReads = reads();
+  fixture.writeElsewhere('<p>이전 조회가 받은 중간 본문</p>');
   const releaseRead = fixture.holdNextEditorRead();
   act(() => fixture.result.current.editor.retryDescription());
   await waitFor(() => expect(reads()).toBe(previousReads + 1));
@@ -225,11 +228,15 @@ it('빈 초안을 저장하다 충돌하면 진행 중이던 조회가 끝나도
     expect(reads()).toBe(previousReads + 2);
     expect(fixture.result.current.editor.hasServerChange).toBe(true);
     expect(fixture.result.current.editor.form.getValues().description).toBe('');
+    expect(fixture.result.current.editor.latestDescription).toBe(latest);
+    act(() => fixture.result.current.editor.acceptLatestDescription());
+    expect(fixture.result.current.editor.hasServerChange).toBe(false);
+    expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
   } finally {
     await act(async () => releaseRead());
   }
-  expect(fixture.result.current.editor.latestDescription).toBe(latest);
-  act(() => fixture.result.current.editor.acceptLatestDescription());
   expect(fixture.result.current.editor.hasServerChange).toBe(false);
   expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+  await act(async () => fixture.result.current.editor.submit({ description: '<p>최신 본문을 이어서 수정</p>' }));
+  expect(fixture.savedDescription()).toBe('<p>최신 본문을 이어서 수정</p>');
 });

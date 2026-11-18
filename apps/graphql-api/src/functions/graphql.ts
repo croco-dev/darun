@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/aws-serverless';
 import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { GraphQLISODateTime } from 'type-graphql';
 import { Container } from 'typedi';
+import { createGraphQLDescriptionPrecondition } from '../app/graphqlDescriptionPrecondition';
 import { createGraphQLDiagnostics } from '../app/graphqlDiagnostics';
 import { resolvers } from '../app/resolvers';
 import { createPostgresConnection } from '../config/database';
@@ -26,7 +27,7 @@ export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
       },
       config: {
         playground: IS_LOCAL,
-        plugins: [createGraphQLDiagnostics(), screenshotRegistrationPlugin],
+        plugins: [createGraphQLDescriptionPrecondition(), createGraphQLDiagnostics(), screenshotRegistrationPlugin],
       },
     }),
     {

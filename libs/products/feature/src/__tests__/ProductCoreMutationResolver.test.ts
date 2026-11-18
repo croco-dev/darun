@@ -21,6 +21,7 @@ vi.mock('type-graphql', () => {
     Args: () => methodDecorator,
     ArgsType: () => () => {},
     Authorized: methodDecorator,
+    Ctx: () => () => {},
     Field: () => () => {},
     FieldResolver: methodDecorator,
     GraphQLISODateTime: class GraphQLISODateTime {},
