@@ -171,7 +171,9 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
   it('관리자 분류 변경을 공개 목록과 추천 후보에 반영하고 실패 시 원자적으로 되돌린다', async () => {
     const productId = '764-category-product';
+    const slug = '764-product-slug';
     const [a, b, c] = ['764-cat-a', '764-cat-b', '764-cat-c'] as const;
+    const categorySlug = (id: string) => `${id}-slug`;
     const productRepository = new PostgresqlProductRepository(db);
     const categoryRepository = new PostgresqlCategoryRepository(db);
     const adminResolver = new AdminProductCategoriesResolver(
@@ -182,15 +184,15 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     const publicResolver = Object.assign(Object.create(ProductQueryResolver.prototype), {
       getProductsByCategoryUseCase: new GetProductsByCategory(productRepository, categoryRepository),
     });
-    const server = createServer({
-      options: {
+    const server = new ApolloServer({
+      schema: buildSchemaSync({
         resolvers: [AdminProductCategoriesResolver, ProductQueryResolver],
         authChecker: createAuthChecker(),
         container: {
           get: resolver => (resolver === AdminProductCategoriesResolver ? adminResolver : publicResolver),
         },
-      },
-      config: { playground: false },
+      }),
+      formatError: (formatted, error) => formatServerError(formatted, error, false),
     });
     const run = async (query: string, variables: Record<string, unknown>, roles: string[] = ['admin']) => {
       const result = await server.executeOperation(
@@ -204,7 +206,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     const mutation = print(UpdateAdminProductCategoriesDocument);
     const categoryQuery = 'query($slug: String!) { productsByCategory(slug: $slug) { edges { node { id } } } }';
     const expectMembership = async (categoryId: string, isMember: boolean) => {
-      const result = await run(categoryQuery, { slug: categoryId }, []);
+      const result = await run(categoryQuery, { slug: categorySlug(categoryId) }, []);
       expect(result.errors).toBeUndefined();
       expect(result.data?.productsByCategory).toEqual({
         edges: isMember ? [{ node: { id: productId } }] : [],
@@ -233,22 +235,24 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     try {
       await server.start();
       await writer`insert into categories (id, slug, label_ko, label_en) values
-        (${a}, ${a}, '분류 A', 'Category A'), (${b}, ${b}, '분류 B', 'Category B'), (${c}, ${c}, '분류 C', 'Category C')`;
+        (${a}, ${categorySlug(a)}, '분류 A', 'Category A'),
+        (${b}, ${categorySlug(b)}, '분류 B', 'Category B'),
+        (${c}, ${categorySlug(c)}, '분류 C', 'Category C')`;
       await writer`insert into products (id, slug, name, summary, description, logo_url, category_ids, published_at)
-        values (${productId}, ${productId}, 'Category fixture', 'summary', 'description', '',
+        values (${productId}, ${slug}, 'Category fixture', 'summary', 'description', '',
           ${JSON.stringify([a, b])}::json, now())`;
       await writer`insert into tags (id, name, type) values (${productId}, '764-fixture-tag', 'Simple')`;
       await writer`insert into product_tags (id, product_id, tag_id) values (${productId}, ${productId}, ${productId})`;
       const before = await storedProduct();
-      const initial = await run(adminQuery, { slug: productId });
+      const initial = await run(adminQuery, { slug });
       expect(initial.errors).toBeUndefined();
       expect(initial.data?.adminProductCategorySelection).toMatchObject({
         productId,
         categoryIds: [a, b],
-        categories: expect.arrayContaining([{ id: c, slug: c, labelKo: '분류 C' }]),
+        categories: expect.arrayContaining([{ id: c, slug: categorySlug(c), labelKo: '분류 C' }]),
       });
       for (const denied of [
-        await run(adminQuery, { slug: productId }, []),
+        await run(adminQuery, { slug }, []),
         await run(mutation, { productId, categoryIds: [c] }, []),
       ]) {
         expect(denied.errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
@@ -278,7 +282,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       expect(await writer`select tag_id from product_tags where product_id = ${productId}`).toEqual([
         { tag_id: productId },
       ]);
-      expect((await run(adminQuery, { slug: productId })).data?.adminProductCategorySelection).toMatchObject({
+      expect((await run(adminQuery, { slug })).data?.adminProductCategorySelection).toMatchObject({
         categoryIds: [a, c],
       });
       await expectMembership(a, true);

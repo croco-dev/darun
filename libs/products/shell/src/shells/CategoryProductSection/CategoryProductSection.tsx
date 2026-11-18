@@ -87,6 +87,8 @@ function CategoryProducts({ slug, locale }: { slug: string; locale: string }) {
     []
   );
   const { data, client } = useSuspenseQuery<ProductsByCategoryQueryData>(PRODUCTS_BY_CATEGORY_QUERY, {
+    // Admin category changes do not invalidate this client's cached listing.
+    fetchPolicy: 'network-only',
     variables: {
       slug,
       locale,

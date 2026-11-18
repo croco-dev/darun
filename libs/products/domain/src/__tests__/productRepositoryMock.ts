@@ -6,6 +6,7 @@ export function createMockRepository(): ProductRepository {
     publishById: vi.fn(),
     registerCompanyById: vi.fn(),
     updateById: vi.fn(),
+    replaceCategoryIds: vi.fn(),
     findAllByBeforeIdAndLimit: vi.fn(),
     findAllByAfterIdAndLimit: vi.fn(),
     findPublishedByAfterIdAndLimit: vi.fn(),
