@@ -993,15 +993,21 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     baselineTag: string,
     run: (session: Sql, database: PostgresJsDatabase, migrationsSchema: string) => Promise<void>
   ) {
-    const schema = `request_migration_${randomUUID().split('-').join('')}`;
+    const name = `request_migration_${randomUUID().replaceAll('-', '')}`;
+    const schema = 'public';
+    const url = new URL(databaseUrl!);
+    url.pathname = `/${name}`;
     const folder = await mkdtemp(join(tmpdir(), 'darun-request-migration-'));
-    const session = postgres(databaseUrl!, {
+    const session = postgres(url.href, {
       max: 4,
       prepare: false,
       connection: { search_path: schema, statement_timeout: 10000, lock_timeout: 5000 },
     });
+    let created = false;
     try {
-      await sql`create schema ${sql(schema)}`;
+      // Some generated migrations explicitly target public, regardless of search_path.
+      await sql`create database ${sql(name)}`;
+      created = true;
       await cp(migrationsFolder, folder, { recursive: true });
       const journal = JSON.parse(await readFile(join(folder, 'meta/_journal.json'), 'utf8')) as {
         entries: Array<{ tag: string }>;
@@ -1014,9 +1020,12 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       await migrate(database, { migrationsFolder: folder, migrationsSchema: schema });
       await run(session, database, schema);
     } finally {
-      await session.end({ timeout: 5 });
-      await sql`drop schema if exists ${sql(schema)} cascade`;
-      await rm(folder, { recursive: true, force: true });
+      try {
+        await session.end({ timeout: 5 });
+        if (created) await sql`drop database ${sql(name)} with (force)`;
+      } finally {
+        await rm(folder, { recursive: true, force: true });
+      }
     }
   }
 
