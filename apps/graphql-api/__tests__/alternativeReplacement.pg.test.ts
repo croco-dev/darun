@@ -333,14 +333,45 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       expect(await repository.findExclusionsByProductId('source')).toEqual(excluded);
     });
 
-    it('카테고리 후보 범위 안에 추천할 상품이 없으면 사이트맵에도 대안이 없다고 표시한다', async () => {
+    it('발행 시각이 같아도 카테고리 상위 30개에서 공개 대안과 사이트맵이 같은 후보를 읽는다', async () => {
       await client`update products set published_at = null where id <> 'source'`;
       await client`insert into products (id, slug, name, summary, logo_url, published_at, category_ids)
-        select 'category-' || n, 'category-' || n, '후보 ' || n, '', '',
-          '2026-02-01'::timestamp + n * interval '1 day', '["shared"]'::json from generate_series(1, 31) n`;
+        select id, id, id, '', '', '2026-02-01', '["shared"]'::json
+        from (
+          select 'category-' || lpad(n::text, 2, '0') as id
+          from generate_series(31, 1, -1) n
+        ) candidates`;
       await client`insert into alternative_product_exclusions (product_id, alternative_product_id)
-        select 'source', 'category-' || n from generate_series(2, 31) n`;
+        select 'source', 'category-' || lpad(n::text, 2, '0') from generate_series(1, 30) n`;
 
+      expect(await publicIds()).toEqual([]);
+      expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
+      await repository.restore('source', 'category-30');
+      expect(await publicIds()).toEqual(['category-30']);
+      expect(await productRepository.hasPublishedAlternatives('source')).toBe(true);
+    });
+
+    it('발행 시각이 같은 최신 50개의 태그 후보에서도 공개 대안과 사이트맵이 일치한다', async () => {
+      await client`update products set published_at = null where id <> 'source'`;
+      await client`insert into products (id, slug, name, summary, logo_url, published_at)
+        select id, id, id, '', '', '2026-02-01'
+        from (
+          select 'tag-candidate-' || lpad(n::text, 2, '0') as id
+          from generate_series(51, 1, -1) n
+        ) candidates`;
+      await client`insert into tags (id, name, type) values ('tag-boundary', 'tag-boundary', 'Featured')
+        on conflict (name) do nothing`;
+      await client`insert into product_tags (id, product_id, tag_id) values
+        ('boundary-source', 'source', 'tag-boundary'), ('boundary-51', 'tag-candidate-51', 'tag-boundary')`;
+      expect(await publicIds()).toEqual([]);
+      expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
+
+      await client`insert into product_tags (id, product_id, tag_id) values
+        ('boundary-50', 'tag-candidate-50', 'tag-boundary')`;
+      expect(await publicIds()).toEqual(['tag-candidate-50']);
+      expect(await productRepository.hasPublishedAlternatives('source')).toBe(true);
+
+      await repository.exclude({ productId: 'source', alternativeProductId: 'tag-candidate-50', note: null });
       expect(await publicIds()).toEqual([]);
       expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
     });

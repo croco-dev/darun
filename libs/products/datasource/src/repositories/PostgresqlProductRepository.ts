@@ -1,4 +1,5 @@
 import {
+  PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS,
   type ProductRepository,
   Product,
   ProductScreenshot,
@@ -35,6 +36,8 @@ import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { beginProductContentWrite } from './productContentSync';
 import { isProductSlugConflict } from './productSlugConflict';
 import { lockCategoryMembership, lockProductSource } from './productSourceMutex';
+
+const newestProductsFirst = [desc(products.publishedAt), asc(products.id)];
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
@@ -111,33 +114,52 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   private readonly alternativesExistenceLoader = new DataLoader<string, boolean>(
     async ids => {
-      const rows = await this.db
-        .select({
-          id: products.id,
-          value: sql<boolean>`(
-            exists (select 1 from alternative_products a join products p on p.id = a.alternative_product_id
-              where a.product_id = ${products}.id and p.id <> a.product_id and p.published_at is not null)
-            or (${products}.published_at is not null and (
-              exists (select 1 from jsonb_array_elements_text(${products}.category_ids::jsonb) as category(id)
-                cross join lateral (
-                  select p.id from products p
-                  where p.published_at is not null and p.category_ids::jsonb @> jsonb_build_array(category.id)
-                  order by p.published_at desc limit 30
-                ) p
-                where p.id <> ${products}.id
-                  and not exists (select 1 from alternative_product_exclusions e
-                    where e.product_id = ${products}.id and e.alternative_product_id = p.id))
-              or exists (select 1 from (select id from products where published_at is not null order by published_at desc limit 50) p
-                join product_tags candidate on candidate.product_id = p.id
-                join product_tags source on source.tag_id = candidate.tag_id
-                where source.product_id = ${products}.id and p.id <> ${products}.id
-                  and not exists (select 1 from alternative_product_exclusions e
-                    where e.product_id = ${products}.id and e.alternative_product_id = p.id))
-            ))
-          )`,
-        })
-        .from(products)
-        .where(inArray(products.id, [...ids]));
+      // Only sources with exclusions need the exact bounded category window.
+      // Evaluate that window once per distinct category in the batch.
+      const byRecency = sql.join(newestProductsFirst, sql`, `);
+      const rows = await this.db.execute<{ id: string; value: boolean }>(sql`
+        with source_products as materialized (
+          select id, published_at, category_ids,
+            exists (select 1 from alternative_product_exclusions e where e.product_id = ${products.id}) as has_exclusions
+          from ${products} where ${inArray(products.id, [...ids])}
+        ), source_categories as materialized (
+          select source.id as source_id, category.id as category_id
+          from source_products source
+          cross join lateral jsonb_array_elements_text(source.category_ids::jsonb) as category(id)
+          where source.published_at is not null and source.has_exclusions
+        ), category_candidates as materialized (
+          select category.category_id, candidate.id
+          from (select distinct category_id from source_categories) category
+          cross join lateral (
+            select id from ${products}
+            where published_at is not null and category_ids::jsonb @> jsonb_build_array(category.category_id)
+            order by ${byRecency} limit ${PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS.perCategory}
+          ) candidate
+        ), recent_candidates as materialized (
+          select id from ${products} where published_at is not null
+          order by ${byRecency} limit ${PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS.recent}
+        )
+        select source.id, (
+          exists (select 1 from alternative_products a join products p on p.id = a.alternative_product_id
+            where a.product_id = source.id and p.id <> source.id and p.published_at is not null)
+          or (source.published_at is not null and (
+            (not source.has_exclusions and exists (select 1 from products p
+              where p.published_at is not null and p.id <> source.id
+                and p.category_ids::jsonb ?| array(select jsonb_array_elements_text(source.category_ids::jsonb))))
+            or (source.has_exclusions and exists (select 1 from source_categories sc
+              join category_candidates p on p.category_id = sc.category_id
+              where sc.source_id = source.id and p.id <> source.id
+                and not exists (select 1 from alternative_product_exclusions e
+                  where e.product_id = source.id and e.alternative_product_id = p.id)))
+            or exists (select 1 from recent_candidates p
+              join product_tags candidate on candidate.product_id = p.id
+              join product_tags source_tag on source_tag.tag_id = candidate.tag_id
+              where source_tag.product_id = source.id and p.id <> source.id
+                and not exists (select 1 from alternative_product_exclusions e
+                  where e.product_id = source.id and e.alternative_product_id = p.id))
+          ))
+        ) as value from source_products source
+      `);
       const byId = new Map(rows.map(row => [row.id, row.value]));
       return ids.map(id => byId.get(id) ?? false);
     },
@@ -327,7 +349,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .select()
       .from(products)
       .where(isNotNull(products.publishedAt))
-      .orderBy(desc(products.publishedAt))
+      .orderBy(...newestProductsFirst)
       .limit(n)
       .then(rows => rows.map(row => this.mapper(row)));
   }
@@ -414,7 +436,7 @@ export class PostgresqlProductRepository implements ProductRepository {
       .where(
         and(isNotNull(products.publishedAt), sql`${products.categoryIds}::jsonb @> ${JSON.stringify([categoryId])}`)
       )
-      .orderBy(desc(products.publishedAt))
+      .orderBy(...newestProductsFirst)
       .limit(limit)
       .then(rows => rows.map(row => this.mapper(row)));
   }

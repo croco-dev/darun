@@ -40,3 +40,5 @@ export interface ProductRepository {
 }
 
 export const ProductRepositoryToken = new Token<ProductRepository>('ProductRepository');
+
+export const PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS = { perCategory: 30, recent: 50 } as const;

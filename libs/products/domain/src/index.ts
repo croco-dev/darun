@@ -69,7 +69,7 @@ export { ProductLinkRepositoryToken } from './repositories/ProductLinkRepository
 export type { CategoryRepository } from './repositories/CategoryRepository';
 export { CategoryRepositoryToken } from './repositories/CategoryRepository';
 export type { ProductRepository } from './repositories/ProductRepository';
-export { ProductRepositoryToken } from './repositories/ProductRepository';
+export { PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS, ProductRepositoryToken } from './repositories/ProductRepository';
 export type {
   ProductScreenshotRepository,
   VisualScreenshotFilter,
