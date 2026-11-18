@@ -61,7 +61,7 @@ export function beginProductDescriptionSave(client: ApolloClient, slug: string) 
     requests.publication = { sequence: ++requestCount, source: 'save' };
     const savedProduct = { ...product, __typename: 'Product' };
     client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
-    requests.verification(undefined);
+    if (requests.verification()?.status === 'failed') requests.verification({ status: 'loading' });
     // A different administrator can save between this commit and the arrival of its response.
     void readSavedProductDescription(client, slug, query, 'verify').catch(() => {});
     return product;
@@ -106,7 +106,7 @@ export function readSavedProductDescription(
       },
       (error: unknown) => {
         if (requests.pending !== read) return supersedingResult();
-        if (requests.verification()?.status === 'loading') {
+        if (purpose === 'verify' || requests.verification()?.status === 'loading') {
           requests.verification({ status: 'failed', error: descriptionReadError(error) });
         }
         throw error;
