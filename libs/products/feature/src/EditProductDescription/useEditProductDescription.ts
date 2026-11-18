@@ -2,16 +2,20 @@
 
 import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
 import {
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
-  TempProductBySlugOnProductDescriptionDocument,
 } from '@darun/provider-graphql';
 import { getEditorTableError } from '@darun/ui-admin';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  readSavedProductDescription,
+  storeSavedProductDescription,
+  useSavedProductDescription,
+} from '../ProductDescription/useSavedProductDescription';
 
 gql`
   query TempProductBySlugOnEditProductDescription($slug: String!) {
@@ -64,18 +68,13 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const [previousSlug, setPreviousSlug] = useState(slug);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<DescriptionConflict | null>(null);
-  const [hasConfirmedDescription, setHasConfirmedDescription] = useState(false);
-  const [reconciling, setReconciling] = useState(false);
   const [loading, setLoading] = useState(false);
   if (previousSlug !== slug) {
     setPreviousSlug(slug);
     setConflict(null);
-    setHasConfirmedDescription(false);
-    setReconciling(false);
     setLoading(false);
   }
   const savePending = useRef(false);
-  const currentRefresh = useRef(0);
   const imageUploadPending = useRef(false);
   const [imageUploading, setImageUploading] = useState(false);
   const onImageUploadingChange = useCallback((uploading: boolean) => {
@@ -88,12 +87,10 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     error: descriptionError,
     loading: descriptionLoading,
     refetch,
-  } = useQuery(TempProductBySlugOnEditProductDescriptionDocument, {
-    variables: { slug },
-  });
+  } = useSavedProductDescription(TempProductBySlugOnEditProductDescriptionDocument, slug);
   const product = data?.tempProductBySlug;
   const hasCurrentDescription = Boolean(product && !descriptionError);
-  const descriptionReady = hasCurrentDescription || conflict !== null || hasConfirmedDescription;
+  const descriptionReady = hasCurrentDescription || conflict !== null;
   const description = product?.description ?? null;
   const formDescription = description ?? '';
   const sourceRef = useRef({ slug, description });
@@ -131,7 +128,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   );
 
   useEffect(() => {
-    if (!hasCurrentDescription || loading || conflict || reconciling) return;
+    if (!hasCurrentDescription || loading || conflict) return;
     const lastObserved = lastObservedSourceRef.current;
     if (lastObserved.slug === slug && lastObserved.description === description) return;
     lastObservedSourceRef.current = { slug, description };
@@ -143,54 +140,23 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     } else {
       setHasObservedChange(description !== sourceRef.current.description);
     }
-  }, [slug, description, hasCurrentDescription, loading, conflict, reconciling, getValues, resetDraft]);
+  }, [slug, description, hasCurrentDescription, loading, conflict, getValues, resetDraft]);
 
   const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument);
-
-  const refreshDescriptionViews = async () => {
-    const queries = [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument];
-    const targets = queries.map(query => ({
-      query,
-      watches: [...client.getObservableQueries([query])].filter(watch => watch.variables.slug === slug),
-    }));
-    const earlierReads = targets.flatMap(({ watches }) => watches.filter(watch => watch.getCurrentResult().loading));
-    // Older responses can replace the current description in Apollo's shared cache.
-    await Promise.allSettled(earlierReads.map(query => query.refetch()));
-    await Promise.all(
-      targets.map(({ query, watches }) => {
-        const reads: Promise<unknown>[] = watches.length
-          ? watches.map(watch => watch.refetch())
-          : [client.query({ query, variables: { slug }, fetchPolicy: 'network-only' })];
-        return Promise.allSettled(reads);
-      })
-    );
-  };
-
-  const reconcileDescriptionViews = () => {
-    const productSession = productSessionRef.current;
-    const refresh = ++currentRefresh.current;
-    setHasConfirmedDescription(true);
-    setReconciling(true);
-    void refreshDescriptionViews().then(() => {
-      if (currentRefresh.current === refresh && productSessionRef.current === productSession) {
-        setReconciling(false);
-      }
-    });
-  };
 
   const refreshAfterConflict = async () => {
     const productSession = productSessionRef.current;
     setConflict({ status: 'loading' });
     try {
       // A read already in flight may have started before the rejected save.
-      const result = await client.query({
-        query: TempProductBySlugOnEditProductDescriptionDocument,
-        variables: { slug },
-        fetchPolicy: 'no-cache',
-        context: { queryDeduplication: false },
-      });
+      const result = await readSavedProductDescription(
+        client,
+        slug,
+        TempProductBySlugOnEditProductDescriptionDocument,
+        true
+      );
       if (productSessionRef.current === productSession) {
-        const latest = result.data?.tempProductBySlug;
+        const latest = result?.tempProductBySlug;
         setConflict(latest ? { status: 'ready', description: latest.description ?? null } : { status: 'failed' });
       }
     } catch {
@@ -223,15 +189,16 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
       if (productSessionRef.current !== productSession) return;
       const result = await editDescription({
         variables: { slug, input: { description: descriptionToSave } },
+        fetchPolicy: 'no-cache',
         // Older API deployments accept the existing mutation while ignoring this extension.
         context: { darunExpectedDescriptionHash: expectedDescriptionHash },
       });
-      if (productSessionRef.current !== productSession) return;
       const product = result.data?.editProduct?.product;
+      if (product?.id) storeSavedProductDescription(client, slug, product);
+      if (productSessionRef.current !== productSession) return;
       if (product?.id) {
         resetDraft(product.description ?? null);
         setConflict(null);
-        reconcileDescriptionViews();
         onSaved?.(product.id);
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         onSubmit?.();
@@ -266,7 +233,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     descriptionError,
     descriptionLoading,
     descriptionReady,
-    retryDescription: () => void refetch().catch(() => {}),
+    retryDescription: () => void refetch(),
     form,
     submit,
     onCancel,
@@ -275,9 +242,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     conflictRefresh: conflict?.status === 'ready' ? null : (conflict?.status ?? null),
     refreshAfterConflict,
     acceptLatestDescription: () => {
-      // Requests begun before conflict recovery can still update the shared cache.
-      if (conflict?.status === 'ready') reconcileDescriptionViews();
-      lastObservedSourceRef.current = { slug, description };
+      lastObservedSourceRef.current = { slug, description: latestDescription };
       resetDraft(latestDescription);
       setConflict(null);
     },

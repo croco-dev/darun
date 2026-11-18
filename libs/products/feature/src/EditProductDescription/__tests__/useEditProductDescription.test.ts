@@ -10,6 +10,7 @@ vi.stubGlobal('crypto', webcrypto);
 const hash = (description: string) => createHash('sha256').update(description).digest('hex');
 const saveRequest = (draft: string, base: string | null) => ({
   variables: { slug: 'product-1', input: { description: draft } },
+  fetchPolicy: 'no-cache',
   context: { darunExpectedDescriptionHash: base === null ? null : hash(base) },
 });
 
@@ -24,18 +25,20 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 const mutate = vi.fn();
+const client = { query: vi.fn(), writeQuery: vi.fn() };
 let description: string | null | undefined;
 let descriptionError: Error | undefined;
 
 beforeEach(() => {
   vi.clearAllMocks();
   mutate.mockReset();
+  client.query.mockResolvedValue({ data: undefined });
   description = undefined;
   descriptionError = undefined;
   vi.mocked(useQuery).mockImplementation(
     () =>
       ({
-        client: { getObservableQueries: () => new Set(), query: vi.fn() },
+        client,
         data: description === undefined ? undefined : { tempProductBySlug: { id: 'product-1', description } },
         error: descriptionError,
       }) as unknown as useQuery.Result<

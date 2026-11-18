@@ -21,7 +21,10 @@ afterEach(() => {
   clients.splice(0).forEach(client => client.stop());
 });
 
-function setup(initialDescription = '<p>Original saved introduction</p>') {
+function setup(
+  initialDescription = '<p>Original saved introduction</p>',
+  candidateDescription = '<p>Accepted AI candidate</p>'
+) {
   let savedDescription = initialDescription;
   let failNextRead: boolean | string = false;
   let waitForRead: Promise<boolean> | undefined;
@@ -34,7 +37,7 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
     status: 'completed',
     message: null,
     error: null,
-    candidateHtml: '<p>Accepted AI candidate</p>',
+    candidateHtml: candidateDescription,
     appliedAt: null,
   };
   const product = () => ({
@@ -73,7 +76,7 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
                 };
                 break;
               case 'ApplyProductDescriptionCandidate':
-                savedDescription = '<p>Accepted AI candidate</p>';
+                savedDescription = candidateDescription;
                 data = {
                   applyProductDescriptionCandidate: {
                     __typename: 'ApplyProductDescriptionCandidatePayload',
@@ -137,14 +140,10 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
     failedReads,
     savedDescription: () => savedDescription,
     cachedDescription: () =>
-      client.readQuery({ query: TempProductBySlugOnEditProductDescriptionDocument, variables: { slug: 'sample' } })
-        ?.tempProductBySlug?.description,
-    writeCachedDescription: (description: string) =>
-      client.writeQuery({
+      client.readQuery({
         query: TempProductBySlugOnEditProductDescriptionDocument,
         variables: { slug: 'sample' },
-        data: { tempProductBySlug: { ...product(), description } },
-      }),
+      })?.tempProductBySlug?.description,
     writeElsewhere: (description: string) => {
       savedDescription = description;
     },
@@ -178,9 +177,7 @@ describe('AI candidate application and manual description drafts on one Apollo c
       await act(async () => fixture.result.current.candidate.handleApply());
       await waitFor(() => expect(fixture.result.current.candidate.isApplying).toBe(false));
       expect(fixture.savedDescription()).toBe('<p>Accepted AI candidate</p>');
-      expect(
-        fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length
-      ).toBeGreaterThan(1);
+      expect(fixture.result.current.display.description).toBe('<p>Accepted AI candidate</p>');
       expect(fixture.result.current.editor.form.getValues().description).toBe(
         dirty ? '<p>Unsaved human draft</p>' : '<p>Accepted AI candidate</p>'
       );
@@ -195,6 +192,23 @@ describe('AI candidate application and manual description drafts on one Apollo c
       }
     }
   );
+});
+
+it('공유 본문 조회가 처음 실패한 뒤 읽기 화면에서 다시 조회하면 두 화면이 복구된다', async () => {
+  const description = '<p>복구된 소개</p>';
+  const fixture = setup(description);
+  fixture.failNextRead();
+  await waitFor(() => {
+    expect(fixture.result.current.display.error).toBeDefined();
+    expect(fixture.result.current.editor.descriptionReady).toBe(false);
+  });
+  await act(async () => fixture.result.current.display.refetch());
+  await waitFor(() => {
+    expect(fixture.result.current.display.description).toBe(description);
+    expect(fixture.result.current.display.error).toBeUndefined();
+    expect(fixture.result.current.editor.form.getValues().description).toBe(description);
+    expect(fixture.result.current.editor.descriptionReady).toBe(true);
+  });
 });
 
 it('다른 편집자의 저장을 감지해 초안을 보존하고 최신 본문 조회를 다시 시도할 수 있다', async () => {
@@ -264,7 +278,7 @@ it.each([false, true])(
       await act(async () => releaseRead(failEarlierRead));
     }
     await waitFor(() => {
-      expect(reads()).toBeGreaterThan(readsBeforeRelease);
+      expect(reads()).toBe(readsBeforeRelease);
       expect(fixture.cachedDescription()).toBe(revised);
       expect(fixture.result.current.display.description).toBe(revised);
     });
@@ -278,50 +292,43 @@ it.each([false, true])(
   }
 );
 
-it.each([false, true])('최신 본문을 채택한 뒤 재조회 결과와 관계없이 AI 채택을 반영한다 (%s)', async failRefresh => {
-  const fixture = setup();
-  const latest = '<p>다른 관리자의 소개</p>';
-  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
-  fixture.writeElsewhere(latest);
-  await act(async () => fixture.result.current.editor.submit({ description: '<p>오래된 초안</p>' }));
-  if (failRefresh) fixture.failNextRead('TempProductBySlugOnEditProductDescription');
-  act(() => fixture.result.current.editor.acceptLatestDescription());
-  expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
-  if (failRefresh) {
-    await waitFor(() => expect(fixture.failedReads).toContain('TempProductBySlugOnEditProductDescription'));
-    expect(fixture.result.current.editor.descriptionReady).toBe(true);
-  }
-  await act(async () => fixture.result.current.candidate.handleApply());
-  await waitFor(() =>
-    expect(fixture.result.current.editor.form.getValues().description).toBe('<p>Accepted AI candidate</p>')
-  );
-});
-
-it('이전 저장의 조회가 완료되어도 새로 확인한 본문을 교체하지 않는다', async () => {
-  const fixture = setup();
-  const latest = '<p>다른 관리자의 최신 소개</p>';
-  const reads = () => fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length;
-  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
-  const slowSaveRefresh = fixture.holdNextEditorRead();
-  const initialReads = reads();
-  await act(async () => fixture.result.current.editor.submit({ description: '<p>방금 저장한 소개</p>' }));
-  await waitFor(() => expect(reads()).toBe(initialReads + 1));
-  try {
-    act(() => fixture.writeCachedDescription('<p>예전 조회의 본문</p>'));
-    fixture.writeElsewhere(latest);
-    await act(async () => fixture.result.current.editor.submit({ description: '<p>오래된 초안</p>' }));
-    act(() => fixture.result.current.editor.acceptLatestDescription());
-    expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
-    const newerRefresh = fixture.holdNextEditorRead();
-    const readsBeforeRelease = reads();
+it.each([false, true])(
+  '최신 본문을 채택한 뒤 AI가 원래 본문을 저장하면 이를 최신 본문으로 반영한다 (%s)',
+  async failEarlierRead => {
+    const original = '<p>처음 저장된 소개</p>';
+    const latest = '<p>다른 관리자의 소개</p>';
+    const fixture = setup(original, original);
+    const reads = () => fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length;
+    await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
+    const olderReads = reads();
+    fixture.writeElsewhere('<p>이전 조회가 받은 중간 본문</p>');
+    const releaseRead = fixture.holdNextEditorRead();
+    act(() => fixture.result.current.editor.retryDescription());
+    await waitFor(() => expect(reads()).toBe(olderReads + 1));
     try {
-      await act(async () => slowSaveRefresh(false));
-      await waitFor(() => expect(reads()).toBeGreaterThan(readsBeforeRelease));
+      fixture.writeElsewhere(latest);
+      await act(async () =>
+        fixture.result.current.editor.submit({
+          description: '<p>오래된 초안</p>',
+        })
+      );
+      act(() => fixture.result.current.editor.acceptLatestDescription());
       expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+      expect(fixture.cachedDescription()).toBe(latest);
+      await act(async () => fixture.result.current.candidate.handleApply());
+      expect(fixture.result.current.editor.form.getValues().description).toBe(original);
+      expect(fixture.result.current.display.description).toBe(original);
     } finally {
-      await act(async () => newerRefresh(false));
+      await act(async () => releaseRead(failEarlierRead));
     }
-  } finally {
-    await act(async () => slowSaveRefresh(false));
+    expect(fixture.cachedDescription()).toBe(original);
+    expect(fixture.result.current.editor.form.getValues().description).toBe(original);
+    expect(fixture.result.current.editor.hasServerChange).toBe(false);
+    await act(async () =>
+      fixture.result.current.editor.submit({
+        description: '<p>이어 쓴 본문</p>',
+      })
+    );
+    expect(fixture.savedDescription()).toBe('<p>이어 쓴 본문</p>');
   }
-});
+);

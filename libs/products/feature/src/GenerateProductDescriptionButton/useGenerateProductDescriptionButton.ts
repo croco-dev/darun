@@ -7,11 +7,10 @@ import {
   ApplyProductDescriptionCandidateDocument,
   GenerateProductDescriptionDocument,
   GetProductDescriptionJobDocument,
-  TempProductBySlugOnEditProductDescriptionDocument,
-  TempProductBySlugOnProductDescriptionDocument,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { useEffect, useRef, useState } from 'react';
+import { storeSavedProductDescription } from '../ProductDescription/useSavedProductDescription';
 import { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } from '../productDescriptionRequests';
 
 gql(`
@@ -99,21 +98,12 @@ export function useGenerateProductDescriptionButton(
   const generateBaseAddressRef = useRef<{ jobId?: string; slug: string } | null>(null);
   const reopenRequestRef = useRef(0);
   const apolloClient = useApolloClient();
-  const [generateDescriptionMutation] = useMutation(GenerateProductDescriptionDocument);
+  // Generation only creates a candidate. Its response can carry an older saved description.
+  const [generateDescriptionMutation] = useMutation(GenerateProductDescriptionDocument, { fetchPolicy: 'no-cache' });
   const [applyCandidateMutation] = useMutation(ApplyProductDescriptionCandidateDocument);
   const [getProductDescriptionJob] = useLazyQuery(GetProductDescriptionJobDocument, {
     fetchPolicy: 'network-only',
   });
-
-  const refetchProductQueries = async () => {
-    try {
-      await apolloClient.refetchQueries({
-        include: [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument],
-      });
-    } catch (refetchErr) {
-      console.warn('[useGenerateProductDescriptionButton] Refetch queries failed:', refetchErr);
-    }
-  };
 
   const openPreview = () => setIsPreviewOpen(true);
   const closePreview = () => setIsPreviewOpen(false);
@@ -286,6 +276,7 @@ export function useGenerateProductDescriptionButton(
         variables: { jobId: candidateJob.id },
       });
       const applied = result.data?.applyProductDescriptionCandidate;
+      if (applied?.product.id) storeSavedProductDescription(apolloClient, slug, applied.product);
       if (applied?.product.id && !applied.alreadyApplied) onSaved?.(applied.product.id);
       if (applyRequestRef.current !== applyRequest) return;
 
@@ -301,7 +292,6 @@ export function useGenerateProductDescriptionButton(
         setIsPreviewOpen(false);
         setCandidateJob(null);
         setStaleApplyNotice(null);
-        await refetchProductQueries();
       } else {
         notifications.show({
           title: '적용 실패',
