@@ -63,18 +63,23 @@ export function ProductDescriptionVerification({
   error,
   onRetry,
 }: Readonly<{ pending: boolean; error?: Error; onRetry: () => void }>) {
-  if (pending) return <p role="status">최신 본문을 확인하는 중입니다.</p>;
-  if (!error) return null;
   return (
-    <AdminErrorState
-      title="최신 본문을 확인하지 못했습니다."
-      error={error}
-      action={
-        <Button type="button" variant="contained" color="secondary" onClick={onRetry}>
-          최신 본문 다시 불러오기
-        </Button>
-      }
-    />
+    <>
+      <output aria-atomic="true" className="block">
+        {pending && '최신 본문을 확인하는 중입니다.'}
+      </output>
+      {error && (
+        <AdminErrorState
+          title="최신 본문을 확인하지 못했습니다."
+          error={error}
+          action={
+            <Button type="button" variant="contained" color="secondary" onClick={onRetry}>
+              최신 본문 다시 불러오기
+            </Button>
+          }
+        />
+      )}
+    </>
   );
 }
 
