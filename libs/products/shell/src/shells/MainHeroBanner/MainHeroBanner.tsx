@@ -4,15 +4,16 @@ import { ChevronRight, ContentArea, Search } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 
-type MainHeroBannerProps = { productsCount?: number };
+type MainHeroBannerProps = { headline: ReactNode };
 
 const POPULAR_SEARCH_TAGS: Record<string, string[]> = {
   ko: ['노션', '피그마', '슬랙'],
   en: ['Notion', 'Figma', 'Slack'],
 };
 
-export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
+export const MainHeroBanner = ({ headline }: MainHeroBannerProps) => {
   const t = useTranslations();
   const locale = useLocale();
   const popularSearchTags = POPULAR_SEARCH_TAGS[locale] ?? POPULAR_SEARCH_TAGS.ko;
@@ -66,7 +67,7 @@ export const MainHeroBanner = ({ productsCount }: MainHeroBannerProps) => {
               {t('Main.hero.description')}
             </span>
             <h1 className="text-3xl font-extrabold leading-[1.12] tracking-tight text-white [word-break:keep-all] sm:text-4xl md:text-5xl">
-              {t('Main.hero.headline', { count: productsCount ?? 0 })}
+              {headline}
             </h1>
           </div>
 

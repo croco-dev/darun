@@ -175,7 +175,8 @@
       "description": "서비스의 특징과 대안을 한곳에서 살펴보세요",
       "subDescription": "등록된 서비스의 소개와 기능을 살펴보고, 두 서비스를 나란히 비교해보세요.",
       "popularSearch": "검색 예시:",
-      "headline": "{count}개의 다른 서비스를 발견하세요"
+      "headline": "{count}개의 다른 서비스를 발견하세요",
+      "headlineWithoutCount": "다른 서비스를 발견하세요"
     },
     "recentSection": {
       "title": "새롭게 추가된 서비스",

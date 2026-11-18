@@ -225,6 +225,8 @@ jobs:
           pnpm --filter graphql-api exec vitest run __tests__/categorySearch.mongodb.test.ts
       - name: Verify native touch scrolling with isolated read fixtures
         run: pnpm --filter service-web exec playwright test --config playwright.touch.config.ts
+      - name: Verify home discovery with an isolated product count fixture
+        run: pnpm --filter service-web exec playwright test --config playwright.home.config.ts
       - name: Verify external product logos with isolated read fixtures
         run: pnpm --filter service-web exec playwright test --config playwright.logos.config.ts
         env:

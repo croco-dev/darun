@@ -183,7 +183,8 @@
       "description": "Explore service features and alternatives in one place",
       "subDescription": "Explore registered services and their features, then compare two services side by side.",
       "popularSearch": "Try:",
-      "headline": "{count, plural, one {Discover # alternative service} other {Discover # alternative services}}"
+      "headline": "{count, plural, one {Discover # alternative service} other {Discover # alternative services}}",
+      "headlineWithoutCount": "Discover alternative services"
     },
     "recentSection": {
       "title": "Newly Added Services",
