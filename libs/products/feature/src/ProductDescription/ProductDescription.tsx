@@ -58,22 +58,50 @@ export function SavedProductDescription({ description }: Readonly<{ description?
   );
 }
 
-export const ProductDescription = bind(useProductDescription, ({ description, loading, error, refetch }) => {
-  if (loading) return <AdminLoadingState />;
+export function ProductDescriptionVerification({
+  pending,
+  error,
+  onRetry,
+}: Readonly<{ pending: boolean; error?: Error; onRetry: () => void }>) {
+  if (pending) return <p role="status">최신 본문을 확인하는 중입니다.</p>;
+  if (!error) return null;
+  return (
+    <AdminErrorState
+      title="최신 본문을 확인하지 못했습니다."
+      error={error}
+      action={
+        <Button type="button" variant="contained" color="secondary" onClick={onRetry}>
+          최신 본문 다시 불러오기
+        </Button>
+      }
+    />
+  );
+}
 
-  if (error) {
+export const ProductDescription = bind(
+  useProductDescription,
+  ({ description, loading, error, refetch, verificationError, verificationPending }) => {
+    if (loading) return <AdminLoadingState />;
+
+    if (error) {
+      return (
+        <AdminErrorState
+          title="설명을 불러오지 못했습니다."
+          error={error}
+          action={
+            <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
+              다시 시도
+            </Button>
+          }
+        />
+      );
+    }
+
     return (
-      <AdminErrorState
-        title="설명을 불러오지 못했습니다."
-        error={error}
-        action={
-          <Button type="button" variant="contained" color="primary" onClick={() => refetch()}>
-            다시 시도
-          </Button>
-        }
-      />
+      <>
+        <SavedProductDescription description={description} />
+        <ProductDescriptionVerification pending={verificationPending} error={verificationError} onRetry={refetch} />
+      </>
     );
   }
-
-  return <SavedProductDescription description={description} />;
-});
+);

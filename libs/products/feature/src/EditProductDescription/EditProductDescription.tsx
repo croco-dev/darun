@@ -4,7 +4,7 @@ import { Button } from '@darun/ui';
 import { Editor, AdminActions, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import type { ReactNode } from 'react';
-import { SavedProductDescription } from '../ProductDescription/ProductDescription';
+import { ProductDescriptionVerification, SavedProductDescription } from '../ProductDescription/ProductDescription';
 import {
   normalizeProductDescriptionDraft,
   useEditProductDescription,
@@ -31,6 +31,8 @@ const EditProductDescriptionForm = bind(
     descriptionError,
     descriptionLoading,
     descriptionReady,
+    verificationError,
+    verificationPending,
     retryDescription,
     hasServerChange,
     latestDescription,
@@ -65,6 +67,13 @@ const EditProductDescriptionForm = bind(
           <AdminEmptyState title="상품을 찾을 수 없습니다." />
         )}
       </div>
+      {!hasServerChange && (
+        <ProductDescriptionVerification
+          pending={verificationPending}
+          error={verificationError}
+          onRetry={retryDescription}
+        />
+      )}
       {imageUploading && (
         <p role="status" className="mt-3 text-sm text-dark-600">
           본문 이미지를 업로드하고 있습니다. 완료 후 저장할 수 있습니다.
@@ -142,7 +151,14 @@ const EditProductDescriptionForm = bind(
           variant="contained"
           color="primary"
           className="active:scale-[0.98] motion-reduce:transform-none"
-          disabled={!descriptionReady || loading || imageUploading || hasServerChange || Boolean(conflictRefresh)}
+          disabled={
+            !descriptionReady ||
+            loading ||
+            imageUploading ||
+            hasServerChange ||
+            verificationPending ||
+            Boolean(verificationError)
+          }
         >
           {loading ? '저장 중...' : '저장'}
         </Button>

@@ -87,6 +87,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     error: descriptionError,
     loading: descriptionLoading,
     verificationPending,
+    verificationError,
     refetch,
   } = useSavedProductDescription(TempProductBySlugOnEditProductDescriptionDocument, slug);
   const product = data?.tempProductBySlug;
@@ -100,9 +101,9 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const [hasObservedChange, setHasObservedChange] = useState(false);
   const hasServerChange = conflict !== null || hasObservedChange;
   let conflictStatus = conflict;
-  if (conflict === 'ready') {
+  if (hasServerChange && (conflict === 'ready' || conflict === null)) {
     if (verificationPending) conflictStatus = 'loading';
-    else if (!product || descriptionError) conflictStatus = 'failed';
+    else if (!product || descriptionError || verificationError) conflictStatus = 'failed';
   }
 
   useEffect(
@@ -172,6 +173,8 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     if (
       !descriptionReady ||
       savePending.current ||
+      verificationPending ||
+      verificationError ||
       (conflictStatus && conflictStatus !== 'ready') ||
       imageUploadPending.current
     ) {
@@ -237,6 +240,8 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     descriptionError,
     descriptionLoading,
     descriptionReady,
+    verificationError,
+    verificationPending,
     retryDescription: () => void refetch(),
     form,
     submit,

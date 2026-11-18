@@ -2,7 +2,6 @@ import { gql } from '@apollo/client';
 import { TempProductBySlugOnProductDescriptionDocument } from '@darun/provider-graphql';
 import { useSavedProductDescription } from './useSavedProductDescription';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnProductDescription($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -17,7 +16,7 @@ type ProductDescriptionProps = {
 };
 
 export function useProductDescription({ slug }: ProductDescriptionProps) {
-  const { data, loading, error, refetch } = useSavedProductDescription(
+  const { data, loading, error, refetch, verificationError, verificationPending } = useSavedProductDescription(
     TempProductBySlugOnProductDescriptionDocument,
     slug
   );
@@ -26,5 +25,7 @@ export function useProductDescription({ slug }: ProductDescriptionProps) {
     loading,
     error,
     refetch,
+    verificationError,
+    verificationPending,
   };
 }

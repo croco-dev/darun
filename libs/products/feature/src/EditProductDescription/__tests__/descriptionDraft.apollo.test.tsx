@@ -280,7 +280,7 @@ it('AI 적용 응답이 늦어도 뒤이어 저장한 수동 본문을 되돌리
   expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
 });
 
-it('첫 조회가 늦어도 이전 본문 대신 확인된 AI 적용 결과를 표시한다', async () => {
+it('이전 본문과 AI 저장 응답이 다르고 확인이 실패하면 다시 조회할 수 있다', async () => {
   const original = '<p>첫 조회 시 저장된 본문</p>';
   const candidate = '<p>AI 적용 후 저장된 본문</p>';
   const fixture = setup(original, candidate, 'before');
@@ -301,12 +301,16 @@ it('첫 조회가 늦어도 이전 본문 대신 확인된 AI 적용 결과를 �
     releaseApply();
     await applying;
   });
+  expect(fixture.result.current.display.description).toBe(original);
+  expect(fixture.result.current.display.verificationError).toBeDefined();
+  await act(async () => fixture.result.current.display.refetch());
   expect(fixture.cachedDescription()).toBe(candidate);
+  expect(fixture.result.current.display.verificationError).toBeUndefined();
   expect(fixture.result.current.display.description).toBe(candidate);
   expect(fixture.result.current.editor.form.getValues().description).toBe(candidate);
 });
 
-it('첫 조회가 AI 적용보다 새로운 외부 저장을 발견하면 늦은 적용 응답 뒤에도 최신 본문을 표시한다', async () => {
+it.each([false, true])('첫 조회에서 본 최신 외부 저장을 늦은 AI 적용 응답으로 교체하지 않는다 (%s)', async fails => {
   const original = '<p>처음 저장된 본문</p>';
   const candidate = '<p>AI로 저장한 본문</p>';
   const latest = '<p>AI 적용 뒤 다른 관리자가 저장한 본문</p>';
@@ -328,10 +332,55 @@ it('첫 조회가 AI 적용보다 새로운 외부 저장을 발견하면 늦은
     await applying;
   });
   expect(fixture.cachedDescription()).toBe(latest);
-  await act(async () => releaseVerification(false));
+  await act(async () => releaseVerification(fails));
+  if (fails) {
+    expect(fixture.result.current.display.verificationError).toBeDefined();
+    expect(fixture.cachedDescription()).toBe(latest);
+    await act(async () => fixture.result.current.display.refetch());
+  }
   await waitFor(() => expect(fixture.result.current.display.description).toBe(latest));
   expect(fixture.cachedDescription()).toBe(latest);
   expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+});
+
+it('수동 저장과 AI 응답이 다르면 확인 실패를 표시하고 다시 조회해 최신 본문을 표시한다', async () => {
+  const original = '<p>변경 없이 저장한 본문</p>';
+  const candidate = '<p>나중에 적용한 AI 본문</p>';
+  const fixture = setup(original, candidate);
+  await waitFor(() => {
+    expect(fixture.result.current.editor.descriptionReady).toBe(true);
+    expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1');
+  });
+  const releaseManual = fixture.holdNextMutationResponse('EditProductOnEditProductDescription');
+  let saving!: Promise<void>;
+  act(() => {
+    saving = fixture.result.current.editor.submit({ description: original });
+  });
+  await waitFor(() => expect(fixture.operations).toContain('EditProductOnEditProductDescription'));
+
+  const releaseApply = fixture.holdNextMutationResponse('ApplyProductDescriptionCandidate');
+  let applying!: Promise<void>;
+  act(() => {
+    applying = fixture.result.current.candidate.handleApply();
+  });
+  await waitFor(() => expect(fixture.savedDescription()).toBe(candidate));
+  const releaseOldVerification = fixture.holdNextEditorRead();
+  await act(async () => {
+    releaseManual();
+    await saving;
+  });
+  fixture.failNextRead();
+  await act(async () => {
+    releaseApply();
+    await applying;
+  });
+  expect(fixture.result.current.display.verificationError).toBeDefined();
+  expect(fixture.cachedDescription()).toBe(original);
+  await act(async () => releaseOldVerification(false));
+  expect(fixture.result.current.display.verificationError).toBeDefined();
+  await act(async () => fixture.result.current.display.refetch());
+  expect(fixture.result.current.display.verificationError).toBeUndefined();
+  expect(fixture.result.current.display.description).toBe(candidate);
 });
 
 it('수동 저장 응답이 늦어도 AI가 되돌린 본문을 편집 기준으로 사용한다', async () => {
@@ -356,6 +405,8 @@ it('수동 저장 응답이 늦어도 AI가 되돌린 본문을 편집 기준으
     await saving;
   });
   expect(fixture.result.current.editor.form.getValues().description).toBe(original);
+  expect(fixture.result.current.editor.verificationError).toBeDefined();
+  await act(async () => fixture.result.current.display.refetch());
   await act(async () => fixture.result.current.editor.submit({ description: '<p>이어서 편집한 소개</p>' }));
   expect(fixture.savedDescription()).toBe('<p>이어서 편집한 소개</p>');
 });

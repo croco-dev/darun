@@ -8,6 +8,7 @@ import { ProductDescription } from '../ProductDescription';
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 let root: Root | undefined;
+const noVerification = { verificationError: undefined, verificationPending: false };
 
 afterEach(() => {
   if (root) {
@@ -27,6 +28,7 @@ describe('ProductDescription', () => {
     act(() => {
       root?.render(
         <ProductDescription.ViewComponent
+          {...noVerification}
           description={description}
           loading={false}
           error={undefined}
@@ -57,6 +59,7 @@ describe('ProductDescription', () => {
     act(() => {
       root?.render(
         <ProductDescription.ViewComponent
+          {...noVerification}
           description="   "
           loading={false}
           error={undefined}
@@ -76,6 +79,7 @@ describe('ProductDescription', () => {
     act(() => {
       root?.render(
         <ProductDescription.ViewComponent
+          {...noVerification}
           description={null}
           loading={true}
           error={undefined}
@@ -95,6 +99,7 @@ describe('ProductDescription', () => {
     act(() => {
       root?.render(
         <ProductDescription.ViewComponent
+          {...noVerification}
           description={null}
           loading={false}
           error={new Error('인증 오류')}

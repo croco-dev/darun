@@ -16,7 +16,6 @@ type ReadPurpose = 'load' | 'conflict' | 'verify';
 type Verification = { status: 'loading' } | { status: 'failed'; error: Error };
 type DescriptionRequests = {
   publication?: { sequence: number; source: 'read' | 'save' };
-  authority?: { sequence: number; source: 'conflict' | 'save' };
   pending?: DescriptionRead;
   verification: ReactiveVar<Verification | undefined>;
 };
@@ -49,39 +48,22 @@ export function beginProductDescriptionSave(client: ApolloClient, slug: string) 
   const variables = { slug };
   return (product: DescriptionProduct) => {
     const current = client.readQuery({ query, variables })?.tempProductBySlug;
-    const publication = requests.publication;
-    const authority = requests.authority;
-    const overlappingRead = publication?.source === 'read' && publication.sequence > request;
-    const superseded = authority && authority.sequence > request;
-    const verify = () => readSavedProductDescription(client, slug, query, 'verify');
-
-    if (superseded || (current && current.id !== product.id)) {
-      // When a conflict read and a save disagree, confirm the current value before offering it to the editor.
-      if (authority?.source === 'conflict' && current?.description !== product.description) {
-        requests.verification({ status: 'loading' });
-      }
-      void verify().catch(() => {});
+    const observedDuringSave = requests.publication && requests.publication.sequence > request;
+    const differentProduct = current?.id !== product.id;
+    const disagrees = differentProduct || current?.description !== product.description;
+    if ((current && differentProduct) || (observedDuringSave && disagrees)) {
+      // Request timing alone cannot establish which of two different responses reflects the latest commit.
+      requests.verification({ status: 'loading' });
+      void readSavedProductDescription(client, slug, query, 'verify').catch(() => {});
       return current?.id === product.id ? current : product;
     }
-    const publishSave = () => {
-      requests.pending = undefined;
-      const saved = { sequence: ++requestCount, source: 'save' } as const;
-      requests.publication = saved;
-      requests.authority = saved;
-      const savedProduct = { ...product, __typename: 'Product' };
-      client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
-      requests.verification(undefined);
-    };
-    if (overlappingRead && current?.description !== product.description) {
-      // The read might include another administrator's later write.
-      void verify().catch(() => {
-        if (requests.publication === publication && !requests.pending) publishSave();
-      });
-      return current ?? product;
-    }
-    publishSave();
+    requests.pending = undefined;
+    requests.publication = { sequence: ++requestCount, source: 'save' };
+    const savedProduct = { ...product, __typename: 'Product' };
+    client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
+    requests.verification(undefined);
     // A different administrator can save between this commit and the arrival of its response.
-    void verify().catch(() => {});
+    void readSavedProductDescription(client, slug, query, 'verify').catch(() => {});
     return product;
   };
 }
@@ -117,7 +99,6 @@ export function readSavedProductDescription(
         if (data) {
           const sequence = ++requestCount;
           requests.publication = { sequence, source: 'read' };
-          if (purpose === 'conflict') requests.authority = { sequence, source: 'conflict' };
           client.writeQuery({ query, variables, data });
           requests.verification(undefined);
         }
@@ -160,16 +141,18 @@ export function useSavedProductDescription(query: DescriptionQuery, slug: string
   }, [data, cacheError, load]);
 
   const verificationError = verification?.status === 'failed' ? verification.error : undefined;
-  const error = cacheError ?? verificationError ?? (!data && failure?.slug === slug ? failure.error : undefined);
+  const error = cacheError ?? (!data && failure?.slug === slug ? failure.error : undefined);
   const refetch = () => {
     setFailure(undefined);
+    if (verification?.status === 'failed') requestsFor(client, slug).verification({ status: 'loading' });
     return load();
   };
   return {
     client,
     data,
     error,
-    loading: !data && !error,
+    verificationError,
+    loading: !data && !error && !verificationError,
     verificationPending: verification?.status === 'loading',
     refetch,
   };
