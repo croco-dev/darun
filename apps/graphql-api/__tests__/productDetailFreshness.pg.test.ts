@@ -143,11 +143,38 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   let selectQueries: string[] = [];
   beforeAll(async () => {
     const target = new URL(url!);
-    if (!['localhost', '127.0.0.1'].includes(target.hostname) || target.pathname !== '/darun_detail_freshness') {
-      throw new Error('Requires isolated local darun_detail_freshness database');
+    const database = 'darun_detail_freshness';
+    if (
+      !['postgres:', 'postgresql:'].includes(target.protocol) ||
+      !['localhost', '127.0.0.1'].includes(target.hostname) ||
+      target.pathname !== `/${database}` ||
+      target.search
+    ) {
+      throw new Error('Requires the isolated local darun_detail_freshness database without startup options');
     }
-    writer = postgres(url!, { max: 1, connect_timeout: 5 });
-    reader = postgres(url!, { max: 1, connect_timeout: 5 });
+    const username = decodeURIComponent(target.username);
+    const password = decodeURIComponent(target.password);
+    if (!username || [username, password].some(value => /\p{Cc}/u.test(value))) {
+      throw new Error('Product detail tests require an explicit database user and valid credentials');
+    }
+    const connection = {
+      host: target.hostname,
+      port: target.port ? Number(target.port) : 5432,
+      database,
+      username,
+      password,
+      max: 1,
+      connect_timeout: 5,
+      connection: { search_path: 'public' },
+    };
+    writer = postgres(connection);
+    reader = postgres(connection);
+    for (const session of [writer, reader]) {
+      const [current] = await session`select current_database() as name, current_schema() as schema`;
+      if (current?.name !== database || current.schema !== 'public') {
+        throw new Error('Product detail test fixture connected to the wrong database or schema');
+      }
+    }
     await migrate(drizzle(writer), {
       migrationsFolder: resolve(__dirname, '../scripts/migrations'),
     });
@@ -1286,7 +1313,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
   describe('상품 대표 링크의 전체 순서', () => {
     beforeEach(async () => {
-      await writer`delete from product_links`;
+      await writer`delete from product_links where product_id in ('link-parent-a', 'link-parent-b')`;
       await writer`insert into products (id, name, slug, summary, logo_url) values
         ('link-parent-a', 'Link A', 'link-parent-a', '', ''),
         ('link-parent-b', 'Link B', 'link-parent-b', '', '')`;
@@ -1306,7 +1333,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
     afterEach(async () => {
       await writer`delete from product_content_sync_intents where product_id in ('link-parent-a', 'link-parent-b')`;
-      await writer`delete from product_links`;
+      await writer`delete from product_links where product_id in ('link-parent-a', 'link-parent-b')`;
       await writer`delete from products where id in ('link-parent-a', 'link-parent-b')`;
     });
 
@@ -1542,7 +1569,9 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           makePrimary: true,
         }),
       ]);
-      const rows = await writer`select id, role, is_designated_primary from product_links order by id`;
+      const readRows = () => writer`select id, role, is_designated_primary from product_links
+        where product_id in ('link-parent-a', 'link-parent-b') order by id`;
+      const rows = await readRows();
       expect(rows).toHaveLength(6);
       const designated = rows.filter(row => row.is_designated_primary);
       expect(designated).toContainEqual({ id: 'b-new', role: null, is_designated_primary: true });
@@ -1573,7 +1602,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
             role: 'official',
           })
         ).rejects.toThrow('fixture registration failure');
-        expect(await writer`select id, role, is_designated_primary from product_links order by id`).toEqual(rows);
+        expect(await readRows()).toEqual(rows);
         expect(await writer`select content_revision from products where id = 'link-parent-a'`).toEqual([before]);
         expect(await writer`select id from product_content_sync_intents where product_id = 'link-parent-a'`).toEqual(
           []

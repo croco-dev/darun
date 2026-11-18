@@ -90,6 +90,34 @@ const { graphql } = createRequire(`${process.cwd()}/package.json`)('graphql') as
 const databaseUrl = process.env['ATOMIC_TEST_DATABASE_URL'];
 const suite = databaseUrl ? describe : describe.skip;
 const migrationsFolder = resolve(__dirname, '../../../../../apps/graphql-api/scripts/migrations');
+const atomicDatabase = 'darun_atomic_integrity';
+const fixtureSchema = 'public';
+const connectionSettings = { search_path: fixtureSchema, statement_timeout: 10000, lock_timeout: 5000 };
+
+function atomicDatabaseOptions() {
+  const url = new URL(databaseUrl!);
+  if (
+    !['postgres:', 'postgresql:'].includes(url.protocol) ||
+    !['localhost', '127.0.0.1'].includes(url.hostname) ||
+    url.pathname !== `/${atomicDatabase}` ||
+    url.search
+  ) {
+    throw new Error('Atomic tests require the isolated local darun_atomic_integrity database without startup options');
+  }
+  const username = decodeURIComponent(url.username);
+  const password = decodeURIComponent(url.password);
+  if (!username || [username, password].some(value => /\p{Cc}/u.test(value))) {
+    throw new Error('Atomic tests require an explicit database user and valid credentials');
+  }
+  return { host: url.hostname, port: url.port ? Number(url.port) : 5432, username, password };
+}
+
+async function assertAtomicDatabase(session: Sql, name: string) {
+  const [current] = await session`select current_database() as name, current_schema() as schema`;
+  if (current?.name !== name || current.schema !== fixtureSchema) {
+    throw new Error('Atomic test fixture connected to the wrong database or schema');
+  }
+}
 
 suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', () => {
   let sql: Sql;
@@ -100,23 +128,22 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
   const prefix = `atomic-${randomUUID()}`;
 
   beforeAll(async () => {
-    const url = new URL(databaseUrl!);
-    if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.pathname !== '/darun_atomic_integrity') {
-      throw new Error('Atomic tests require the isolated local darun_atomic_integrity database');
-    }
-    if (['database', 'search_path', 'options'].some(parameter => url.searchParams.has(parameter))) {
-      throw new Error('Atomic test database URL must not override the database or search path');
-    }
-    sql = postgres(databaseUrl!, {
+    const address = atomicDatabaseOptions();
+    sql = postgres({
+      ...address,
+      database: atomicDatabase,
       max: 6,
       prepare: false,
-      connection: { statement_timeout: 10000, lock_timeout: 5000 },
+      connection: connectionSettings,
     });
-    writerSql = postgres(databaseUrl!, {
+    writerSql = postgres({
+      ...address,
+      database: atomicDatabase,
       max: 1,
       prepare: false,
-      connection: { application_name: prefix, statement_timeout: 10000, lock_timeout: 5000 },
+      connection: { ...connectionSettings, application_name: prefix },
     });
+    await Promise.all([assertAtomicDatabase(sql, atomicDatabase), assertAtomicDatabase(writerSql, atomicDatabase)]);
     db = drizzle(sql);
     writerDb = drizzle(writerSql);
     Container.set(DrizzleToken, db);
@@ -997,22 +1024,20 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     run: (session: Sql, database: PostgresJsDatabase, migrationsSchema: string) => Promise<void>
   ) {
     const name = `request_migration_${randomUUID().replaceAll('-', '')}`;
-    const schema = 'public';
-    const url = new URL(databaseUrl!);
-    url.pathname = `/${name}`;
     const folder = await mkdtemp(join(tmpdir(), 'darun-request-migration-'));
-    const session = postgres(url.href, {
+    const session = postgres({
+      ...atomicDatabaseOptions(),
+      database: name,
       max: 4,
       prepare: false,
-      connection: { search_path: schema, statement_timeout: 10000, lock_timeout: 5000 },
+      connection: connectionSettings,
     });
     let created = false;
     try {
       // Some generated migrations explicitly target public, regardless of search_path.
       await sql`create database ${sql(name)}`;
       created = true;
-      const [current] = await session`select current_database() as name`;
-      if (current?.name !== name) throw new Error('Historical migration fixture connected to the wrong database');
+      await assertAtomicDatabase(session, name);
       await cp(migrationsFolder, folder, { recursive: true });
       const journal = JSON.parse(await readFile(join(folder, 'meta/_journal.json'), 'utf8')) as {
         entries: Array<{ tag: string }>;
@@ -1022,8 +1047,8 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       journal.entries = journal.entries.slice(0, baselineIndex + 1);
       await writeFile(join(folder, 'meta/_journal.json'), JSON.stringify(journal));
       const database = drizzle(session);
-      await migrate(database, { migrationsFolder: folder, migrationsSchema: schema });
-      await run(session, database, schema);
+      await migrate(database, { migrationsFolder: folder, migrationsSchema: fixtureSchema });
+      await run(session, database, fixtureSchema);
     } finally {
       try {
         await session.end({ timeout: 5 });
