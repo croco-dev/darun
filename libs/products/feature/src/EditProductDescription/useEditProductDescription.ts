@@ -12,8 +12,8 @@ import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  beginProductDescriptionSave,
   readSavedProductDescription,
-  storeSavedProductDescription,
   useSavedProductDescription,
 } from '../ProductDescription/useSavedProductDescription';
 
@@ -39,7 +39,7 @@ type FormValues = {
   description?: string;
 };
 
-type DescriptionConflict = { status: 'loading' | 'failed' } | { status: 'ready'; description: string | null };
+type DescriptionConflict = 'loading' | 'failed' | 'ready';
 
 async function hashDescription(description: string | null): Promise<string | null> {
   if (description === null) return null;
@@ -98,7 +98,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const productSessionRef = useRef({ slug });
   const [hasObservedChange, setHasObservedChange] = useState(false);
   const hasServerChange = conflict !== null || hasObservedChange;
-  const latestDescription = conflict?.status === 'ready' ? conflict.description : description;
+  const conflictStatus = conflict === 'ready' && !product ? 'failed' : conflict;
 
   useEffect(
     () => () => {
@@ -146,7 +146,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
 
   const refreshAfterConflict = async () => {
     const productSession = productSessionRef.current;
-    setConflict({ status: 'loading' });
+    setConflict('loading');
     try {
       // A read already in flight may have started before the rejected save.
       const result = await readSavedProductDescription(
@@ -156,11 +156,10 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
         true
       );
       if (productSessionRef.current === productSession) {
-        const latest = result?.tempProductBySlug;
-        setConflict(latest ? { status: 'ready', description: latest.description ?? null } : { status: 'failed' });
+        setConflict(result?.tempProductBySlug ? 'ready' : 'failed');
       }
     } catch {
-      if (productSessionRef.current === productSession) setConflict({ status: 'failed' });
+      if (productSessionRef.current === productSession) setConflict('failed');
     }
   };
 
@@ -168,7 +167,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     if (
       !descriptionReady ||
       savePending.current ||
-      (conflict && conflict.status !== 'ready') ||
+      (conflictStatus && conflictStatus !== 'ready') ||
       imageUploadPending.current
     ) {
       return;
@@ -187,6 +186,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     try {
       const expectedDescriptionHash = await hashDescription(expectedDescription);
       if (productSessionRef.current !== productSession) return;
+      const confirmSave = beginProductDescriptionSave(client, slug);
       const result = await editDescription({
         variables: { slug, input: { description: descriptionToSave } },
         fetchPolicy: 'no-cache',
@@ -194,7 +194,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
         context: { darunExpectedDescriptionHash: expectedDescriptionHash },
       });
       const product = result.data?.editProduct?.product;
-      if (product?.id) storeSavedProductDescription(client, slug, product);
+      if (product?.id) confirmSave(product);
       if (productSessionRef.current !== productSession) return;
       if (product?.id) {
         resetDraft(product.description ?? null);
@@ -238,15 +238,16 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     submit,
     onCancel,
     hasServerChange,
-    latestDescription,
-    conflictRefresh: conflict?.status === 'ready' ? null : (conflict?.status ?? null),
+    latestDescription: description,
+    conflictRefresh: conflictStatus === 'ready' ? null : conflictStatus,
     refreshAfterConflict,
     acceptLatestDescription: () => {
-      lastObservedSourceRef.current = { slug, description: latestDescription };
-      resetDraft(latestDescription);
+      if (!product) return;
+      lastObservedSourceRef.current = { slug, description };
+      resetDraft(description);
       setConflict(null);
     },
-    overwriteWithDraft: () => save(getValues(), latestDescription),
+    overwriteWithDraft: () => save(getValues(), description),
     loading,
     imageUploading,
     onImageUploadingChange,

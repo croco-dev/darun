@@ -25,7 +25,7 @@ vi.mock('@mantine/notifications', () => ({
 }));
 
 const mutate = vi.fn();
-const client = { query: vi.fn(), writeQuery: vi.fn() };
+const client = { query: vi.fn(), readQuery: vi.fn(), writeQuery: vi.fn() };
 let description: string | null | undefined;
 let descriptionError: Error | undefined;
 

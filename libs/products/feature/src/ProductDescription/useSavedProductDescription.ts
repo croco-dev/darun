@@ -11,17 +11,43 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 type DescriptionResult = TempProductBySlugOnEditProductDescriptionQuery;
 type DescriptionProduct = NonNullable<DescriptionResult['tempProductBySlug']>;
 type DescriptionQuery = typeof TempProductBySlugOnEditProductDescriptionDocument;
+type DescriptionRead = Promise<DescriptionResult | undefined>;
+type DescriptionRequests = { confirmed: number; pending?: DescriptionRead };
 
-const pendingReads = new WeakMap<ApolloClient, Map<string, Promise<DescriptionResult | undefined>>>();
+const requestsByClient = new WeakMap<ApolloClient, Map<string, DescriptionRequests>>();
+let requestCount = 0;
 
-export function storeSavedProductDescription(client: ApolloClient, slug: string, product: DescriptionProduct) {
-  pendingReads.get(client)?.delete(slug);
-  const savedProduct = { ...product, __typename: 'Product' };
-  client.writeQuery({
-    query: TempProductBySlugOnEditProductDescriptionDocument,
-    variables: { slug },
-    data: { tempProductBySlug: savedProduct },
-  });
+function requestsFor(client: ApolloClient, slug: string) {
+  let products = requestsByClient.get(client);
+  if (!products) {
+    products = new Map();
+    requestsByClient.set(client, products);
+  }
+  let requests = products.get(slug);
+  if (!requests) {
+    requests = { confirmed: 0 };
+    products.set(slug, requests);
+  }
+  return requests;
+}
+
+export function beginProductDescriptionSave(client: ApolloClient, slug: string) {
+  const requests = requestsFor(client, slug);
+  const request = ++requestCount;
+  const query = TempProductBySlugOnEditProductDescriptionDocument;
+  const variables = { slug };
+  return (product: DescriptionProduct) => {
+    const current = client.readQuery({ query, variables })?.tempProductBySlug;
+    if (requests.confirmed > request || (current && current.id !== product.id)) {
+      // An older command response cannot establish what the server holds now.
+      void readSavedProductDescription(client, slug, query, true).catch(() => {});
+      return;
+    }
+    requests.pending = undefined;
+    requests.confirmed = request;
+    const savedProduct = { ...product, __typename: 'Product' };
+    client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
+  };
 }
 
 export function readSavedProductDescription(
@@ -30,33 +56,38 @@ export function readSavedProductDescription(
   query: DescriptionQuery,
   fresh = false
 ) {
-  let reads = pendingReads.get(client);
-  if (!reads) {
-    reads = new Map();
-    pendingReads.set(client, reads);
-  }
-  const pending = reads.get(slug);
-  if (pending && !fresh) return pending;
+  const requests = requestsFor(client, slug);
+  if (requests.pending && !fresh) return requests.pending;
 
-  const active = reads;
+  const request = ++requestCount;
   const variables = { slug };
-  const read = client
+  const supersedingResult = async () => {
+    if (!fresh) return undefined;
+    if (requests.confirmed < request) await requests.pending;
+    if (requests.confirmed <= request) return undefined;
+    return client.readQuery({ query, variables }) ?? undefined;
+  };
+  const read: DescriptionRead = client
     .query({ query, variables, fetchPolicy: 'no-cache', context: { queryDeduplication: false } })
     .then(
       ({ data }) => {
         // A confirmed save or an independent conflict read supersedes older requests for this slug.
-        if (active.get(slug) === read && data) client.writeQuery({ query, variables, data });
+        if (requests.pending !== read) return supersedingResult();
+        if (data) {
+          requests.confirmed = request;
+          client.writeQuery({ query, variables, data });
+        }
         return data;
       },
       (error: unknown) => {
-        if (active.get(slug) === read || fresh) throw error;
-        return undefined;
+        if (requests.pending === read) throw error;
+        return supersedingResult();
       }
     )
     .finally(() => {
-      if (active.get(slug) === read) active.delete(slug);
+      if (requests.pending === read) requests.pending = undefined;
     });
-  active.set(slug, read);
+  requests.pending = read;
   return read;
 }
 
