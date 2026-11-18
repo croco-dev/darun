@@ -283,6 +283,41 @@ it('충돌 조회가 늦으면 편집기에 이미 확인한 AI 적용 본문을
   expect(fixture.savedDescription()).toBe(draft);
 });
 
+it('이전 AI 적용의 응답과 충돌 조회가 겹쳐도 다른 관리자가 저장한 최신 본문을 보여 준다', async () => {
+  const fixture = setup();
+  const latest = '<p>AI 적용 뒤 다른 관리자가 저장한 본문</p>';
+  const draft = '<p>유지할 초안</p>';
+  await waitFor(() => {
+    expect(fixture.result.current.editor.descriptionReady).toBe(true);
+    expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1');
+  });
+
+  const releaseApply = fixture.holdNextApplyResponse();
+  let applying!: Promise<void>;
+  act(() => {
+    applying = fixture.result.current.candidate.handleApply();
+  });
+  await waitFor(() => expect(fixture.savedDescription()).toBe('<p>Accepted AI candidate</p>'));
+  fixture.writeElsewhere(latest);
+  act(() => fixture.result.current.editor.form.getInputProps('description').onChange(draft));
+  const releaseRead = fixture.holdNextEditorRead();
+  let saving!: Promise<void>;
+  act(() => {
+    saving = fixture.result.current.editor.submit({ description: draft });
+  });
+  await waitFor(() => expect(fixture.result.current.editor.conflictRefresh).toBe('loading'));
+  await act(async () => {
+    releaseApply();
+    await applying;
+    releaseRead(false);
+    await saving;
+  });
+  expect(fixture.result.current.editor.conflictRefresh).toBeNull();
+  expect(fixture.result.current.editor.latestDescription).toBe(latest);
+  expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
+  expect(fixture.cachedDescription()).toBe(latest);
+});
+
 it('다른 편집자의 저장을 감지해 초안을 보존하고 최신 본문 조회를 다시 시도할 수 있다', async () => {
   const fixture = setup();
   const draft = '<p>Unsaved human draft</p>';

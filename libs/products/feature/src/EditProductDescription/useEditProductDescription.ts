@@ -194,15 +194,14 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
         context: { darunExpectedDescriptionHash: expectedDescriptionHash },
       });
       const product = result.data?.editProduct?.product;
-      if (product?.id) confirmSave(product);
+      if (!product?.id) return;
+      confirmSave(product);
+      onSaved?.(product.id);
       if (productSessionRef.current !== productSession) return;
-      if (product?.id) {
-        resetDraft(product.description ?? null);
-        setConflict(null);
-        onSaved?.(product.id);
-        notifications.show({ message: '수정되었습니다!', color: 'teal' });
-        onSubmit?.();
-      }
+      resetDraft(product.description ?? null);
+      setConflict(null);
+      notifications.show({ message: '수정되었습니다!', color: 'teal' });
+      onSubmit?.();
     } catch (error) {
       if (productSessionRef.current !== productSession) return;
       if (

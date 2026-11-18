@@ -12,7 +12,10 @@ type DescriptionResult = TempProductBySlugOnEditProductDescriptionQuery;
 type DescriptionProduct = NonNullable<DescriptionResult['tempProductBySlug']>;
 type DescriptionQuery = typeof TempProductBySlugOnEditProductDescriptionDocument;
 type DescriptionRead = Promise<DescriptionResult | undefined>;
-type DescriptionRequests = { confirmed: number; pending?: DescriptionRead };
+type DescriptionRequests = {
+  publication?: { sequence: number; source: 'read' | 'save' };
+  pending?: DescriptionRead;
+};
 
 const requestsByClient = new WeakMap<ApolloClient, Map<string, DescriptionRequests>>();
 let requestCount = 0;
@@ -25,7 +28,7 @@ function requestsFor(client: ApolloClient, slug: string) {
   }
   let requests = products.get(slug);
   if (!requests) {
-    requests = { confirmed: 0 };
+    requests = {};
     products.set(slug, requests);
   }
   return requests;
@@ -38,13 +41,13 @@ export function beginProductDescriptionSave(client: ApolloClient, slug: string) 
   const variables = { slug };
   return (product: DescriptionProduct) => {
     const current = client.readQuery({ query, variables })?.tempProductBySlug;
-    if (requests.confirmed > request || (current && current.id !== product.id)) {
+    if ((requests.publication && requests.publication.sequence > request) || (current && current.id !== product.id)) {
       // An older command response cannot establish what the server holds now.
       void readSavedProductDescription(client, slug, query, true).catch(() => {});
       return;
     }
     requests.pending = undefined;
-    requests.confirmed = request;
+    requests.publication = { sequence: ++requestCount, source: 'save' };
     const savedProduct = { ...product, __typename: 'Product' };
     client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
   };
@@ -63,8 +66,13 @@ export function readSavedProductDescription(
   const variables = { slug };
   const supersedingResult = async () => {
     if (!fresh) return undefined;
-    if (requests.confirmed < request) await requests.pending;
-    if (requests.confirmed <= request) return undefined;
+    if (requests.pending) await requests.pending;
+    const publication = requests.publication;
+    if (!publication || publication.sequence <= request) return undefined;
+    if (publication.source === 'save') {
+      // The delayed read might precede or follow the actual commit. Read again after its acknowledgement.
+      return readSavedProductDescription(client, slug, query, true);
+    }
     return client.readQuery({ query, variables }) ?? undefined;
   };
   const read: DescriptionRead = client
@@ -74,7 +82,7 @@ export function readSavedProductDescription(
         // A confirmed save or an independent conflict read supersedes older requests for this slug.
         if (requests.pending !== read) return supersedingResult();
         if (data) {
-          requests.confirmed = request;
+          requests.publication = { sequence: ++requestCount, source: 'read' };
           client.writeQuery({ query, variables, data });
         }
         return data;

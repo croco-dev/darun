@@ -242,7 +242,8 @@ describe('description validation', () => {
     let complete!: (value: unknown) => void;
     mutate.mockReturnValueOnce(new Promise(resolve => (complete = resolve)));
     const onSubmit = vi.fn();
-    const { result, unmount } = renderHook(() => useEditProductDescription({ slug: 'product-1', onSubmit }));
+    const onSaved = vi.fn();
+    const { result, unmount } = renderHook(() => useEditProductDescription({ slug: 'product-1', onSubmit, onSaved }));
     let saving!: Promise<void>;
     act(() => {
       saving = result.current.submit({ description: '<p>기존 상품</p>' });
@@ -261,6 +262,7 @@ describe('description validation', () => {
     });
     expect(onSubmit).not.toHaveBeenCalled();
     expect(notifications.show).not.toHaveBeenCalled();
+    expect(onSaved).toHaveBeenCalledWith('product-1');
   });
 
   it('너무 큰 표는 직접 submit에서도 전송하지 않고 원문을 유지한다', async () => {
