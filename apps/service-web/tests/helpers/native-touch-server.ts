@@ -42,6 +42,17 @@ const nativeTouchProduct = {
 };
 
 const companyRead = Promise.withResolvers<void>();
+const homeScenarios = ['count-delayed-error', 'count-zero', 'count-positive', 'category-error'] as const;
+let homeScenario: (typeof homeScenarios)[number] = 'count-positive';
+let releaseProductCount = Promise.withResolvers<void>();
+
+const homeCategory = {
+  __typename: 'Category',
+  id: 'home-productivity',
+  slug: 'productivity',
+  labelKo: '생산성 도구',
+  labelEn: 'Productivity tools',
+};
 const delayedCompany = {
   id: 'delayed-company',
   name: 'Delayed Company',
@@ -89,6 +100,22 @@ const productWithDesignatedLink = {
 
 // Both SSR and browser reads use this loopback-only fixture. No database or external API is involved.
 createServer((request, response) => {
+  if (request.method === 'POST' && request.url?.startsWith('/home-scenario/')) {
+    const scenario = request.url.slice('/home-scenario/'.length);
+    const selected = homeScenarios.find(value => value === scenario);
+    if (scenario === 'release-count') {
+      releaseProductCount.resolve();
+    } else if (selected) {
+      releaseProductCount.resolve();
+      releaseProductCount = Promise.withResolvers<void>();
+      homeScenario = selected;
+    } else {
+      response.writeHead(404).end();
+      return;
+    }
+    response.writeHead(204).end();
+    return;
+  }
   if (request.url === '/release-company' && request.method === 'POST') {
     companyRead.resolve();
     response.writeHead(204).end();
@@ -110,6 +137,25 @@ createServer((request, response) => {
   request.on('end', async () => {
     const { operationName, query, variables } = body ? JSON.parse(body) : {};
     response.setHeader('Content-Type', 'application/json');
+    if (operationName === 'ProductsCountOnHomePage') {
+      if (homeScenario === 'count-delayed-error') {
+        await releaseProductCount.promise;
+        response.end(JSON.stringify({ data: null, errors: [{ message: 'Fixture count unavailable' }] }));
+      } else {
+        response.end(JSON.stringify({ data: { productsCount: homeScenario === 'count-zero' ? 0 : 42 } }));
+      }
+      return;
+    }
+    if (operationName === 'CategoriesOnCategoryNavigationSection') {
+      response.end(
+        JSON.stringify(
+          homeScenario === 'category-error'
+            ? { data: null, errors: [{ message: 'Fixture categories unavailable' }] }
+            : { data: { categories: [homeCategory] } }
+        )
+      );
+      return;
+    }
     const failPhoto = variables?.slug === 'unavailable-photos' && operationName === 'GetPhotosOnProductPhotos';
     const readsCompany = typeof query === 'string' && /\bownedCompany\s*\{/.test(query);
     const companyUnavailable = variables?.slug === 'unavailable-company' && readsCompany;
@@ -141,7 +187,10 @@ createServer((request, response) => {
                 : product,
           searchProducts: variables?.query === 'section-retry-fixture' ? [nativeTouchProduct] : [],
           categories: [],
-          rankedProducts: [],
+          rankedProducts: operationName === 'TrendingProductsOnTrendingProductSection' ? [nativeTouchProduct] : [],
+          recentProducts: [
+            { ...nativeTouchProduct, id: 'home-recent', slug: 'recent-fixture', name: 'Recent Fixture' },
+          ],
         },
       })
     );

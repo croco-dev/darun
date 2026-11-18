@@ -10,8 +10,10 @@ import {
 } from '@darun/products-shell';
 import { Compass, Layers, SectionHeader, SectionWrapper, ShieldCheck } from '@darun/ui';
 import { Layout } from '@darun/ui-layout';
+import { captureException } from '@sentry/nextjs';
 
 import { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { JsonLd } from '../../lib/seo/json-ld';
 import { buildHomePageMetadata, getSiteName } from '../../lib/seo/metadata';
@@ -23,6 +25,28 @@ const productsCountQuery = gql`
     productsCount
   }
 `;
+
+async function HomeHeroHeadline({
+  locale,
+  fallback,
+}: {
+  locale: ReturnType<typeof normalizeLocale>;
+  fallback: string;
+}) {
+  const { data, error } = await getClient({ static: true }).query<{ productsCount: number }>({
+    query: productsCountQuery,
+    errorPolicy: 'all',
+  });
+
+  if (error) {
+    captureException(error);
+    return fallback;
+  }
+  if (data?.productsCount == null) return fallback;
+
+  const t = await getTranslations({ locale, namespace: 'Main.hero' });
+  return t('headline', { count: data.productsCount });
+}
 
 export const revalidate = 3600;
 
@@ -91,24 +115,20 @@ export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
   const currentLocale = normalizeLocale(locale);
   const isKo = currentLocale === 'ko';
-
-  const { data } = await getClient({ static: true }).query<{
-    productsCount: number;
-  }>({
-    query: productsCountQuery,
-  });
-
-  if (!data) {
-    throw new Error('Products count query returned no data');
-  }
-
-  const productsCount = data.productsCount;
+  const t = await getTranslations({ locale: currentLocale, namespace: 'Main.hero' });
+  const fallbackHeadline = t('headlineWithoutCount');
 
   return (
     <Layout>
       <JsonLd data={getWebSiteJsonLd(currentLocale)} />
       <main data-testid="home-page" className="flex flex-col">
-        <MainHeroBanner productsCount={productsCount} />
+        <MainHeroBanner
+          headline={
+            <Suspense fallback={fallbackHeadline}>
+              <HomeHeroHeadline locale={currentLocale} fallback={fallbackHeadline} />
+            </Suspense>
+          }
+        />
         <Suspense fallback={<CategoryNavigationSkeleton />}>
           <CategoryNavigationSection />
         </Suspense>
