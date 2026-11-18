@@ -451,7 +451,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     }
   }
 
-  it.each(['variable', 'inline', 'default'])('redacts a private exclusion note written as a %s', async encoding => {
+  it.each(['variable', 'inline', 'default'])('%s 방식의 비공개 제외 메모를 진단에서 가린다', async encoding => {
     const note = `synthetic-exclusion-note-${randomUUID()} +/한글`;
     const literal = JSON.stringify(note);
     const variable = encoding === 'variable';

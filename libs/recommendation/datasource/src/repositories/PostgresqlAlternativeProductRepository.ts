@@ -15,8 +15,10 @@ import { alternativeProducts, alternativeProductExclusions } from '../entities/A
 
 type Transaction = Parameters<Parameters<Drizzle['transaction']>[0]>[0];
 
-const lockProduct = (tx: Transaction, productId: string) =>
-  tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`alternative-products:${productId}`}, 0))`);
+const lockProduct = (tx: Transaction, productId: string) => {
+  const lockKey = `alternative-products:${productId}`;
+  return tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+};
 
 @Service(AlternativeProductRepositoryToken)
 export class PostgresqlAlternativeProductRepository implements AlternativeProductRepository {
@@ -167,7 +169,12 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
     return this.db
       .transaction(async tx => {
         const byProduct = groupBy(newAlternatives, alternative => alternative.productId);
-        for (const productId of Object.keys(byProduct).sort()) {
+        const productIds = Object.keys(byProduct).sort((left, right) => {
+          if (left === right) return 0;
+          return left < right ? -1 : 1;
+        });
+        // Concurrent batches acquire locks in the same order.
+        for (const productId of productIds) {
           await lockProduct(tx, productId);
           await this.assertNotExcluded(
             tx,
