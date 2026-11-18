@@ -53,6 +53,9 @@ function setup(initialIds: string[] = []) {
     replaceByProductId: vi.fn(async (_productId: string, ids: string[]) => {
       storedIds = [...ids];
     }),
+    findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+    exclude: vi.fn(),
+    restore: vi.fn(),
     create: vi.fn(),
     createMany: vi.fn(),
     deleteMany: vi.fn(),

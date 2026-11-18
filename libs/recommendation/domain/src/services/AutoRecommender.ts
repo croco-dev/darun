@@ -1,9 +1,11 @@
 import type { Product, ProductRepository, ProductTagRepository } from '@darun/products-domain';
-import { ProductRepositoryToken, ProductTagRepositoryToken } from '@darun/products-domain';
+import {
+  PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS,
+  ProductRepositoryToken,
+  ProductTagRepositoryToken,
+} from '@darun/products-domain';
 import { Inject, Service } from 'typedi';
 import { AlternativeProduct } from '../entities/AlternativeProduct';
-
-const CATEGORY_CANDIDATE_CAP = 30;
 
 type Candidate = {
   readonly productId: string;
@@ -66,7 +68,10 @@ export class AutoRecommender {
 
     const categoryProducts = await Promise.all(
       product.categoryIds.map(categoryId =>
-        this.productRepository.findPublishedByCategoryIdAndLimit(categoryId, CATEGORY_CANDIDATE_CAP)
+        this.productRepository.findPublishedByCategoryIdAndLimit(
+          categoryId,
+          PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS.perCategory
+        )
       )
     );
     for (const products of categoryProducts) {
@@ -128,7 +133,9 @@ export class AutoRecommender {
       return 0;
     }
 
-    const products = await this.productRepository.findTopNSortByPublishedAtDesc(50);
+    const products = await this.productRepository.findTopNSortByPublishedAtDesc(
+      PRODUCT_ALTERNATIVE_CANDIDATE_LIMITS.recent
+    );
     const candidateProducts = new Map<string, Pick<Product, 'id' | 'publishedAt'>>(
       [...candidates.values()].map(candidate => [
         candidate.productId,

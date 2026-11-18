@@ -32,7 +32,11 @@ const httpLink = new HttpLink({
 
 function createApolloClient() {
   return new ApolloClient({
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      typePolicies: {
+        Product: { fields: { alternatives: { merge: false } } },
+      },
+    }),
     link: ApolloLink.from([
       new RetryLink({
         delay: {

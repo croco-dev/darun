@@ -301,6 +301,7 @@ type Mutation {
   retryProductDescriptionJob(id: String!, requestId: String): ProductDescriptionJob!
   retryProductResearch(input: RetryProductResearchInput, jobId: String!): ProductResearchJob
   retryTranslationJob(id: String!): TranslationJob!
+  setProductAlternativeExclusion(exclusionNote: String, input: SetProductAlternativeExclusionInput!): Boolean!
   setVisualFlowSave(input: SetVisualSaveInput!): SetVisualSavePayload!
   setVisualScreenshotSave(input: SetVisualSaveInput!): SetVisualSavePayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
@@ -327,6 +328,7 @@ type PageInfo {
 
 """서비스 정보와 관련 콘텐츠를 조회하는 Product."""
 type Product {
+  alternativeManagement: ProductAlternativeManagement!
   alternatives: [Product!]!
   coverScreenshot: Screenshot
   description: String
@@ -348,6 +350,17 @@ type Product {
   tags: [Tag!]!
   updatedAt: DateTimeISO
   voteCount: Int
+}
+
+type ProductAlternativeExclusion {
+  alternativeProductId: String!
+  alternativeProductName: String
+  note: String
+}
+
+type ProductAlternativeManagement {
+  automatic: [Product!]!
+  exclusions: [ProductAlternativeExclusion!]!
 }
 
 type ProductConnection {
@@ -614,6 +627,12 @@ type Screenshot {
   screenType: VisualScreenType
   title: String
   uiElements: [VisualUiElement!]!
+}
+
+input SetProductAlternativeExclusionInput {
+  alternativeProductId: String!
+  excluded: Boolean!
+  slug: String!
 }
 
 input SetVisualSaveInput {

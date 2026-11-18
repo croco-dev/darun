@@ -40,6 +40,9 @@ describe('GetAlternativeProducts', () => {
     const alternativeRepository = {
       replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue(manual),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
       createMany: vi.fn<AlternativeProductRepository['createMany']>(),
@@ -93,6 +96,9 @@ describe('GetAlternativeProducts', () => {
             })
         )
       ),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn(),
       deleteMany: vi.fn(),
       createMany: vi.fn(),
@@ -111,6 +117,9 @@ describe('GetAlternativeProducts', () => {
     const alternativeRepository = {
       replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
       createMany: vi.fn<AlternativeProductRepository['createMany']>(),
@@ -193,6 +202,9 @@ describe('GetAlternativeProducts', () => {
     const alternativeRepository = {
       replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
       createMany: vi.fn<AlternativeProductRepository['createMany']>(),
@@ -227,6 +239,9 @@ describe('GetAlternativeProducts', () => {
     const alternativeRepository = {
       replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
       createMany: vi.fn<AlternativeProductRepository['createMany']>(),
@@ -262,6 +277,9 @@ describe('GetAlternativeProducts', () => {
     const alternativeRepository = {
       replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
       createMany: vi.fn<AlternativeProductRepository['createMany']>(),
@@ -291,6 +309,9 @@ describe('GetAlternativeProducts', () => {
     const alternativeRepository = {
       replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
       findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn<AlternativeProductRepository['create']>(),
       deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>(),
       createMany: vi.fn<AlternativeProductRepository['createMany']>(),
@@ -334,6 +355,9 @@ describe('GetAlternativeProducts', () => {
             })
         )
       ),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn(),
       deleteMany: vi.fn(),
       createMany: vi.fn(),
@@ -360,6 +384,9 @@ describe('GetAlternativeProducts', () => {
           alternativeProductId: 'manual',
         }),
       ]),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn(),
       deleteMany: vi.fn(),
       createMany: vi.fn(),

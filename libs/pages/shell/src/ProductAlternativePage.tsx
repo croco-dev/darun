@@ -8,10 +8,12 @@ import { useLocale, useTranslations } from 'next-intl';
 export const ProductAlternativePage = ({
   params: { slug },
   productName,
+  alternativeIds,
   faqItems,
 }: {
   params: { slug: string };
   productName: string;
+  alternativeIds?: string[];
   faqItems?: FAQItem[];
 }) => {
   const locale = useLocale();
@@ -35,7 +37,7 @@ export const ProductAlternativePage = ({
           </ContentArea>
         </div>
         <ContentArea className="flex flex-col gap-10 pt-6 pb-16 sm:gap-12 md:gap-14 md:pt-8 md:pb-24">
-          <AlternativeProductSection slug={slug} />
+          <AlternativeProductSection slug={slug} alternativeIds={alternativeIds} />
           {faqItems && faqItems.length > 0 && <FAQSection items={faqItems} />}
         </ContentArea>
       </main>

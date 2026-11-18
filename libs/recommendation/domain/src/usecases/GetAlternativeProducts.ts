@@ -1,7 +1,10 @@
 import type { ProductRepository } from '@darun/products-domain';
 import { ProductRepositoryToken } from '@darun/products-domain';
 import { Inject, Service } from 'typedi';
-import type { AlternativeProductRepository } from '../repositories/AlternativeProductRepository';
+import type {
+  AlternativeProductExclusion,
+  AlternativeProductRepository,
+} from '../repositories/AlternativeProductRepository';
 import { AlternativeProductRepositoryToken } from '../repositories/AlternativeProductRepository';
 import { AutoRecommender } from '../services/AutoRecommender';
 
@@ -22,9 +25,18 @@ export class GetAlternativeProducts {
   }
 
   async execute({ productId }: { productId: string }) {
-    const manualRows = (await this.executeManual({ productId })).filter(
-      alternative => alternative.alternativeProductId !== productId
-    );
+    const { manual, automatic } = await this.recommendations(productId);
+    return [...manual, ...automatic];
+  }
+
+  async executeForManagement(productId: string) {
+    const exclusions = await this.alternativeProductRepository.findExclusionsByProductId(productId);
+    const { automatic } = await this.recommendations(productId, exclusions);
+    return { exclusions, automatic };
+  }
+
+  private async recommendations(productId: string, exclusions?: AlternativeProductExclusion[]) {
+    const manualRows = (await this.executeManual({ productId })).filter(row => row.alternativeProductId !== productId);
     const publishedProducts = await this.productRepository.findPublishedByIds(
       manualRows.map(alternative => alternative.alternativeProductId)
     );
@@ -39,15 +51,16 @@ export class GetAlternativeProducts {
       })
       .slice(0, DEFAULT_ALTERNATIVE_LIMIT);
     if (manualAlternatives.length >= DEFAULT_ALTERNATIVE_LIMIT || !this.autoRecommender) {
-      return manualAlternatives;
+      return { manual: manualAlternatives, automatic: [] };
     }
 
+    const excluded = exclusions ?? (await this.alternativeProductRepository.findExclusionsByProductId(productId));
     const automaticAlternatives = await this.autoRecommender.recommend({
       productId,
-      excludeProductIds: manualAlternatives.map(alternative => alternative.alternativeProductId),
+      excludeProductIds: [...manualAlternatives, ...excluded].map(alternative => alternative.alternativeProductId),
       limit: DEFAULT_ALTERNATIVE_LIMIT - manualAlternatives.length,
     });
 
-    return [...manualAlternatives, ...automaticAlternatives];
+    return { manual: manualAlternatives, automatic: automaticAlternatives };
   }
 }

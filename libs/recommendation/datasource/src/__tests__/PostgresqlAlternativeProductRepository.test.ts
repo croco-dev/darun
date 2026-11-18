@@ -32,6 +32,8 @@ describe('PostgresqlAlternativeProductRepository', () => {
   let mockTx: {
     delete: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
+    execute: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
   };
   let mockDb: MockedDb;
   let mockSelect: ReturnType<typeof vi.fn>;
@@ -45,6 +47,8 @@ describe('PostgresqlAlternativeProductRepository', () => {
     mockTxReturning = vi.fn().mockResolvedValue([{ id: 'new-1', productId: 'p1', alternativeProductId: 'alt-1' }]);
 
     mockTx = {
+      execute: vi.fn(),
+      select: vi.fn(() => ({ from: () => ({ where: () => ({ limit: () => Promise.resolve([]) }) }) })),
       delete: vi.fn(() => ({ where: mockTxDeleteWhere })),
       insert: vi.fn(() => ({
         values: vi.fn(() => ({

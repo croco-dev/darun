@@ -7,6 +7,9 @@ describe('UpdateAlternativeProduct', () => {
     const repository: AlternativeProductRepository = {
       replaceByProductId: vi.fn(),
       findManyByProductId: vi.fn(),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn(),
       createMany: vi.fn(),
       deleteMany: vi.fn(),
@@ -26,6 +29,9 @@ describe('UpdateAlternativeProduct', () => {
     const repository: AlternativeProductRepository = {
       replaceByProductId,
       findManyByProductId: vi.fn(),
+      findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+      exclude: vi.fn(),
+      restore: vi.fn(),
       create: vi.fn(),
       createMany: vi.fn(),
       deleteMany: vi.fn(),

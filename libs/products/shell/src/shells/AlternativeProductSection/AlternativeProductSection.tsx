@@ -8,11 +8,12 @@ import { useProductAlternativeList } from '../../components/ProductAlternativeLi
 
 type AlternativeProductSectionProps = {
   slug: string;
+  alternativeIds?: string[];
 };
 
-export const AlternativeProductSection = ({ slug }: AlternativeProductSectionProps) => {
+export const AlternativeProductSection = ({ slug, alternativeIds }: AlternativeProductSectionProps) => {
   const t = useTranslations('Alternative');
-  const { products, locale } = useProductAlternativeList({ slug });
+  const { products, locale } = useProductAlternativeList({ slug, alternativeIds });
 
   if (!products?.length) {
     return (

@@ -1,6 +1,7 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useLazyQuery, useMutation, useQuery } from '@apollo/client/react';
 import {
   EditProductOnEditAlternativeProductsDocument,
@@ -105,6 +106,13 @@ export function useEditAlternativeProducts({ slug, onSubmit, onCancel }: UseEdit
       }
     },
     onError: error => {
+      const conflict = CombinedGraphQLErrors.is(error)
+        ? error.errors.find(item => item.extensions?.code === 'alternative-product/conflict')
+        : undefined;
+      if (conflict) {
+        notifications.show({ message: conflict.message, color: 'red' });
+        return;
+      }
       console.error('mutation failed:', error);
       notifications.show({ message: '수정에 실패했습니다.', color: 'red' });
     },

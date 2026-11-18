@@ -4,6 +4,7 @@ import { UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { Product } from './graphs/Product';
+import { SetProductAlternativeExclusionInput } from './graphs/ProductAlternativeManagement';
 import { UpdateAlternativeProductInput } from './graphs/UpdateAlternativeProduct';
 import { UpdateAlternativeProductPayload } from './graphs/UpdateAlternativeProduct';
 import { ProductPublishMutationResolver } from './ProductPublishMutationResolver';
@@ -71,5 +72,24 @@ export class ProductRecommendationMutationResolver extends ProductPublishMutatio
     return {
       product: await this.getProductUseCase.execute({ slug }),
     };
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => Boolean)
+  async setProductAlternativeExclusion(
+    @Arg('input') input: SetProductAlternativeExclusionInput,
+    @Arg('exclusionNote', () => String, { nullable: true }) exclusionNote?: string | null
+  ): Promise<boolean> {
+    const source = await this.getProductUseCase.execute({ slug: input.slug });
+    if (!source) throw productNotFound();
+
+    if (input.excluded) {
+      const target = await this.getProductUseCase.execute({ id: input.alternativeProductId });
+      if (!target) throw productNotFound();
+      await this.updateAlternativeProductUseCase.exclude(source.id, target.id, exclusionNote ?? null);
+    } else {
+      await this.updateAlternativeProductUseCase.restore(source.id, input.alternativeProductId);
+    }
+    return true;
   }
 }

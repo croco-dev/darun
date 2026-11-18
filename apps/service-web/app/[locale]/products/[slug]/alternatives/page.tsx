@@ -19,6 +19,7 @@ const productQuery = gql`
         name
       }
       alternatives {
+        id
         name
         tags {
           name
@@ -34,7 +35,7 @@ type ProductQueryData = {
     summary?: string;
     logoUrl?: string;
     tags: { name: string }[];
-    alternatives?: { name: string; tags: { name: string }[] }[];
+    alternatives?: { id: string; name: string; tags: { name: string }[] }[];
   };
 };
 
@@ -179,7 +180,12 @@ export default async function ProductAlternativePageWrapper({ params }: Props) {
   return (
     <>
       <JsonLd data={breadcrumbJsonLd} />
-      <ProductAlternativePage params={resolvedParams} productName={productName} faqItems={faqItems} />
+      <ProductAlternativePage
+        params={resolvedParams}
+        productName={productName}
+        alternativeIds={data.productBySlug.alternatives?.map(product => product.id)}
+        faqItems={faqItems}
+      />
     </>
   );
 }
