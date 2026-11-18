@@ -301,7 +301,7 @@ type Mutation {
   retryProductDescriptionJob(id: String!, requestId: String): ProductDescriptionJob!
   retryProductResearch(input: RetryProductResearchInput, jobId: String!): ProductResearchJob
   retryTranslationJob(id: String!): TranslationJob!
-  setProductAlternativeExclusion(input: SetProductAlternativeExclusionInput!): Boolean!
+  setProductAlternativeExclusion(exclusionNote: String, input: SetProductAlternativeExclusionInput!): Boolean!
   setVisualFlowSave(input: SetVisualSaveInput!): SetVisualSavePayload!
   setVisualScreenshotSave(input: SetVisualSaveInput!): SetVisualSavePayload!
   signImageUpload(input: SignImageUploadInput!): SignImageUploadPayload!
@@ -632,7 +632,6 @@ type Screenshot {
 input SetProductAlternativeExclusionInput {
   alternativeProductId: String!
   excluded: Boolean!
-  note: String
   slug: String!
 }
 

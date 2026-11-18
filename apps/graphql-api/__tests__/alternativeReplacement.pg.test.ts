@@ -217,20 +217,25 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
         alternativeManagement { automatic { id } exclusions { alternativeProductId alternativeProductName note } }
       } }`;
       const publicQuery = `query($slug: String!) { productBySlug(slug: $slug) { alternatives { id } } }`;
-      const write = `mutation($input: SetProductAlternativeExclusionInput!) { setProductAlternativeExclusion(input: $input) }`;
+      const write = `mutation($input: SetProductAlternativeExclusionInput!, $exclusionNote: String) {
+        setProductAlternativeExclusion(input: $input, exclusionNote: $exclusionNote)
+      }`;
       const selectManually = `mutation {
         updateAlternativeProduct(slug: "source", input: { alternativeProductIds: ["auto-1"] }) {
           product { manualAlternatives { id } }
         }
       }`;
-      const input = { slug: 'source', alternativeProductId: 'auto-1', excluded: true, note: ' 첫 메모 ' };
+      const input = { slug: 'source', alternativeProductId: 'auto-1', excluded: true };
       const expected = (ids: string[]) => ({ productBySlug: { alternatives: ids.map(id => ({ id })) } });
+      const otherSource = expected(['source', 'auto-1', ...autoIds.slice(2, 5)]);
 
       try {
+        await client`update products set published_at = '2026-01-10 01:00:00' where id = 'source'`;
         expect((await run(publicQuery, { slug: 'source' }, [])).data).toEqual(expected(autoIds.slice(0, 5)));
         expect((await run(publicQuery, { slug: 'auto-1' }, [])).data).toEqual(
           expected(['source', ...autoIds.slice(1, 5)])
         );
+        expect((await run(publicQuery, { slug: 'auto-2' }, [])).data).toEqual(otherSource);
         for (const roles of [[], ['user']]) {
           const forbiddenRead = await run(
             '{ productBySlug(slug: "source") { alternativeManagement { exclusions { note } } } }',
@@ -243,17 +248,20 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
         expect(await repository.findExclusionsByProductId('source')).toEqual([]);
         expect((await run(write, { input: { ...input, alternativeProductId: 'missing' } })).errors).toHaveLength(1);
         expect((await run(write, { input: { ...input, alternativeProductId: 'source' } })).errors).toHaveLength(1);
-        expect((await run(write, { input: { ...input, note: 'x'.repeat(501) } })).errors).toHaveLength(1);
+        expect((await run(write, { input, exclusionNote: 'x'.repeat(501) })).errors).toHaveLength(1);
 
-        expect((await run(write, { input })).data).toEqual({ setProductAlternativeExclusion: true });
-        expect((await run(write, { input: { ...input, note: '재전송한 메모' } })).data).toEqual({
+        await client`update products set name = '제외한 후보' where id = 'auto-1'`;
+        expect((await run(write, { input, exclusionNote: '첫 메모' })).data).toEqual({
+          setProductAlternativeExclusion: true,
+        });
+        expect((await run(write, { input, exclusionNote: '재전송한 메모' })).data).toEqual({
           setProductAlternativeExclusion: true,
         });
         expect((await run(management)).data).toEqual({
           tempProductBySlug: {
             alternativeManagement: {
               automatic: autoIds.slice(1).map(id => ({ id })),
-              exclusions: [{ alternativeProductId: 'auto-1', alternativeProductName: 'auto-1', note: '첫 메모' }],
+              exclusions: [{ alternativeProductId: 'auto-1', alternativeProductName: '제외한 후보', note: '첫 메모' }],
             },
           },
         });
@@ -261,6 +269,14 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
         expect((await run(publicQuery, { slug: 'auto-1' }, [])).data).toEqual(
           expected(['source', ...autoIds.slice(1, 5)])
         );
+        expect((await run(publicQuery, { slug: 'auto-2' }, [])).data).toEqual(otherSource);
+        await client`update products set published_at = '2026-01-01' where id in ('manual-3', 'manual-1')`;
+        expect((await run(publicQuery, { slug: 'source' }, [])).data).toEqual(
+          expected(['manual-3', 'manual-1', ...autoIds.slice(1, 4)])
+        );
+        expect((await run(management)).data?.tempProductBySlug).toMatchObject({
+          alternativeManagement: { automatic: autoIds.slice(1, 4).map(id => ({ id })) },
+        });
 
         const conflict = await run(selectManually);
         expect(conflict.errors?.[0]).toMatchObject({

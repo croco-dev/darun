@@ -57,6 +57,7 @@ it.each([
         },
       ],
     })).reverse();
+    let currentAlternatives = alternatives;
     const operations: {
       name: string | undefined;
       variables: Record<string, unknown>;
@@ -77,7 +78,7 @@ it.each([
                 productBySlug: {
                   __typename: 'Product',
                   id: 'source',
-                  alternatives,
+                  alternatives: currentAlternatives,
                 },
               },
             });
@@ -94,7 +95,11 @@ it.each([
           <NextIntlClientProvider locale={locale} timeZone="UTC" messages={messages}>
             <ApolloProvider client={client}>
               <Suspense fallback="Loading">
-                <AlternativeProductSection key={key} slug="source" />
+                <AlternativeProductSection
+                  key={key}
+                  slug="source"
+                  alternativeIds={currentAlternatives.map(p => p.id)}
+                />
               </Suspense>
             </ApolloProvider>
           </NextIntlClientProvider>
@@ -124,6 +129,17 @@ it.each([
 
       await renderSection('warm');
       expect(operations).toHaveLength(1);
+      if (count > 0) {
+        const removedProduct = currentAlternatives[0];
+        currentAlternatives = currentAlternatives.slice(1);
+        await renderSection('after-exclusion');
+        expect(operations.map(operation => operation.name)).toEqual([featureOperation, featureOperation]);
+        expect(container.textContent).not.toContain(removedProduct.name);
+        expect(!!container.querySelector('[data-testid="alt-empty"]')).toBe(count === 1);
+        expect(container.querySelectorAll('[data-testid="compare-button"]')).toHaveLength(count - 1);
+        await renderSection('after-exclusion-warm');
+        expect(operations).toHaveLength(2);
+      }
     } finally {
       await act(async () => root.unmount());
       client.stop();

@@ -2,7 +2,7 @@ import { ApolloServerPlugin } from '@apollo/server';
 import * as Sentry from '@sentry/node';
 import { Kind, parse, print, visit, type DocumentNode, type ValueNode } from 'graphql';
 
-const SECRET_ARGUMENTS: Record<string, true> = { apiKey: true, braveApiKey: true };
+const SECRET_ARGUMENTS: Record<string, true> = { apiKey: true, braveApiKey: true, exclusionNote: true };
 const REDACTED = '[REDACTED]';
 // Sentry names its protocol identity fields exactly where it uses them, so
 // redaction knows them by path instead of by leaf key: `event.type`, the trace
@@ -17,7 +17,7 @@ const TRACE_IDENTITY_KEYS: Record<string, true> = {
 // Set-Cookie headers embed the cookie name, which is user input.
 const SPAN_COOKIE_ATTRIBUTE_PREFIXES = ['http.request.header.cookie.', 'http.request.header.set_cookie.'];
 
-function redactSettingCredentials(document: DocumentNode, variables?: Record<string, unknown>) {
+function redactSensitiveArguments(document: DocumentNode, variables?: Record<string, unknown>) {
   const secretVariables = new Set<string>();
   const secrets = new Set<string>();
   const propertyNames = new Set<string>();
@@ -360,9 +360,9 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T {
         ? (body.variables as Record<string, unknown>)
         : undefined;
     try {
-      const credentials = redactSettingCredentials(parse(body.query), variables);
-      for (const secret of credentials.secrets) secrets.add(secret);
-      for (const name of credentials.propertyNames) propertyNames.add(name);
+      const redacted = redactSensitiveArguments(parse(body.query), variables);
+      for (const secret of redacted.secrets) secrets.add(secret);
+      for (const name of redacted.propertyNames) propertyNames.add(name);
     } catch {
       // Invalid documents are not executable; raw request bodies and searches are still removed below.
     }
@@ -422,7 +422,7 @@ export const createSentryApolloLogPlugin = (): ApolloServerPlugin => ({
       }
 
       // Use Apollo's parsed document, not variable names or field aliases supplied by clients.
-      const redacted = redactSettingCredentials(ctx.document, ctx.request.variables);
+      const redacted = redactSensitiveArguments(ctx.document, ctx.request.variables);
       const { redactText, redactKey, redactSpanCookieName } = createCredentialRedactors(
         redacted.secrets,
         redacted.propertyNames

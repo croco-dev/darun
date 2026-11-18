@@ -32,7 +32,4 @@ export class SetProductAlternativeExclusionInput {
 
   @Field(() => Boolean)
   excluded: boolean;
-
-  @Field(() => String, { nullable: true })
-  note?: string | null;
 }

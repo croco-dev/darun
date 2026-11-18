@@ -8,7 +8,7 @@ import { createSentryApolloLogPlugin, sentryRequestRedaction } from '@darun/util
 import * as Sentry from '@sentry/node';
 import bodyParser from 'body-parser';
 import type * as GraphQL from 'graphql';
-import { Authorized, Mutation, Resolver } from 'type-graphql';
+import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { createServer, request, type Server } from 'node:http';
@@ -27,6 +27,15 @@ class HttpDiagnosticResolver {
   @Mutation(() => String)
   diagnosticSuccess(): string {
     return 'HTTP fixture ready';
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Mutation(() => Boolean)
+  diagnosticExclusionFailure(@Arg('exclusionNote', () => String, { nullable: true }) exclusionNote?: string): never {
+    // A database error can retain the input in both its message and diagnostic properties.
+    throw Object.assign(new Error(`Synthetic exclusion storage failure: ${exclusionNote}`), {
+      params: [exclusionNote],
+    });
   }
 
   @Authorized([AuthRole.Admin])
@@ -441,6 +450,32 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       inspect(value);
     }
   }
+
+  it.each(['variable', 'inline', 'default'])('redacts a private exclusion note written as a %s', async encoding => {
+    const note = `synthetic-exclusion-note-${randomUUID()} +/한글`;
+    const literal = JSON.stringify(note);
+    const variable = encoding === 'variable';
+    const operation = {
+      query:
+        encoding === 'inline'
+          ? `mutation Exclusion { excluded: diagnosticExclusionFailure(exclusionNote: ${literal}) }`
+          : `mutation Exclusion($memo: String${variable ? '' : ` = ${literal}`}) {
+            excluded: diagnosticExclusionFailure(exclusionNote: $memo)
+          }`,
+      ...(variable ? { variables: { memo: note } } : {}),
+    };
+
+    const result = (await post(operation)) as Result;
+    expect(result.errors?.[0]).toMatchObject({
+      message: 'Internal server error',
+      path: ['excluded'],
+      extensions: { code: 'INTERNAL_SERVER_ERROR' },
+    });
+    expectProtectedEvent('Exclusion', 'excluded');
+    expect(events[0].exception?.values?.[0].value).toContain('Synthetic exclusion storage failure');
+    expectNoCredentials(envelopes, [note]);
+    expectNoCredentials(consoleDiagnostics, [note]);
+  });
 
   function expectLateDiagnosticEvent(settingCode: string, secrets: readonly string[], settingPath?: string[]) {
     const event = events.find(event => String(event.extra?.query).includes('HttpDiagnostics'));

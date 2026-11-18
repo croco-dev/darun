@@ -26,8 +26,8 @@ gql`
     }
   }
 
-  mutation SetProductAlternativeExclusion($input: SetProductAlternativeExclusionInput!) {
-    setProductAlternativeExclusion(input: $input)
+  mutation SetProductAlternativeExclusion($input: SetProductAlternativeExclusionInput!, $exclusionNote: String) {
+    setProductAlternativeExclusion(input: $input, exclusionNote: $exclusionNote)
   }
 `;
 
@@ -54,7 +54,9 @@ export function ProductAlternativeManagement({ slug }: { slug: string }) {
     setStatus('');
 
     try {
-      await updateExclusion({ variables: { input: { slug, alternativeProductId: id, excluded, note } } });
+      await updateExclusion({
+        variables: { input: { slug, alternativeProductId: id, excluded }, exclusionNote: note },
+      });
       setDraft(null);
       setStatus(excluded ? '자동 대안에서 제외했습니다.' : '자동 대안 제외를 해제했습니다.');
       // Successful writes remove their trigger from the refreshed list.
