@@ -86,6 +86,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     data,
     error: descriptionError,
     loading: descriptionLoading,
+    verificationPending,
     refetch,
   } = useSavedProductDescription(TempProductBySlugOnEditProductDescriptionDocument, slug);
   const product = data?.tempProductBySlug;
@@ -98,7 +99,11 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const productSessionRef = useRef({ slug });
   const [hasObservedChange, setHasObservedChange] = useState(false);
   const hasServerChange = conflict !== null || hasObservedChange;
-  const conflictStatus = conflict === 'ready' && !product ? 'failed' : conflict;
+  let conflictStatus = conflict;
+  if (conflict === 'ready') {
+    if (verificationPending) conflictStatus = 'loading';
+    else if (!product || descriptionError) conflictStatus = 'failed';
+  }
 
   useEffect(
     () => () => {
@@ -153,7 +158,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
         client,
         slug,
         TempProductBySlugOnEditProductDescriptionDocument,
-        true
+        'conflict'
       );
       if (productSessionRef.current === productSession) {
         setConflict(result?.tempProductBySlug ? 'ready' : 'failed');
@@ -241,7 +246,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     conflictRefresh: conflictStatus === 'ready' ? null : conflictStatus,
     refreshAfterConflict,
     acceptLatestDescription: () => {
-      if (!product) return;
+      if (!product || (conflictStatus && conflictStatus !== 'ready')) return;
       lastObservedSourceRef.current = { slug, description };
       resetDraft(description);
       setConflict(null);

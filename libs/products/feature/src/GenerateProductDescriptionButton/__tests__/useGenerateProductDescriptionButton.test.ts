@@ -39,6 +39,7 @@ describe('useGenerateProductDescriptionButton', () => {
     writeQuery = vi.fn();
 
     vi.mocked(useApolloClient).mockReturnValue({
+      query: vi.fn().mockResolvedValue({}),
       readQuery: vi.fn(),
       writeQuery,
     } as unknown as ReturnType<typeof useApolloClient>);

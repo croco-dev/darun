@@ -30,6 +30,7 @@ function setup(
   let failNextRead: boolean | string = false;
   let waitForRead: Promise<boolean> | undefined;
   let snapshotOnResponse = false;
+  let waitForApplyCommit: Promise<void> | undefined;
   const pendingMutationResponses = new Map<string, Promise<void>>();
   const holdNextEditorRead = (takeSnapshotOnResponse = false) => {
     let release!: (fail: boolean) => void;
@@ -78,7 +79,7 @@ function setup(
             waitForRead = undefined;
             return;
           }
-          queueMicrotask(() => {
+          const commitAndRespond = () => {
             let data: Record<string, unknown>;
             switch (name) {
               case 'GetProductDescriptionJob':
@@ -139,7 +140,13 @@ function setup(
             } else {
               respond();
             }
-          });
+          };
+          if (name === 'ApplyProductDescriptionCandidate' && waitForApplyCommit) {
+            void waitForApplyCommit.then(commitAndRespond);
+            waitForApplyCommit = undefined;
+          } else {
+            queueMicrotask(commitAndRespond);
+          }
         })
     ),
   });
@@ -173,6 +180,13 @@ function setup(
     },
     holdNextEditorRead,
     releaseInitialRead,
+    holdNextApplyCommit: () => {
+      let release!: () => void;
+      waitForApplyCommit = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      return release;
+    },
     holdNextMutationResponse: (
       operation: 'ApplyProductDescriptionCandidate' | 'EditProductOnEditProductDescription'
     ) => {
@@ -344,6 +358,66 @@ it('수동 저장 응답이 늦어도 AI가 되돌린 본문을 편집 기준으
   expect(fixture.result.current.editor.form.getValues().description).toBe(original);
   await act(async () => fixture.result.current.editor.submit({ description: '<p>이어서 편집한 소개</p>' }));
   expect(fixture.savedDescription()).toBe('<p>이어서 편집한 소개</p>');
+});
+
+it('수동 저장 응답이 도착하기 전에 다른 관리자가 저장하면 최신 본문을 다시 확인한다', async () => {
+  const fixture = setup();
+  const firstSave = '<p>먼저 성공한 저장</p>';
+  const latest = '<p>다른 관리자가 이어서 저장한 본문</p>';
+  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
+  const release = fixture.holdNextMutationResponse('EditProductOnEditProductDescription');
+  let saving!: Promise<void>;
+  act(() => {
+    saving = fixture.result.current.editor.submit({ description: firstSave });
+  });
+  await waitFor(() => expect(fixture.savedDescription()).toBe(firstSave));
+  fixture.writeElsewhere(latest);
+  await act(async () => {
+    release();
+    await saving;
+  });
+  await waitFor(() => {
+    expect(fixture.result.current.display.description).toBe(latest);
+    expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+  });
+});
+
+it('충돌 조회 뒤 AI가 저장하면 재확인 중에는 본문 선택을 멈추고 실패 뒤 다시 조회할 수 있다', async () => {
+  const fixture = setup();
+  const latest = '<p>충돌 조회가 먼저 확인한 본문</p>';
+  const draft = '<p>작성 중인 초안</p>';
+  await waitFor(() => {
+    expect(fixture.result.current.editor.descriptionReady).toBe(true);
+    expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1');
+  });
+  fixture.writeElsewhere(latest);
+  const releaseApply = fixture.holdNextApplyCommit();
+  let applying!: Promise<void>;
+  act(() => {
+    applying = fixture.result.current.candidate.handleApply();
+    fixture.result.current.editor.form.getInputProps('description').onChange(draft);
+  });
+  await act(async () => fixture.result.current.editor.submit({ description: draft }));
+  expect(fixture.result.current.editor.conflictRefresh).toBeNull();
+  expect(fixture.result.current.editor.latestDescription).toBe(latest);
+
+  const releaseVerification = fixture.holdNextEditorRead();
+  await act(async () => {
+    releaseApply();
+    await applying;
+  });
+  expect(fixture.result.current.editor.conflictRefresh).toBe('loading');
+  act(() => fixture.result.current.editor.acceptLatestDescription());
+  expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
+  await act(async () => releaseVerification(true));
+  expect(fixture.result.current.editor.conflictRefresh).toBe('failed');
+  await act(async () => fixture.result.current.editor.overwriteWithDraft());
+  expect(fixture.savedDescription()).toBe('<p>Accepted AI candidate</p>');
+
+  await act(async () => fixture.result.current.editor.refreshAfterConflict());
+  expect(fixture.result.current.editor.conflictRefresh).toBeNull();
+  expect(fixture.result.current.editor.latestDescription).toBe('<p>Accepted AI candidate</p>');
+  expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
 });
 
 it('충돌 조회가 늦으면 편집기에 이미 확인한 AI 적용 본문을 표시한다', async () => {
