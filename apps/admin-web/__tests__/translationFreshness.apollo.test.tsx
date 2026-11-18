@@ -245,6 +245,7 @@ it('refreshes only the edited product after saving its name and summary, and ret
 
 it('상품 소개 초안을 공개 형식으로 보고 편집 창으로 돌아와도 저장하거나 번역을 요청하지 않는다', async () => {
   const restoreDialog = installPreviewDialog();
+  const originalOverflow = document.body.style.overflow;
   try {
     const fixture = await start();
     fireEvent.click(productSection().getByRole('button', { name: '수정' }));
@@ -266,7 +267,13 @@ it('상품 소개 초안을 공개 형식으로 보고 편집 창으로 돌아�
     expect(screen.queryByTitle('공개 화면')).toBeNull();
     expect(screen.getByRole('dialog', { name: '설명 수정' })).toBeDefined();
     expect(editor.value).toBe(draft);
+    fireEvent.change(editor, { target: { value: '<p></p>' } });
+    expect(openDraftPreview().body.getByText('작성한 소개가 없습니다.')).toBeDefined();
+    expect(editor.value).toBe('<p></p>');
     expect(fixture.writes).toEqual([]);
+    expect(document.body.style.overflow).toBe('hidden');
+    cleanup();
+    expect(document.body.style.overflow).toBe(originalOverflow);
   } finally {
     restoreDialog();
   }

@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useRef } from 'react';
 
+import { lockBodyScroll } from '../lib/body-scroll-lock';
 import { cn } from '../lib/utils';
 
 const FOCUSABLE_SELECTOR =
@@ -28,8 +29,7 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
     }
 
     if (open) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
+      const unlockScroll = lockBodyScroll(document.body);
 
       if (!dialog.open) {
         previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -40,9 +40,7 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
         (firstFocusable ?? dialog).focus();
       }
 
-      return () => {
-        document.body.style.overflow = originalOverflow;
-      };
+      return unlockScroll;
     } else if (dialog.open) {
       dialog.close();
       const previouslyFocused = previouslyFocusedRef.current;

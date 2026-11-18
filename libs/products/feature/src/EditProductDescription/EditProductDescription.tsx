@@ -4,10 +4,14 @@ import { Button } from '@darun/ui';
 import { Editor, AdminActions, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import type { ReactNode } from 'react';
-import { useEditProductDescription, type UseEditProductDescriptionProps } from './useEditProductDescription';
+import {
+  normalizeProductDescriptionDraft,
+  useEditProductDescription,
+  type UseEditProductDescriptionProps,
+} from './useEditProductDescription';
 
 type EditProductDescriptionProps = UseEditProductDescriptionProps & {
-  renderPreview?: (description: string, disabled: boolean) => ReactNode;
+  renderPreview?: (readDraft: () => string, disabled: boolean) => ReactNode;
 };
 
 const EditProductDescriptionForm = bind(
@@ -95,7 +99,11 @@ const EditProductDescriptionForm = bind(
       )}
 
       <AdminActions>
-        {descriptionReady && renderPreview?.(form.values.description ?? '', loading || imageUploading)}
+        {descriptionReady &&
+          renderPreview?.(
+            () => normalizeProductDescriptionDraft(form.getValues().description ?? ''),
+            loading || imageUploading
+          )}
         {onCancel && (
           <Button
             type="button"

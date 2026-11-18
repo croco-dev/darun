@@ -17,7 +17,17 @@ const PREVIEW_DOCUMENT = `<!doctype html>
     <body></body>
   </html>`;
 
-function PreviewFrame({ width, onClose, children }: { width: PreviewWidth; onClose: () => void; children: ReactNode }) {
+function PreviewFrame({
+  width,
+  onClose,
+  onTabEnd,
+  children,
+}: {
+  width: PreviewWidth;
+  onClose: () => void;
+  onTabEnd: () => void;
+  children: ReactNode;
+}) {
   const [frameDocument, setFrameDocument] = useState<Document | null>(null);
   const handleEscape = useEffectEvent((event: KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -64,6 +74,10 @@ function PreviewFrame({ width, onClose, children }: { width: PreviewWidth; onClo
             onAuxClickCapture={event => event.preventDefault()}
           >
             {children}
+            {/* Tab at the end of the frame does not reach the dialog's keyboard handler. */}
+            <button type="button" className="sr-only" onFocus={onTabEnd}>
+              미리보기 도구로 돌아가기
+            </button>
           </ContentArea>,
           frameDocument.body
         )}
@@ -71,11 +85,12 @@ function PreviewFrame({ width, onClose, children }: { width: PreviewWidth; onClo
   );
 }
 
-export function DraftPreview({ children, disabled }: { children: ReactNode; disabled?: boolean }) {
+export function DraftPreview({ children, disabled }: { children: () => ReactNode; disabled?: boolean }) {
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState(false);
   const [width, setWidth] = useState<PreviewWidth>(390);
   const titleId = useId();
+  const closeId = useId();
   const close = () => setOpen(false);
 
   return (
@@ -100,7 +115,7 @@ export function DraftPreview({ children, disabled }: { children: ReactNode; disa
                 <h2 id={titleId} className="text-base font-bold text-dark-900">
                   공개 미리보기
                 </h2>
-                <Button type="button" onClick={close}>
+                <Button id={closeId} type="button" onClick={close}>
                   미리보기 닫기
                 </Button>
               </div>
@@ -118,9 +133,11 @@ export function DraftPreview({ children, disabled }: { children: ReactNode; disa
                   </Button>
                 ))}
               </div>
-              <PreviewFrame width={width} onClose={close}>
-                {children}
-              </PreviewFrame>
+              {open && (
+                <PreviewFrame width={width} onClose={close} onTabEnd={() => document.getElementById(closeId)?.focus()}>
+                  {children()}
+                </PreviewFrame>
+              )}
             </div>
           </Dialog>,
           portalTarget

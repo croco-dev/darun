@@ -1,5 +1,6 @@
 export * from './lib/utils';
 export * from './lib/date';
+export { lockBodyScroll } from './lib/body-scroll-lock';
 export * from './components/Button';
 export * from './components/Chip';
 export * from './components/ContentArea';

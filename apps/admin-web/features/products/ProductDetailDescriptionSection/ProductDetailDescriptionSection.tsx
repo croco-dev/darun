@@ -71,9 +71,9 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
           onSaved={refreshProductTranslation}
           onSubmit={closeEditModal}
           onCancel={closeEditModal}
-          renderPreview={(description, disabled) => (
+          renderPreview={(readDraft, disabled) => (
             <DraftPreview disabled={disabled}>
-              <ProductDescriptionContent description={description} emptyLabel="작성한 소개가 없습니다." />
+              {() => <ProductDescriptionContent description={readDraft()} emptyLabel="작성한 소개가 없습니다." />}
             </DraftPreview>
           )}
         />

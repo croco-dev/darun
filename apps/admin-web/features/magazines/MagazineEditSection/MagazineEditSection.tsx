@@ -424,14 +424,16 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
           목록
         </Button>
         <DraftPreview disabled={!!busy || uploading}>
-          <MagazineArticle
-            title={values.title}
-            summary={values.summary}
-            body={values.content}
-            badge="다른 매거진"
-            contentLabel="매거진 본문"
-            emptyLabel="아직 본문이 없습니다."
-          />
+          {() => (
+            <MagazineArticle
+              title={values.title}
+              summary={values.summary}
+              body={values.content}
+              badge="다른 매거진"
+              contentLabel="매거진 본문"
+              emptyLabel="아직 본문이 없습니다."
+            />
+          )}
         </DraftPreview>
         <Button type="submit" variant="contained" color="primary" disabled={!!busy || uploading || !dirty || conflict}>
           {busy === 'save' ? '저장 중...' : '저장'}
