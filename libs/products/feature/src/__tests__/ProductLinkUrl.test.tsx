@@ -12,6 +12,7 @@ vi.mock('@darun/ui-admin', () => ({ notifySavedWithRefresh: vi.fn() }));
 
 import { useEditProductLinkItem } from '../EditProductLinkItem/useEditProductLinkItem';
 import { useNewProductLinkForm } from '../NewProductLinkForm/useNewProductLinkForm';
+import { getProductLinkIconSource } from '../productLinkPresentation';
 
 const values = {
   title: '공식 사이트',
@@ -81,4 +82,18 @@ describe('실제 Mantine 상품 링크 폼 검증', () => {
       },
     });
   });
+});
+
+describe('상품 링크 아이콘 주소', () => {
+  it.each(['https://linear.example/logo.png', 'http://linear.example/legacy.png', '/images/link.svg?size=16'])(
+    '저장한 아이콘 주소 %s를 그대로 표시한다',
+    value => expect(getProductLinkIconSource(value)).toBe(value)
+  );
+
+  it.each([
+    '//elsewhere.example/icon.svg',
+    'https://fixture:fixture@elsewhere.example/icon.svg',
+    'data:image/svg+xml,<svg/>',
+    '/images/../api/icon',
+  ])('지원하지 않는 주소 %s는 브라우저에 전달하지 않는다', value => expect(getProductLinkIconSource(value)).toBeNull());
 });

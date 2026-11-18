@@ -25,7 +25,6 @@ gql`
 
 type ProductLinkRowProps = {
   link: EditProductLinkItemFragment;
-  productLogoUrl: string | null | undefined;
   onEdit: (link: EditProductLinkItemFragment) => void;
 };
 
@@ -59,10 +58,10 @@ function LinkIcon({
   );
 }
 
-function ProductLinkRow({ link, productLogoUrl, onEdit }: ProductLinkRowProps) {
+function ProductLinkRow({ link, onEdit }: ProductLinkRowProps) {
   const label = getProductLinkLabel(link);
   const roleLabel = link.role ? productLinkRoleLabels[link.role].ko : '미분류';
-  const iconSrc = getProductLinkIconSource(link.iconUrl, productLogoUrl);
+  const iconSrc = getProductLinkIconSource(link.iconUrl);
   return (
     <tr className="border-b border-dark-200 hover:bg-surface-100 transition last:border-b-0">
       <td className="border-r border-dark-200 px-4 py-3">
@@ -135,15 +134,11 @@ function ProductLinkRow({ link, productLogoUrl, onEdit }: ProductLinkRowProps) {
 
 function ProductLinkRows({
   links,
-  productLogoUrl,
   loading,
   error,
   refreshLinks,
   editLink,
-}: Pick<
-  ReturnType<typeof useProductLinkTable>,
-  'links' | 'productLogoUrl' | 'loading' | 'error' | 'refreshLinks' | 'editLink'
->) {
+}: Pick<ReturnType<typeof useProductLinkTable>, 'links' | 'loading' | 'error' | 'refreshLinks' | 'editLink'>) {
   if (loading) {
     return <AdminLoadingState />;
   }
@@ -193,7 +188,7 @@ function ProductLinkRows({
         </thead>
         <tbody className="bg-white">
           {links.map(link => (
-            <ProductLinkRow key={link.id} link={link} productLogoUrl={productLogoUrl} onEdit={editLink} />
+            <ProductLinkRow key={link.id} link={link} onEdit={editLink} />
           ))}
         </tbody>
       </table>
@@ -203,16 +198,9 @@ function ProductLinkRows({
 
 export const ProductLinkTable = bind(
   useProductLinkTable,
-  ({ links, productLogoUrl, loading, error, refreshLinks, editLink, closeEditModal, finishEdit, link, slug }) => (
+  ({ links, loading, error, refreshLinks, editLink, closeEditModal, finishEdit, link, slug }) => (
     <>
-      <ProductLinkRows
-        links={links}
-        productLogoUrl={productLogoUrl}
-        loading={loading}
-        error={error}
-        refreshLinks={refreshLinks}
-        editLink={editLink}
-      />
+      <ProductLinkRows links={links} loading={loading} error={error} refreshLinks={refreshLinks} editLink={editLink} />
       {link && (
         <EditProductLinkItem slug={slug} link={link} links={links} onSubmit={finishEdit} onCancel={closeEditModal} />
       )}

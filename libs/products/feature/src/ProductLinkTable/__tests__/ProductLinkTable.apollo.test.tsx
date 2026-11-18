@@ -41,7 +41,6 @@ function setup({ failSave = false, delaySave = false, firstTitle = initialLink.t
   const product = () => ({
     __typename: 'Product',
     id: 'product-a',
-    logoUrl: researchLogo,
     links,
   });
   const client = new ApolloClient({
@@ -253,6 +252,7 @@ describe('상품 링크 재편집', () => {
         selected: true,
       })
     ).toHaveProperty('value', researchLogo);
+    expect(within(dialog()!).getByRole('option', { name: '아이콘을 선택해 주세요' })).toHaveProperty('disabled', true);
     fireEvent.click(screen.getByText('취소', { selector: 'button' }));
     edit('Other link');
     const modal = within(dialog()!);

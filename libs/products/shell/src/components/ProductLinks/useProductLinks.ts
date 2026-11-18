@@ -8,7 +8,6 @@ gql`
   query ProductOnProductLinks($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id
-      logoUrl
       links {
         id
         displayLink
@@ -30,11 +29,5 @@ export function useProductLinks({ slug }: ProductLinksProps) {
     ...productSectionQueryOptions,
     variables: { slug, locale },
   });
-  const product = data?.productBySlug;
-  return {
-    links: product?.links ?? [],
-    productLogoUrl: product?.logoUrl,
-    error,
-    refetch,
-  };
+  return { links: data?.productBySlug?.links ?? [], error, refetch };
 }

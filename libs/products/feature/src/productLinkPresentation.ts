@@ -1,5 +1,5 @@
+import { isProductLinkUrl } from '@darun/products-domain/link';
 import type { ProductLinkRole } from '@darun/provider-graphql';
-import { isDarunImageRemoteUrl } from '@darun/ui/image-origins';
 
 const whiteGlobeUrl =
   'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg';
@@ -64,27 +64,17 @@ export function orderPublicProductLinks<T extends { isPrimary: boolean }>(links:
   return [...links].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
 }
 
-export function getProductLinkIconSource(
-  iconUrl: string | null | undefined,
-  productLogoUrl: string | null | undefined
-) {
+export function getProductLinkIconSource(iconUrl: string | null | undefined) {
   if (!iconUrl) return null;
   const localOrigin = 'https://darun.invalid';
   try {
-    const url = new URL(iconUrl, localOrigin);
-    if (iconUrl.startsWith('/') && url.origin === localOrigin && url.pathname.startsWith('/images/')) {
-      return url.pathname + url.search;
-    }
-    if (isDarunImageRemoteUrl(url)) return url.href;
-    // Research registration also saves the displayed product logo as the visit link's icon.
-    if (
-      iconUrl === productLogoUrl &&
-      url.origin !== localOrigin &&
-      (url.protocol === 'https:' || url.protocol === 'http:') &&
-      !url.username &&
-      !url.password
-    ) {
-      return url.href;
+    if (iconUrl.startsWith('/') && !iconUrl.startsWith('//')) {
+      const url = new URL(iconUrl, localOrigin);
+      if (url.origin === localOrigin && url.pathname.startsWith('/images/')) return url.pathname + url.search;
+    } else if (isProductLinkUrl(iconUrl)) {
+      // Stored icons can use an external source independently of the product's current logo.
+      const url = new URL(iconUrl);
+      if (!url.username && !url.password) return url.href;
     }
   } catch {
     // Fall back for malformed persisted icon URLs.

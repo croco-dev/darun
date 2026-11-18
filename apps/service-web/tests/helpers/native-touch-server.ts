@@ -52,7 +52,6 @@ const delayedCompany = {
 const productWithDesignatedLink = {
   ...nativeTouchProduct,
   slug: 'product-link-roles',
-  logoUrl: 'https://research-logo.example/linear.png',
   links: [
     {
       __typename: 'Link',
@@ -60,7 +59,7 @@ const productWithDesignatedLink = {
       title: '공식 홈페이지',
       link: 'https://example.com/home',
       displayLink: '',
-      iconUrl: 'https://third-party.example/legacy-icon.svg',
+      iconUrl: '//third-party.example/legacy-icon.svg',
       isPrimary: false,
       role: null,
     },

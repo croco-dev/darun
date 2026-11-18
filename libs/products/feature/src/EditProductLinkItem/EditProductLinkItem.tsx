@@ -85,7 +85,9 @@ export function EditProductLinkItem(
           <ProductLinkRoleField disabled={loading} {...form.getInputProps('role')} />
           <AdminField label="아이콘" error={form.errors.iconUrl}>
             <AdminSelect disabled={loading} key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
-              <option value="">아이콘 없음</option>
+              <option value="" disabled={Boolean(link.iconUrl)}>
+                아이콘을 선택해 주세요
+              </option>
               {storedCustomIcon && <option value={link.iconUrl ?? ''}>현재 아이콘</option>}
               {productLinkIconOptions.map(icon => (
                 <option key={icon.value} value={icon.value}>

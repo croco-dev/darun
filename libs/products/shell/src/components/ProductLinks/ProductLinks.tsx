@@ -17,13 +17,13 @@ import { useProductLinks } from './useProductLinks';
 
 type ProductLinkQuery = ReturnType<typeof useProductLinks>;
 
-export const ProductLinks = bind(useProductLinks, ({ links, productLogoUrl, error, refetch }) => (
+export const ProductLinks = bind(useProductLinks, ({ links, error, refetch }) => (
   <ProductSectionContent error={error} refetch={refetch}>
-    <ProductLinkButtons links={links} productLogoUrl={productLogoUrl} />
+    <ProductLinkButtons links={links} />
   </ProductSectionContent>
 ));
 
-function ProductLinkButtons({ links, productLogoUrl }: Pick<ProductLinkQuery, 'links' | 'productLogoUrl'>) {
+function ProductLinkButtons({ links }: Pick<ProductLinkQuery, 'links'>) {
   const locale = useLocale();
 
   if (!links || links.length === 0) {
@@ -36,7 +36,7 @@ function ProductLinkButtons({ links, productLogoUrl }: Pick<ProductLinkQuery, 'l
         const { isPrimary } = link;
         const localizedTitle = getProductLinkLabel(link, locale);
         const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
-        const iconSrc = getProductLinkIconSource(link.iconUrl, productLogoUrl);
+        const iconSrc = getProductLinkIconSource(link.iconUrl);
 
         return (
           <Link
