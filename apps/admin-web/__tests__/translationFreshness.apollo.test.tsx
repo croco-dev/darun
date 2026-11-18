@@ -262,7 +262,7 @@ it('상품 소개 초안을 공개 형식으로 보고 편집 창으로 돌아�
     expect(screen.queryByTitle('공개 화면')).toBeNull();
     expect(screen.getByRole('dialog', { name: '설명 수정' })).toBeDefined();
     openDraftPreview();
-    fireEvent.keyDown(screen.getByRole('button', { name: '미리보기 닫기' }), { key: 'Escape' });
+    fireEvent(screen.getByRole('dialog', { name: '공개 미리보기' }), new Event('cancel', { cancelable: true }));
     expect(screen.queryByTitle('공개 화면')).toBeNull();
     expect(screen.getByRole('dialog', { name: '설명 수정' })).toBeDefined();
     expect(editor.value).toBe(draft);

@@ -123,6 +123,7 @@ describe('magazine draft editor with real Apollo operations', () => {
       expect(body.getByRole('heading', { level: 2, name: '새 본문' })).toBeDefined();
       expect(body.getByRole('cell', { name: '검색' })).toBeDefined();
       expect(body.queryByRole('time')).toBeNull();
+      expect(body.queryByRole('link')).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: '1280px' }));
       expect(iframe.width).toBe('1280');
       fireEvent.click(screen.getByRole('button', { name: '미리보기 닫기' }));

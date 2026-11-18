@@ -21,12 +21,15 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
   const titleId = useId();
 
   const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
+    if (e.key !== 'Escape' && e.key !== 'Tab') return;
+    if (document.querySelector('dialog:modal')) return;
+
     if (e.key === 'Escape') {
       onClose();
       return;
     }
 
-    if (e.key === 'Tab' && modalContentRef.current) {
+    if (modalContentRef.current) {
       const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );

@@ -95,17 +95,7 @@ export function DraftPreview({ children, disabled }: { children: ReactNode; disa
       {portalTarget &&
         createPortal(
           <Dialog open={open} onClose={close} labelledBy={titleId} className="backdrop:backdrop-blur-none">
-            <div
-              className="w-[min(84rem,calc(100vw-2rem))] bg-white p-3 sm:p-5"
-              onKeyDownCapture={event => {
-                // Escape in the preview must not close the product editor underneath it.
-                if (event.key === 'Escape') {
-                  event.stopPropagation();
-                  event.preventDefault();
-                  close();
-                }
-              }}
-            >
+            <div className="w-[min(84rem,calc(100vw-2rem))] bg-white p-3 sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2 id={titleId} className="text-base font-bold text-dark-900">
                   공개 미리보기
