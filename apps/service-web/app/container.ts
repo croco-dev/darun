@@ -78,5 +78,6 @@ const authService = new FirebaseAuthService({
 export const container = {
   authService,
   httpLink,
+  createApolloClient,
   getApolloClient,
 };

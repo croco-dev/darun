@@ -57,7 +57,8 @@ export default async function RootLayout({ children, params }: LayoutProps) {
   setRequestLocale(locale);
   const messages = await getMessages();
   const content = ServerRootProvider({
-    children: <ClientRootProvider>{children}</ClientRootProvider>,
+    // Category pages must read memberships again after an admin update.
+    children: <ClientRootProvider freshServerApollo={Boolean(categorySlug)}>{children}</ClientRootProvider>,
   });
 
   return (

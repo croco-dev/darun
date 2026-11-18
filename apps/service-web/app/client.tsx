@@ -11,13 +11,27 @@ import { ReactNode } from 'react';
 
 import { container } from './container';
 
-export const ClientRootProvider = ({ children }: { children: ReactNode }) => {
+export const ClientRootProvider = ({
+  children,
+  freshServerApollo = false,
+}: {
+  children: ReactNode;
+  freshServerApollo?: boolean;
+}) => {
   const cookies = useCookies();
   const locale = useLocale();
   initPostHog();
   return (
     <MotionProvider>
-      <ApolloProvider key={locale} makeClient={() => container.getApolloClient(locale)} cookies={cookies}>
+      <ApolloProvider
+        key={locale}
+        makeClient={() =>
+          freshServerApollo && typeof window === 'undefined'
+            ? container.createApolloClient()
+            : container.getApolloClient(locale)
+        }
+        cookies={cookies}
+      >
         <AuthProvider authService={container.authService} cookies={cookies}>
           <ToastProvider closeAriaLabel={locale === 'en' ? 'Close notification' : '알림 닫기'}>
             {children}
