@@ -104,6 +104,9 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.pathname !== '/darun_atomic_integrity') {
       throw new Error('Atomic tests require the isolated local darun_atomic_integrity database');
     }
+    if (['database', 'search_path', 'options'].some(parameter => url.searchParams.has(parameter))) {
+      throw new Error('Atomic test database URL must not override the database or search path');
+    }
     sql = postgres(databaseUrl!, {
       max: 6,
       prepare: false,
@@ -1008,6 +1011,8 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       // Some generated migrations explicitly target public, regardless of search_path.
       await sql`create database ${sql(name)}`;
       created = true;
+      const [current] = await session`select current_database() as name`;
+      if (current?.name !== name) throw new Error('Historical migration fixture connected to the wrong database');
       await cp(migrationsFolder, folder, { recursive: true });
       const journal = JSON.parse(await readFile(join(folder, 'meta/_journal.json'), 'utf8')) as {
         entries: Array<{ tag: string }>;
