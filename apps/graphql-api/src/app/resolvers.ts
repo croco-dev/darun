@@ -4,6 +4,7 @@ import { CompanyMutationResolver, CompanyQueryResolver } from '@darun/companies-
 import { ImageMutationResolver } from '@darun/images-feature/server';
 import { MagazineMutationResolver, MagazineQueryResolver } from '@darun/magazines-feature/server';
 import {
+  AdminProductCategoriesResolver,
   CategoryQueryResolver,
   FeatureMutationResolver,
   FeatureQueryResolver,
@@ -31,6 +32,7 @@ import { HealthResolver } from './graphql/Health.resolver';
 // eslint-disable-next-line @typescript-eslint/ban-types
 export const resolvers: NonEmptyArray<Function> = [
   HealthResolver,
+  AdminProductCategoriesResolver,
   CategoryQueryResolver,
   ProductQueryResolver,
   ScreenshotFieldResolver,

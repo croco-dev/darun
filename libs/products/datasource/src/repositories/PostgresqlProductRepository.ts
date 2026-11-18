@@ -4,6 +4,7 @@ import {
   Product,
   ProductScreenshot,
   ProductRepositoryToken,
+  productCategoryNotFound,
   productNotFound,
   productUpdateFailed,
   productSlugAlreadyExists,
@@ -30,6 +31,7 @@ import {
 } from 'drizzle-orm';
 import { keyBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
+import { categories } from '../entities/CategorySchema';
 import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
@@ -234,6 +236,31 @@ export class PostgresqlProductRepository implements ProductRepository {
 
       const checkpoint = await finishContentWrite();
       return this.mapper({ ...updated[0], ...checkpoint });
+    });
+  }
+
+  replaceCategoryIds(id: string, categoryIds: string[]): Promise<string[]> {
+    return this.db.transaction(async tx => {
+      const product = await lockProductSource(tx, id);
+      if (categoryIds.length > 0) {
+        const rows = await tx
+          .select({ id: categories.id })
+          .from(categories)
+          .where(inArray(categories.id, categoryIds))
+          .orderBy(asc(categories.id))
+          .for('share');
+        if (rows.length !== categoryIds.length) throw productCategoryNotFound();
+      }
+
+      const currentIds = new Set(product.categoryIds);
+      if (currentIds.size === categoryIds.length && categoryIds.every(categoryId => currentIds.has(categoryId))) {
+        return product.categoryIds;
+      }
+
+      const finishContentWrite = await beginProductContentWrite(tx, id);
+      await tx.update(products).set({ categoryIds }).where(eq(products.id, id));
+      await finishContentWrite();
+      return categoryIds;
     });
   }
 

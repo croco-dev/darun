@@ -2,10 +2,7 @@
 
 import { useApolloClient, useQuery } from '@apollo/client/react';
 import { EditAlternativeProducts } from '@darun/products-feature';
-import {
-  ProductAlternativeManagementDocument,
-  TempProductBySlugOnEditAlternativeProductsDocument,
-} from '@darun/provider-graphql';
+import { TempProductBySlugOnEditAlternativeProductsDocument } from '@darun/provider-graphql';
 import { Button, Layers } from '@darun/ui';
 import {
   AdminEmptyState,
@@ -18,6 +15,7 @@ import {
 } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
 import { ProductAlternativeManagement } from './ProductAlternativeManagement';
+import { refreshProductAlternativeManagement } from './refreshProductAlternativeManagement';
 
 type ProductDetailAlternativeSectionProps = {
   slug: string;
@@ -114,7 +112,7 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
           onSubmit={() => {
             closeEditModal();
             void refetch().catch(() => {});
-            void client.refetchQueries({ include: [ProductAlternativeManagementDocument] }).catch(() => {});
+            void refreshProductAlternativeManagement(client, slug).catch(() => {});
           }}
           onCancel={closeEditModal}
         />

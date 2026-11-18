@@ -2,11 +2,12 @@
 
 import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import { ProductAlternativeManagementDocument, SetProductAlternativeExclusionDocument } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import { AdminActions, AdminErrorState, AdminField, AdminInput, AdminLoadingState, AdminModal } from '@darun/ui-admin';
 import { useId, useRef, useState } from 'react';
+import { refreshProductAlternativeManagement } from './refreshProductAlternativeManagement';
 
 gql`
   query ProductAlternativeManagement($slug: String!) {
@@ -32,7 +33,8 @@ gql`
 `;
 
 export function ProductAlternativeManagement({ slug }: { slug: string }) {
-  const { data, loading, error, refetch } = useQuery(ProductAlternativeManagementDocument, {
+  const client = useApolloClient();
+  const { data, loading, error } = useQuery(ProductAlternativeManagementDocument, {
     variables: { slug },
     fetchPolicy: 'network-only',
   });
@@ -61,7 +63,7 @@ export function ProductAlternativeManagement({ slug }: { slug: string }) {
       setStatus(excluded ? '자동 대안에서 제외했습니다.' : '자동 대안 제외를 해제했습니다.');
       // Successful writes remove their trigger from the refreshed list.
       heading.current?.focus();
-      await refetch().catch(() => {});
+      await refreshProductAlternativeManagement(client, slug).catch(() => {});
     } catch (error) {
       const conflict = CombinedGraphQLErrors.is(error)
         ? error.errors.find(item => item.extensions?.code === 'alternative-product/conflict')
@@ -88,7 +90,11 @@ export function ProductAlternativeManagement({ slug }: { slug: string }) {
         <AdminErrorState
           error={error}
           action={
-            <Button type="button" size="sm" onClick={() => void refetch().catch(() => {})}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void refreshProductAlternativeManagement(client, slug).catch(() => {})}
+            >
               자동 대안 다시 조회
             </Button>
           }

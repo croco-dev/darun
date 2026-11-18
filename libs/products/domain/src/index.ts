@@ -223,6 +223,7 @@ export { GetPublishedProductsForSitemap } from './usecases/GetPublishedProductsF
 export { GetProductsByCategory } from './usecases/GetProductsByCategory';
 export { PublishProduct } from './usecases/PublishProduct';
 export { RegisterProductCompany } from './usecases/RegisterProductCompany';
+export { UpdateProductCategories } from './usecases/UpdateProductCategories';
 export { UpdateProductFeature } from './usecases/UpdateProductFeature';
 export { UpdateProductLink } from './usecases/UpdateProductLink';
 export { UpdateProductTag } from './usecases/UpdateProductTag';

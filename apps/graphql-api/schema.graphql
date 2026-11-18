@@ -26,6 +26,12 @@ type AddProductScreenshotPayload {
   product: Product
 }
 
+type AdminProductCategorySelection {
+  categories: [Category!]!
+  categoryIds: [ID!]!
+  productId: ID!
+}
+
 type AdminProductFlowConnection {
   edges: [AdminProductFlowEdge!]!
   pageInfo: PageInfo!
@@ -311,6 +317,7 @@ type Mutation {
   trackVisualScreenshotView(id: String!): TrackVisualViewPayload!
   updateAlternativeProduct(input: UpdateAlternativeProductInput!, slug: String!): UpdateAlternativeProductPayload!
   updateLlmSetting(apiKey: String, braveApiKey: String, endpoint: String, model: String, thinkingLevel: String): LlmSetting!
+  updateProductCategories(categoryIds: [ID!]!, productId: ID!): [ID!]!
   updateProductFeature(id: String!, input: UpdateProductFeatureInput!): UpdateProductFeaturePayload!
   updateProductFlow(input: UpdateProductFlowInput!): UpdateProductFlowPayload!
   updateProductLink(id: String!, input: UpdateProductLinkInput!, slug: String!): UpdateProductLinkPayload!
@@ -502,6 +509,7 @@ type PublishedMagazineEdge {
 }
 
 type Query {
+  adminProductCategorySelection(slug: String!): AdminProductCategorySelection
   adminProductFlow(id: String!): VisualFlow
   adminProductFlowSummaries(after: String, first: Int! = 24, productSlug: String!): AdminProductFlowConnection!
   adminProductFlows(productSlug: String!): [VisualFlow!]!

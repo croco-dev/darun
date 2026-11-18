@@ -4,6 +4,7 @@ import { PageShell, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@da
 import { getClient } from '@darun/utils-apollo-client/server';
 import {
   ProductDetailAlternativeSection,
+  ProductDetailCategorySection,
   ProductDetailCompanySection,
   ProductDetailDescriptionSection,
   ProductDetailFeatureSection,
@@ -60,6 +61,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     <PageShell title={title} backHref="/products">
       <ProductDetailInfoSection slug={slug} />
       <div className="flex flex-col gap-8 mt-6">
+        <ProductDetailCategorySection key={slug} slug={slug} />
         <ProductDetailDescriptionSection slug={slug} />
         <ProductDetailFeatureSection slug={slug} />
         <ProductDetailLinkSection slug={slug} />

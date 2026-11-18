@@ -1,6 +1,7 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client';
 import { SchemaLink } from '@apollo/client/link/schema';
 import { ApolloProvider } from '@apollo/client/react';
+import { ProductsByCategoryOnSectionDocument } from '@darun/provider-graphql';
 import React, { act, Suspense } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -73,6 +74,43 @@ afterEach(async () => {
 });
 
 describe('CategoryProductSection 단건 분류와 이어읽기', () => {
+  it('캐시에 이전 목록이 있어도 카테고리에 들어가면 최신 분류를 읽는다', async () => {
+    state.locale = 'ko';
+    let current = product(1);
+    const client = new ApolloClient({
+      cache: new InMemoryCache(),
+      link: new SchemaLink({
+        schema,
+        rootValue: {
+          categoryBySlug: () => category('design'),
+          productsByCategory: () => ({
+            totalCount: 1,
+            edges: [{ node: current }],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          }),
+        },
+      }),
+    });
+    await client.query({ query: ProductsByCategoryOnSectionDocument, variables: { slug: 'design', locale: 'ko' } });
+    current = product(2);
+
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    root = createRoot(host);
+    await act(async () =>
+      root?.render(
+        <ApolloProvider client={client}>
+          <Suspense fallback={<p>loading</p>}>
+            <CategoryProductSection slug="design" />
+          </Suspense>
+        </ApolloProvider>
+      )
+    );
+    expect(host.querySelector('a[href="/ko/products/design-2?from=category"]')).not.toBeNull();
+    expect(host.querySelector('a[href="/ko/products/design-1?from=category"]')).toBeNull();
+    client.stop();
+  });
+
   it('최초 조회 실패는 빈 목록으로 숨기지 않고 route 오류 경계에 전달한다', async () => {
     state.locale = 'ko';
     const failure = deferred<ReturnType<typeof page>>();

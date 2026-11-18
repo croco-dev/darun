@@ -98,6 +98,7 @@ const createProductRepository = (overrides: Partial<ProductRepository> = {}): Pr
   publishById: vi.fn(),
   registerCompanyById: vi.fn<ProductRepository['registerCompanyById']>(),
   updateById: vi.fn<ProductRepository['updateById']>(),
+  replaceCategoryIds: vi.fn<ProductRepository['replaceCategoryIds']>(),
   findAllByBeforeIdAndLimit: vi.fn<ProductRepository['findAllByBeforeIdAndLimit']>().mockResolvedValue([]),
   findAllByAfterIdAndLimit: vi.fn<ProductRepository['findAllByAfterIdAndLimit']>().mockResolvedValue([]),
   findPublishedByAfterIdAndLimit: vi.fn<ProductRepository['findPublishedByAfterIdAndLimit']>().mockResolvedValue([]),

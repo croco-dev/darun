@@ -1,6 +1,7 @@
 'use client';
 
 export { ProductDetailAlternativeSection } from './ProductDetailAlternativeSection';
+export { ProductDetailCategorySection } from './ProductDetailCategorySection';
 export { ProductDetailCompanySection } from './ProductDetailCompanySection';
 export { ProductDetailDescriptionSection } from './ProductDetailDescriptionSection';
 export { ProductDetailFeatureSection } from './ProductDetailFeatureSection';

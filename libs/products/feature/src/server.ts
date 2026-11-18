@@ -1,3 +1,4 @@
+export { AdminProductCategoriesResolver } from './AdminProductCategories.resolver';
 export { CategoryQueryResolver } from './Category.query.resolver';
 export { ProductResearchMutationResolver, ProductResearchQueryResolver } from './ProductResearch.resolver';
 export {

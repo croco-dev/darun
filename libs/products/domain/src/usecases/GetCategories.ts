@@ -10,8 +10,8 @@ export class GetCategories {
     private readonly categoryRepository: CategoryRepository
   ) {}
 
-  async execute({ first }: { first: number }): Promise<Category[]> {
+  async execute({ first }: { first?: number } = {}): Promise<Category[]> {
     const categories = await this.categoryRepository.findAll();
-    return categories.slice(0, Math.max(0, first));
+    return first === undefined ? categories : categories.slice(0, Math.max(0, first));
   }
 }

@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { ApolloServer } from '@apollo/server';
 import {
+  PostgresqlCategoryRepository,
   PostgresqlProductFeatureRepository,
   PostgresqlProductFeatureScreenshotRepository,
   PostgresqlProductDescriptionJobRepository,
@@ -13,6 +14,7 @@ import {
   CreateProduct,
   EditProduct,
   GetAllProducts,
+  GetCategories,
   GetProduct,
   GetProductFeatures,
   GetProductLinks,
@@ -20,10 +22,13 @@ import {
   GetPublishedProductsForSitemap,
   GetRankedProducts,
   GetProductScreenshots,
+  GetProductsByCategory,
   GetVisualScreenshots,
+  UpdateProductCategories,
   UpdateProductScreenshot,
 } from '@darun/products-domain';
 import {
+  AdminProductCategoriesResolver,
   ProductMutationResolver,
   ProductQueryResolver,
   ScreenshotFieldResolver,
@@ -52,6 +57,8 @@ import {
   AllProductsOnProductListTableDocument,
   type AllProductsOnProductListTableQuery,
   type AllProductsOnProductListTableQueryVariables,
+  AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
+  UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
 } from '../../../libs/__generated__/graphql';
 import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
@@ -160,6 +167,159 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   afterAll(async () => {
     if (reader) await reader.end({ timeout: 5 });
     if (writer) await writer.end({ timeout: 5 });
+  });
+
+  it('관리자 분류 변경을 공개 목록과 추천 후보에 반영하고 실패 시 원자적으로 되돌린다', async () => {
+    const productId = '764-category-product';
+    const slug = '764-product-slug';
+    const [a, b, c] = ['764-cat-a', '764-cat-b', '764-cat-c'] as const;
+    const categorySlug = (id: string) => `${id}-slug`;
+    const productRepository = new PostgresqlProductRepository(db);
+    const categoryRepository = new PostgresqlCategoryRepository(db);
+    const adminResolver = new AdminProductCategoriesResolver(
+      new GetProduct(productRepository),
+      new GetCategories(categoryRepository),
+      new UpdateProductCategories(productRepository)
+    );
+    const publicResolver = Object.assign(Object.create(ProductQueryResolver.prototype), {
+      getProductsByCategoryUseCase: new GetProductsByCategory(productRepository, categoryRepository),
+    });
+    const server = new ApolloServer({
+      schema: buildSchemaSync({
+        resolvers: [AdminProductCategoriesResolver, ProductQueryResolver],
+        authChecker: createAuthChecker(),
+        container: {
+          get: resolver => (resolver === AdminProductCategoriesResolver ? adminResolver : publicResolver),
+        },
+      }),
+      formatError: (formatted, error) => formatServerError(formatted, error, false),
+    });
+    const run = async (query: string, variables: Record<string, unknown>, roles: string[] = ['admin']) => {
+      const result = await server.executeOperation(
+        { query, variables },
+        { contextValue: { getRoles: async () => roles } }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+      return result.body.singleResult;
+    };
+    const adminQuery = print(AdminProductCategorySelectionOnProductDetailCategorySectionDocument);
+    const mutation = print(UpdateProductCategoriesOnProductDetailCategorySectionDocument);
+    const categoryQuery = 'query($slug: String!) { productsByCategory(slug: $slug) { edges { node { id } } } }';
+    const expectMembership = async (categoryId: string, isMember: boolean) => {
+      const result = await run(categoryQuery, { slug: categorySlug(categoryId) }, []);
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.productsByCategory).toEqual({
+        edges: isMember ? [{ node: { id: productId } }] : [],
+      });
+      const candidates = await productRepository.findPublishedByCategoryIdAndLimit(categoryId, 30);
+      expect(candidates.map(product => product.id)).toEqual(isMember ? [productId] : []);
+    };
+    const intents = () => writer`select kind, source_revision from product_content_sync_intents
+      where product_id = ${productId} order by source_revision`;
+    const storedProduct = async () => {
+      const [row] =
+        await writer`select id, slug, description, category_ids, content_revision from products where id = ${productId}`;
+      return row;
+    };
+    const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
+      ? Container.get(ProductContentSyncRegistrarToken)
+      : undefined;
+    let failRegistration = false;
+    Container.set(ProductContentSyncRegistrarToken, {
+      register: async (...args: Parameters<typeof registerProductContentSync>) => {
+        await registerProductContentSync(...args);
+        if (failRegistration) throw new Error('fixture failed before commit');
+      },
+    });
+    vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'category-membership-fixture-secret');
+    try {
+      await server.start();
+      await writer`insert into categories (id, slug, label_ko, label_en) values
+        (${a}, ${categorySlug(a)}, '분류 A', 'Category A'),
+        (${b}, ${categorySlug(b)}, '분류 B', 'Category B'),
+        (${c}, ${categorySlug(c)}, '분류 C', 'Category C')`;
+      await writer`insert into products (id, slug, name, summary, description, logo_url, category_ids, published_at)
+        values (${productId}, ${slug}, 'Category fixture', 'summary', 'description', '',
+          ${JSON.stringify([a, b])}::json, now())`;
+      await writer`insert into tags (id, name, type) values (${productId}, '764-fixture-tag', 'Simple')`;
+      await writer`insert into product_tags (id, product_id, tag_id) values (${productId}, ${productId}, ${productId})`;
+      const before = await storedProduct();
+      const initial = await run(adminQuery, { slug });
+      expect(initial.errors).toBeUndefined();
+      expect(initial.data?.adminProductCategorySelection).toMatchObject({
+        productId,
+        categoryIds: [a, b],
+        categories: expect.arrayContaining([{ id: c, slug: categorySlug(c), labelKo: '분류 C' }]),
+      });
+      for (const denied of [
+        await run(adminQuery, { slug }, []),
+        await run(mutation, { productId, categoryIds: [c] }, []),
+      ]) {
+        expect(denied.errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+      }
+      const missing = await run(mutation, {
+        productId,
+        categoryIds: [a, '764-missing'],
+      });
+      expect(missing.errors?.[0]?.extensions?.code).toBe('product/category-not-found');
+      expect(await storedProduct()).toEqual(before);
+      expect(await intents()).toEqual([]);
+      await expectMembership(b, true);
+      await expectMembership(c, false);
+
+      const updated = await run(mutation, {
+        productId,
+        categoryIds: [a, c, a],
+      });
+      expect(updated.errors).toBeUndefined();
+      expect(updated.data?.updateProductCategories).toEqual([a, c]);
+      const saved = await storedProduct();
+      expect(saved).toEqual({
+        ...before,
+        category_ids: [a, c],
+        content_revision: '1',
+      });
+      expect(await writer`select tag_id from product_tags where product_id = ${productId}`).toEqual([
+        { tag_id: productId },
+      ]);
+      expect((await run(adminQuery, { slug })).data?.adminProductCategorySelection).toMatchObject({
+        categoryIds: [a, c],
+      });
+      await expectMembership(a, true);
+      await expectMembership(b, false);
+      await expectMembership(c, true);
+
+      const reordered = await run(mutation, {
+        productId,
+        categoryIds: [c, a],
+      });
+      expect(reordered.data?.updateProductCategories).toEqual([a, c]);
+      failRegistration = true;
+      const rolledBack = await run(mutation, { productId, categoryIds: [] });
+      expect(rolledBack.errors?.[0]?.extensions?.code).toBe('INTERNAL_SERVER_ERROR');
+      expect(await storedProduct()).toEqual(saved);
+      expect(await intents()).toEqual([{ kind: 'search', source_revision: '1' }]);
+
+      failRegistration = false;
+      const cleared = await run(mutation, { productId, categoryIds: [] });
+      expect(cleared.data?.updateProductCategories).toEqual([]);
+      await expectMembership(a, false);
+      await expectMembership(c, false);
+      expect(await intents()).toEqual([
+        { kind: 'search', source_revision: '1' },
+        { kind: 'search', source_revision: '2' },
+      ]);
+    } finally {
+      await server.stop();
+      await writer`delete from product_content_sync_intents where product_id = ${productId}`;
+      await writer`delete from product_tags where product_id = ${productId}`;
+      await writer`delete from tags where id = ${productId}`;
+      await writer`delete from products where id = ${productId}`;
+      await writer`delete from categories where id in (${a}, ${b}, ${c})`;
+      if (previousRegistrar) Container.set(ProductContentSyncRegistrarToken, previousRegistrar);
+      else Container.remove(ProductContentSyncRegistrarToken);
+      vi.unstubAllEnvs();
+    }
   });
 
   it('관리자 스크린샷 분류를 일괄 조회하고 저장·해제한 분류를 공개 필터에 반영한다', async () => {

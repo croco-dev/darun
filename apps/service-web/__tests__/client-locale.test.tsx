@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
+import { useApolloClient, useQuery } from '@apollo/client/react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ClientRootProvider } from '../app/client';
 import { container } from '../app/container';
@@ -67,6 +68,34 @@ afterEach(() => {
 });
 
 describe('ClientRootProvider locale transitions', () => {
+  it('isolates category SSR requests while keeping the browser cache for the same locale', () => {
+    const browserClient = container.getApolloClient('ko');
+    const renderedClients: ReturnType<typeof useApolloClient>[] = [];
+    function RecordClient() {
+      renderedClients.push(useApolloClient());
+      return null;
+    }
+    const category = (
+      <ClientRootProvider freshServerApollo>
+        <RecordClient />
+      </ClientRootProvider>
+    );
+
+    vi.stubGlobal('window', undefined);
+    try {
+      renderToString(category);
+      renderToString(category);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(renderedClients).toHaveLength(2);
+    expect(renderedClients[0]).not.toBe(renderedClients[1]);
+    expect(renderedClients).not.toContain(browserClient);
+
+    render(category);
+    expect(renderedClients[2]).toBe(browserClient);
+  });
+
   it('switches the mounted provider and reuses the returning locale cache', async () => {
     write('ko');
     write('en', 7);
