@@ -327,6 +327,160 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     }
   );
 
+  it('같은 실패 작업의 동시 재시도와 전송 실패 뒤 재요청은 최신 intent에 연결된 한 작업을 사용한다', async () => {
+    const { product } = await seedProduct();
+    const [original] = await db
+      .insert(translationJobs)
+      .values({
+        entityType: 'Product',
+        entityId: product.id,
+        fields: ['summary'],
+        status: 'failed',
+      })
+      .returning();
+    const [intent] = await db
+      .insert(productContentSyncIntents)
+      .values({
+        productId: product.id,
+        sourceRevision: 1n,
+        kind: 'translation',
+        status: 'failed',
+        translationJobId: original!.id,
+      })
+      .returning();
+    const queue = {
+      sendJob: vi.fn().mockRejectedValueOnce(new Error('queue unavailable')).mockResolvedValue(true),
+    };
+    const services = [db, writerDb].map(
+      database =>
+        new TranslationJobService(
+          {} as never,
+          {} as never,
+          new PostgresqlTranslationJobRepository(database as never),
+          new PostgresqlTranslationSourceStore(database as never),
+          queue as unknown as TranslationQueueService
+        )
+    );
+    const first = await Promise.all(services.map(service => service.retryProductTranslationJob(original!.id)));
+    expect(new Set(first.map(job => job.id)).size).toBe(1);
+    expect(first.map(job => job.queued).sort()).toEqual([false, true]);
+    const retry = first[0]!;
+    expect(retry).toMatchObject({
+      status: 'pending',
+      retryOfJobId: original!.id,
+      fields: ['summary'],
+    });
+    const replay = await services[0]!.retryProductTranslationJob(original!.id);
+    expect(replay).toMatchObject({ id: retry.id, queued: true });
+    expect(queue.sendJob.mock.calls.map(([payload]) => payload.jobId)).toEqual([retry.id, retry.id, retry.id]);
+    expect(await db.select().from(translationJobs).where(eq(translationJobs.retryOfJobId, original!.id))).toHaveLength(
+      1
+    );
+    expect(
+      (await db.select().from(productContentSyncIntents).where(eq(productContentSyncIntents.id, intent!.id)))[0]
+    ).toMatchObject({ translationJobId: retry.id, status: 'pending' });
+
+    await db.update(translationJobs).set({ status: 'failed' }).where(eq(translationJobs.id, retry.id));
+    expect(await services[1]!.retryProductTranslationJob(original!.id)).toMatchObject({
+      id: retry.id,
+      status: 'failed',
+      queued: false,
+    });
+    expect(queue.sendJob).toHaveBeenCalledTimes(3);
+    const next = await services[0]!.retryProductTranslationJob(retry.id);
+    expect(next.id).not.toBe(retry.id);
+    expect(next).toMatchObject({
+      retryOfJobId: retry.id,
+      status: 'pending',
+      queued: true,
+    });
+    expect(
+      (await db.select().from(productContentSyncIntents).where(eq(productContentSyncIntents.id, intent!.id)))[0]
+    ).toMatchObject({ translationJobId: next.id, status: 'pending' });
+  });
+
+  it.each([
+    ['직접 연결', false],
+    ['다음 재시도까지 연결', true],
+  ] as const)('%s 상태에서 중복된 기존 후속 작업 중 intent에 연결된 계보를 사용한다', async (_state, advanced) => {
+    const { product } = await seedProduct();
+    const fields = ['summary'];
+    const [original] = await db
+      .insert(translationJobs)
+      .values({ entityType: 'Product', entityId: product.id, fields, status: 'failed' })
+      .returning();
+    const [, linked] = await db
+      .insert(translationJobs)
+      .values(
+        [new Date('2026-01-01'), new Date('2026-01-02')].map(createdAt => ({
+          entityType: 'Product',
+          entityId: product.id,
+          fields,
+          status: 'failed',
+          retryOfJobId: original!.id,
+          idempotencyKey: `retry:${original!.id}:${randomUUID()}`,
+          createdAt,
+        }))
+      )
+      .returning();
+    const successor = advanced
+      ? await jobs.createJob({
+          entityType: 'Product',
+          entityId: product.id,
+          fields,
+          retryOfJobId: linked!.id,
+        })
+      : undefined;
+    const [intent] = await db
+      .insert(productContentSyncIntents)
+      .values({
+        productId: product.id,
+        sourceRevision: 1n,
+        kind: 'translation',
+        status: 'failed',
+        translationJobId: successor?.id ?? linked!.id,
+      })
+      .returning();
+
+    expect((await store.createRetryJob(original!.id)).id).toBe(linked!.id);
+    const next = successor ?? (await store.createRetryJob(linked!.id));
+    expect(next.retryOfJobId).toBe(linked!.id);
+    expect(
+      (await db.select().from(productContentSyncIntents).where(eq(productContentSyncIntents.id, intent!.id)))[0]
+    ).toMatchObject({ translationJobId: next.id });
+    expect((await store.createRetryJob(original!.id)).id).toBe(linked!.id);
+    expect(await db.select().from(translationJobs).where(eq(translationJobs.retryOfJobId, original!.id))).toHaveLength(
+      2
+    );
+  });
+
+  it('발행 intent가 없는 실패 작업도 기존에 등록된 후속 작업을 다시 사용한다', async () => {
+    const entityId = randomUUID();
+    const [original] = await db
+      .insert(translationJobs)
+      .values({
+        entityType: 'Magazine',
+        entityId,
+        fields: ['title'],
+        status: 'failed',
+      })
+      .returning();
+    const [legacy] = await db
+      .insert(translationJobs)
+      .values({
+        entityType: 'Magazine',
+        entityId,
+        fields: ['title'],
+        retryOfJobId: original!.id,
+        idempotencyKey: `retry:${original!.id}:${randomUUID()}`,
+        status: 'completed',
+      })
+      .returning();
+    const retry = await store.createRetryJob(original!.id);
+    expect(retry).toMatchObject({ id: legacy!.id, status: 'completed' });
+    expect(await db.select().from(translationJobs).where(eq(translationJobs.entityId, entityId))).toHaveLength(2);
+  });
+
   it('필드 순서·중복은 같은 범위이고 대상·언어·필드 집합이 다르면 별도 작업이다', async () => {
     const request = {
       entityType: 'ProductFeature' as const,

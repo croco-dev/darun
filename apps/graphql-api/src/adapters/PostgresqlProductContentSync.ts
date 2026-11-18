@@ -10,7 +10,7 @@ import {
   SearchableProductRepositoryToken,
   type SearchableProductRepository,
 } from '@darun/search-domain';
-import { translationMeaning } from '@darun/translation-datasource';
+import { PostgresqlTranslationJobRepository, translationMeaning } from '@darun/translation-datasource';
 import { JOB_MAX_ATTEMPTS, jobDispatchStatus } from '@darun/utils-llm';
 import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { GraphQLError } from 'graphql';
@@ -246,26 +246,10 @@ export class PostgresqlProductContentSync implements ProductContentSync {
         let translationJobId = intent.translationJobId;
         if (kind === 'translation') {
           if (!translationJobId) throw new Error('CONTENT_SYNC_TRANSLATION_JOB_MISSING');
-          const [job] = await tx
-            .select()
-            .from(translationJobs)
-            .where(eq(translationJobs.id, translationJobId))
-            .for('update');
+          const [job] = await tx.select().from(translationJobs).where(eq(translationJobs.id, translationJobId));
           if (!job) throw new Error('CONTENT_SYNC_TRANSLATION_JOB_MISSING');
           if (job.status !== 'failed' && job.status !== 'superseded') continue;
-          const [retry] = await tx
-            .insert(translationJobs)
-            .values({
-              entityType: job.entityType,
-              entityId: job.entityId,
-              locale: job.locale,
-              fields: job.fields,
-              retryOfJobId: job.id,
-              idempotencyKey: `retry:${job.id}:${randomUUID()}`,
-              status: 'pending',
-            })
-            .returning();
-          if (!retry) throw new Error('Translation retry registration failed');
+          const retry = await PostgresqlTranslationJobRepository.findOrCreateRetryJob(tx, job.id);
           translationJobId = retry.id;
         }
         await tx
