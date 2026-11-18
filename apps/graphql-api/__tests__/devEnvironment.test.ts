@@ -1,11 +1,13 @@
 import { afterEach, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const directories: string[] = [];
 const devScript = resolve(__dirname, '../scripts/dev.cjs');
+const app = resolve(__dirname, '..');
+const sample = readFileSync(join(app, '.env.sample'), 'utf8');
 
 // Execute the real entry point; stop at the build boundary before any server or DB starts.
 function runDev(files: Record<string, string>, env: Record<string, string> = {}) {
@@ -102,4 +104,36 @@ it('파일이 없어도 로컬 기본값을 적용하고 필수 설정값을 만
 
 it('외부에서 지정한 INFRA_ENV를 기본값이나 파일 값으로 덮지 않는다', () => {
   expect(runDev({ '.env.local': 'INFRA_ENV=local' }, { INFRA_ENV: 'external' }).INFRA_ENV).toBe('external');
+});
+
+it('복사한 샘플만으로 GraphQL 개발 서버 환경을 초기화한다', () => {
+  const env = runDev({ '.env': sample });
+  const initialize = `
+    try {
+      require('./src/config/environment.ts');
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 1;
+    }
+  `;
+  const result = spawnSync(process.execPath, ['--import', 'tsx', '-e', initialize], {
+    cwd: app,
+    env,
+    encoding: 'utf8',
+    timeout: 10_000,
+  });
+
+  expect(result.error).toBeUndefined();
+  expect(result.status, result.stderr).toBe(0);
+  expect(env.VOTE_IP_SALT).toBe('local-salt');
+});
+
+it.each(['custom-vote-salt', ''])('직접 지정한 로컬 투표 salt %j를 유지한다', voteSalt => {
+  const env = runDev({ '.env': sample }, { VOTE_IP_SALT: voteSalt });
+  expect(env.VOTE_IP_SALT).toBe(voteSalt);
+});
+
+it('운영 환경으로 시작하면 샘플에서 로컬 투표 salt를 가져오지 않는다', () => {
+  const env = runDev({ '.env': sample }, { INFRA_ENV: 'prod' });
+  expect(env.VOTE_IP_SALT).toBeUndefined();
 });

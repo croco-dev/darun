@@ -30,7 +30,7 @@ GraphQL 개발 서버(`pnpm --filter graphql-api dev`)는 호출 프로세스의
 `apps/graphql-api/.env.local` → `apps/graphql-api/.env` 순으로 값을 선택합니다.
 빈 문자열도 명시한 값으로 유지하며, 파일이 없어도 실행을 계속합니다.
 Node.js 22의 내장 환경 파일 파서로 인용값, 여러 줄 값, 주석과 `export` 접두어를 읽습니다.
-`INFRA_ENV`가 없으면 `local`을 사용하고, 나머지 필수 설정은 기존 서버 검증을 따릅니다.
+`INFRA_ENV`가 없으면 `local`을 사용합니다.
 환경변수 값은 개발 로더에서 출력하지 않습니다.
 
 #### `apps/graphql-api`
@@ -161,6 +161,10 @@ pnpm --filter visual-web dev    # http://localhost:3002
 유지하면 API 프로세스를 재시작해도 이미 발급한 페이지 커서를 사용할 수 있습니다.
 운영에는 이 공개된 로컬 값을 사용하지 말고 별도의 무작위 비밀값을 설정합니다. API는
 모든 환경에서 키 누락·빈 값·공백만 있는 값을 요청 처리 전에 거절하며 운영 기본값은 없습니다.
+
+로컬 개발 명령은 투표 IP 해시에 쓰는 `VOTE_IP_SALT`가 없으면 Compose와 같은 `local-salt`를 사용합니다.
+기존 `.env` 또는 `.env.local`에 `VOTE_IP_SALT=`가 남아 있다면 해당 줄을 삭제하거나 로컬 전용 값을 지정합니다.
+운영에서는 배포 환경에 별도의 무작위 비밀값을 설정해야 하며, 누락되거나 비어 있으면 API 초기화가 실패합니다.
 
 ## 로컬 개발 환경 (Docker Compose)
 

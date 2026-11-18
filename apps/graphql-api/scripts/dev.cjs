@@ -11,6 +11,10 @@ for (const file of ['.env.local', '.env']) {
 }
 
 process.env.INFRA_ENV ??= 'local';
+if (process.env.INFRA_ENV === 'local') {
+  // Match the local-only salt supplied by Docker Compose.
+  process.env.VOTE_IP_SALT ??= 'local-salt';
+}
 
 const plugins = require('../esbuild.plugins.js');
 const CHILD_GRACE_MS = 3_000;
