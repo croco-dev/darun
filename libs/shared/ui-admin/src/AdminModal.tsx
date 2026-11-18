@@ -1,7 +1,9 @@
 'use client';
 
 import { X, cn, lockBodyScroll } from '@darun/ui';
-import { ReactNode, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
+import { createContext, ReactNode, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
+
+export const AdminModalOpenContext = createContext(true);
 
 export type AdminModalProps = {
   opened: boolean;
@@ -127,7 +129,9 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
             <X size={18} aria-hidden="true" className="shrink-0 stroke-[2]" />
           </button>
         </div>
-        <div className="max-h-[calc(85vh-8rem)] overflow-y-auto">{children}</div>
+        <div className="max-h-[calc(85vh-8rem)] overflow-y-auto">
+          <AdminModalOpenContext value={opened}>{children}</AdminModalOpenContext>
+        </div>
       </div>
     </div>
   );

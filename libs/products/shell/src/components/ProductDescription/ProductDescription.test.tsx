@@ -111,6 +111,20 @@ describe('ProductDescription', () => {
     expect(container.querySelector('.border-leaf-200\\/90')).toBeNull();
   });
 
+  it('renders an editor-authored link in a section with its label and full destination', () => {
+    act(() => {
+      root?.render(
+        <ProductDescription.ViewComponent description='<h2>Pros</h2><p>See <a target="_blank" rel="noopener noreferrer" href="https://example.org/help?os=ios&amp;from=guide"><strong>설치</strong> 가이드</a>.</p>' />
+      );
+    });
+
+    const link = container.querySelector('.border-leaf-200\\/90 a');
+    expect(link?.getAttribute('href')).toBe('https://example.org/help?os=ios&from=guide');
+    expect(link?.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link?.textContent).toBe('설치 가이드');
+    expect(link?.querySelector('strong')?.textContent).toBe('설치');
+  });
+
   it('separates concluding paragraphs and editor signature from the regret section', () => {
     const htmlWithByline = `
       <p>도입부 설명입니다.</p>

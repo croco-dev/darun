@@ -4,8 +4,11 @@ import { useImageUpload } from '@darun/utils-image-upload';
 import { notifications } from '@mantine/notifications';
 import { NodeSelection } from '@tiptap/pm/state';
 import { type Editor, useEditorState } from '@tiptap/react';
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { AdminModalOpenContext } from '../AdminModal';
 import { ImageAltFields } from './ImageAltFields';
+import { LinkFields } from './LinkFields';
+import { applyLink, getCurrentLinkSelection, getLinkSelection, type LinkSelection } from './linkSelection';
 import { MenuItem, menuItemVariants } from './MenuItem';
 
 type MenuBarProps = {
@@ -25,12 +28,38 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
   const inputRef = useRef<HTMLInputElement | null>(null);
   const editImageButtonRef = useRef<HTMLButtonElement | null>(null);
   const { upload } = useImageUpload();
+  const modalOpen = useContext(AdminModalOpenContext);
   const [imageDraft, setImageDraft] = useState<ImageDraft | null>(null);
+  const [linkDraft, setLinkDraft] = useState<LinkSelection | null>(null);
+  if (!modalOpen && linkDraft) setLinkDraft(null);
   const [isUploading, setIsUploading] = useState(false);
   const activeUpload = useRef<{
     controller: AbortController;
     onImageUploadingChange?: (uploading: boolean) => void;
   } | null>(null);
+  const toolbarDisabled = disabled || isUploading || imageDraft !== null || linkDraft !== null;
+
+  function openLinkEditor() {
+    if (!modalOpen || toolbarDisabled || !editor.isEditable || activeUpload.current) return false;
+    const draft = getCurrentLinkSelection(editor);
+    if (!draft) return false;
+    setLinkDraft(draft);
+    return true;
+  }
+
+  const openLinkFromShortcut = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      event.defaultPrevented ||
+      event.key.toLowerCase() !== 'k' ||
+      !(event.metaKey || event.ctrlKey) ||
+      event.altKey ||
+      event.shiftKey ||
+      event.isComposing
+    ) {
+      return;
+    }
+    if (openLinkEditor()) event.preventDefault();
+  });
 
   useEffect(
     () => () => {
@@ -65,11 +94,15 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
       button.focus();
     };
     editorElement.addEventListener('keydown', focusImageEditButton, true);
-    return () => editorElement.removeEventListener('keydown', focusImageEditButton, true);
+    editorElement.addEventListener('keydown', openLinkFromShortcut);
+    return () => {
+      editorElement.removeEventListener('keydown', focusImageEditButton, true);
+      editorElement.removeEventListener('keydown', openLinkFromShortcut);
+    };
   }, [editor]);
 
   const handleSelectImage = () => {
-    if (disabled || imageDraft || activeUpload.current) {
+    if (disabled || imageDraft || linkDraft || activeUpload.current) {
       return;
     }
 
@@ -164,6 +197,8 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     editor,
     selector: () => ({
       imageSelected: getSelectedImage(editor) !== null,
+      linkEditable: getLinkSelection(editor) !== null,
+      link: editor.isActive('link'),
       bold: editor.isActive('bold'),
       italic: editor.isActive('italic'),
       heading1: editor.isActive('heading', { level: 1 }),
@@ -217,7 +252,19 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     },
   ];
 
-  const toolbarDisabled = disabled || isUploading || imageDraft !== null;
+  function closeLinkEditor(restoreSelection: boolean) {
+    setLinkDraft(null);
+    if (disabled || !editor.isEditable) return;
+    if (restoreSelection && linkDraft && editor.state.doc === linkDraft.selection.$from.doc) {
+      editor.view.dispatch(editor.state.tr.setSelection(linkDraft.selection).setStoredMarks(linkDraft.storedMarks));
+    }
+    if (editor.view.hasFocus()) {
+      // Tabbing back into the editor can move the DOM caret before ProseMirror observes it.
+      editor.view.focus();
+    } else {
+      editor.commands.focus();
+    }
+  }
 
   return (
     <>
@@ -225,6 +272,17 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         {menuItems.map(({ label, action, active }) => (
           <MenuItem key={label} label={label} disabled={toolbarDisabled} onClick={action} active={active} />
         ))}
+        <button
+          type="button"
+          className={menuItemVariants({ active: activeFormats.link })}
+          aria-haspopup="dialog"
+          aria-expanded={linkDraft !== null}
+          aria-keyshortcuts="Control+K Meta+K"
+          disabled={toolbarDisabled || !activeFormats.linkEditable}
+          onClick={openLinkEditor}
+        >
+          본문 링크 편집
+        </button>
         <button
           type="button"
           className={menuItemVariants()}
@@ -255,6 +313,23 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
           이미지 대체 텍스트 수정
         </button>
       </div>
+      {linkDraft && (
+        <LinkFields
+          initialText={linkDraft.text}
+          initialHref={linkDraft.mark?.attrs.href ?? undefined}
+          disabled={disabled}
+          onApply={change => {
+            if (disabled || !editor.isEditable || activeUpload.current) return;
+            if (editor.state.doc !== linkDraft.selection.$from.doc) {
+              return '본문이 변경되었습니다. 링크 편집을 닫고 다시 선택해 주세요.';
+            }
+            const changed = !change || change.href !== linkDraft.mark?.attrs.href || change.text !== linkDraft.text;
+            if (changed) applyLink(editor, linkDraft, change);
+            closeLinkEditor(!changed);
+          }}
+          onCancel={() => closeLinkEditor(true)}
+        />
+      )}
       {imageDraft && (
         <ImageAltFields
           adding={'file' in imageDraft}
