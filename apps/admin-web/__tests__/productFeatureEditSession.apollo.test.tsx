@@ -36,12 +36,21 @@ function mountSection() {
     summary: `Summary ${id}`,
   }));
   const pending: ((success: boolean) => void)[] = [];
+  let listUnavailable = false;
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink(
       operation =>
         new Observable(observer => {
           if (operation.operationName === 'TempProductBySlugOnProductFeatureTable') {
+            if (listUnavailable) {
+              observer.next({
+                data: { tempProductBySlug: null },
+                errors: [{ message: 'Internal server error', path: ['tempProductBySlug', 'features'] }],
+              });
+              observer.complete();
+              return;
+            }
             observer.next({
               data: {
                 tempProductBySlug: {
@@ -85,7 +94,13 @@ function mountSection() {
       <ProductDetailFeatureSection slug="fixture-app" />
     </ApolloProvider>
   );
-  return { client, pending };
+  return {
+    client,
+    pending,
+    setListUnavailable: (unavailable: boolean) => {
+      listUnavailable = unavailable;
+    },
+  };
 }
 
 const nameInput = () => screen.getByLabelText('기능 이름 (name)') as HTMLTextAreaElement;
@@ -166,4 +181,23 @@ it('keeps a new session of the same feature open when its old request succeeds',
   expect(screen.getByRole('dialog')).toBeDefined();
   expect(nameInput().value).toBe('New A draft');
   expect(notifications.show).not.toHaveBeenCalled();
+});
+
+it('closes a saved feature edit and retries only the list after a GraphQL read failure', async () => {
+  const fixture = mountSection();
+  await open('A');
+  changeName('Saved A');
+  save();
+  await waitFor(() => expect(fixture.pending).toHaveLength(1));
+  fixture.setListUnavailable(true);
+  await act(async () => fixture.pending[0](true));
+
+  const retry = await screen.findByRole('button', { name: '다시 시도' });
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  expect(notifications.show).toHaveBeenCalledExactlyOnceWith({ message: '수정되었습니다.', color: 'teal' });
+
+  fixture.setListUnavailable(false);
+  fireEvent.click(retry);
+  await screen.findByText('Saved A', { selector: 'div[title]' });
+  expect(fixture.pending).toHaveLength(1);
 });

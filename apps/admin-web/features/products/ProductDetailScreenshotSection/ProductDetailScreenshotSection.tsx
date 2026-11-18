@@ -183,11 +183,11 @@ function ScreenshotImage({ src, alt }: { src: string; alt: string }) {
 
 function ScreenshotMetadataEditor({
   screenshot,
-  slug,
+  refreshScreenshots,
   onClose,
 }: {
   screenshot: ScreenshotCardFields;
-  slug: string;
+  refreshScreenshots: () => Promise<unknown>;
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<ScreenshotMetadataDraft>({
@@ -202,20 +202,6 @@ function ScreenshotMetadataEditor({
   const uiElementCountId = useId();
 
   const [updateScreenshot] = useMutation(UpdateProductScreenshotOnDetailSectionDocument, {
-    refetchQueries: [
-      {
-        query: GetProductScreenshotsOnDetailSectionDocument,
-        variables: { slug },
-      },
-    ],
-    awaitRefetchQueries: true,
-    onCompleted: () => {
-      notifications.show({
-        message: '메타데이터가 저장되었습니다.',
-        color: 'teal',
-      });
-      onClose();
-    },
     onError: error => {
       notifications.show({
         title: '저장 실패',
@@ -236,7 +222,7 @@ function ScreenshotMetadataEditor({
     }
     setIsSaving(true);
     try {
-      await updateScreenshot({
+      const result = await updateScreenshot({
         variables: {
           id: screenshot.id,
           imageAlt: trimmedAlt,
@@ -246,6 +232,11 @@ function ScreenshotMetadataEditor({
           ...(editedUiElements !== undefined ? { uiElements: editedUiElements } : {}),
         },
       });
+      if (result.data?.updateProductScreenshot?.screenshot) {
+        await refreshScreenshots();
+        notifications.show({ message: '메타데이터가 저장되었습니다.', color: 'teal' });
+        onClose();
+      }
     } catch {
       // Handled by onError; draft stays in local state so input is preserved.
     } finally {
@@ -403,13 +394,14 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const { data, loading, error, refetch } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
+  const { data, loading, error, observable, refetch } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
     variables: { slug },
   });
 
-  const refreshScreenshots = () => {
+  const refreshScreenshots = async () => {
+    if (observable.variables.slug !== slug) return;
     // The query displays refresh errors alongside the existing cards.
-    void refetch().catch(() => {});
+    await refetch().catch(() => undefined);
   };
 
   const [deleteScreenshot] = useMutation(DeleteProductScreenshotOnDetailSectionDocument, {
@@ -425,7 +417,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         message: '스크린샷이 삭제되었습니다.',
         color: 'teal',
       });
-      refreshScreenshots();
+      void refreshScreenshots();
     },
   });
 
@@ -496,7 +488,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
             action={
               <Button
                 type="button"
-                onClick={refreshScreenshots}
+                onClick={() => void refreshScreenshots()}
                 variant="contained"
                 color="primary"
                 className="active:scale-[0.98] motion-reduce:transform-none"
@@ -508,7 +500,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         )}
         {loading && !data ? (
           <AdminLoadingState />
-        ) : !data ? null : screenshots.length === 0 ? (
+        ) : !data || (error && screenshots.length === 0) ? null : screenshots.length === 0 ? (
           <AdminEmptyState
             title="등록된 스크린샷이 없습니다."
             description="서비스의 주요 기능 및 화면을 보여주는 스크린샷을 등록해 보세요."
@@ -582,7 +574,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                 {editingId === screenshot.id && (
                   <ScreenshotMetadataEditor
                     screenshot={screenshot}
-                    slug={slug}
+                    refreshScreenshots={refreshScreenshots}
                     onClose={() => setEditingId(current => (current === screenshot.id ? null : current))}
                   />
                 )}

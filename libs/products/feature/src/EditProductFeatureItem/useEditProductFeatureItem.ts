@@ -66,7 +66,15 @@ export function useEditProductFeatureItem({ featureId, onSaved, onSubmit, onCanc
         if (savedId) onSaved?.(savedId);
         return [TempProductBySlugOnProductFeatureTableDocument];
       },
-      awaitRefetchQueries: true,
+      onQueryUpdated: query => {
+        if (apolloClient.getObservableQueries([TempProductBySlugOnProductFeatureTableDocument]).has(query)) {
+          // The table reports lookup errors and retries only the read after a successful save.
+          return query
+            .refetch()
+            .retain()
+            .catch(() => undefined);
+        }
+      },
       onCompleted: () => {
         apolloClient.cache.evict({ fieldName: 'feature' });
         if (!isMounted.current) return;

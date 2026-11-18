@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
+import { GetProductScreenshotsOnDetailSectionDocument } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import React from 'react';
@@ -17,10 +18,13 @@ afterEach(() => {
   cleanup();
   clients.splice(0).forEach(client => client.stop());
   vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
-function mountSection() {
-  const screenshots = ['A', 'B'].map(id => ({
+type ReadFailure = boolean | 'graphql';
+
+function mountSection(ids = ['A', 'B']) {
+  const screenshots = ids.map(id => ({
     __typename: 'Screenshot',
     id,
     imageUrl: `https://fixture.invalid/${id}.png`,
@@ -30,7 +34,7 @@ function mountSection() {
     screenType: 'HOME',
     uiElements: id === 'A' ? ['BUTTON', 'CARD'] : [],
   }));
-  const queries: ((fail?: boolean) => void)[] = [];
+  const queries: ((fail?: ReadFailure) => void)[] = [];
   const writes: Record<string, unknown>[] = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
@@ -39,6 +43,14 @@ function mountSection() {
         new Observable(observer => {
           if (operation.operationName === 'GetProductScreenshotsOnDetailSection') {
             queries.push(fail => {
+              if (fail === 'graphql') {
+                observer.next({
+                  data: { tempProductBySlug: null },
+                  errors: [{ message: 'Internal server error', path: ['tempProductBySlug', 'screenshots'] }],
+                });
+                observer.complete();
+                return;
+              }
               if (fail) return observer.error(new Error('Screenshot lookup unavailable'));
               observer.next({
                 data: {
@@ -81,10 +93,10 @@ function mountSection() {
     </ApolloProvider>
   );
   vi.spyOn(window, 'confirm').mockReturnValue(true);
-  return { queries, writes };
+  return { client, queries, writes };
 }
 
-async function finishQuery(queries: ((fail?: boolean) => void)[], fail = false) {
+async function finishQuery(queries: ((fail?: ReadFailure) => void)[], fail: ReadFailure = false) {
   await waitFor(() => expect(queries.length).toBeGreaterThan(0));
   await act(async () => queries.shift()!(fail));
 }
@@ -93,7 +105,7 @@ function card(id: string) {
   return screen.getByText(`Saved alt ${id}`, { selector: 'span[title]' }).closest('.group') as HTMLElement;
 }
 
-async function editA(queries: ((fail?: boolean) => void)[]) {
+async function editA(queries: ((fail?: ReadFailure) => void)[]) {
   await finishQuery(queries);
   fireEvent.click(within(card('A')).getByRole('button', { name: '메타데이터 수정' }));
   fireEvent.change(screen.getByLabelText('제목'), {
@@ -203,4 +215,38 @@ it('retries an initial lookup failure and shows the loaded screenshots', async (
   await finishQuery(queries);
   expect(card('A')).toBeTruthy();
   expect(card('B')).toBeTruthy();
+});
+
+it('closes a saved screenshot edit and retries only the list after a GraphQL read failure', async () => {
+  const { queries, writes } = mountSection();
+  await editA(queries);
+  fireEvent.click(screen.getByRole('button', { name: /^저장$/ }));
+  await finishQuery(queries, 'graphql');
+
+  expect(notifications.show).toHaveBeenCalledExactlyOnceWith({
+    message: '메타데이터가 저장되었습니다.',
+    color: 'teal',
+  });
+  expect(screen.queryByLabelText('이미지 alt')).toBeNull();
+  fireEvent.click(await screen.findByRole('button', { name: '다시 시도' }));
+  await finishQuery(queries);
+  await screen.findByText('Unsaved alt A', { selector: 'span[title]' });
+  expect(writes).toHaveLength(1);
+});
+
+it('shows only the lookup error when refreshing a cached empty screenshot list fails', async () => {
+  const { client, queries } = mountSection([]);
+  const emptyTitle = '등록된 스크린샷이 없습니다.';
+  await finishQuery(queries);
+  await screen.findByText(emptyTitle);
+
+  await act(async () => {
+    void client.refetchQueries({ include: [GetProductScreenshotsOnDetailSectionDocument] }).catch(() => undefined);
+  });
+  await finishQuery(queries, 'graphql');
+  const retry = await screen.findByRole('button', { name: '다시 시도' });
+  expect(screen.queryByText(emptyTitle)).toBeNull();
+  fireEvent.click(retry);
+  await finishQuery(queries);
+  await screen.findByText(emptyTitle);
 });
