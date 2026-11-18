@@ -708,13 +708,17 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           staleSave = await save(staleDraft, base);
         } else {
           const applicationName = 'darun-description-competing-editor';
-          const secondConnection = postgres(url!, { max: 1, connection: { application_name: applicationName } });
-          const secondServer = editingServer(drizzle(secondConnection));
+          const secondConnection = await openFixtureConnection({
+            connect_timeout: 5,
+            connection: { application_name: applicationName },
+          });
           const registration = Promise.withResolvers<void>();
           const commit = Promise.withResolvers<void>();
+          let secondServer: ReturnType<typeof editingServer> | undefined;
           let firstRequest: ReturnType<typeof save> | undefined;
           let secondRequest: ReturnType<typeof save> | undefined;
           try {
+            secondServer = editingServer(drizzle(secondConnection));
             await secondServer.start();
             const secondBase = await readDescription(secondServer);
             expect(secondBase).toBe(original);
@@ -746,8 +750,11 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
             commit.resolve();
             await Promise.allSettled([firstRequest, secondRequest]);
             holdRegistration = undefined;
-            await secondServer.stop();
-            await secondConnection.end({ timeout: 5 });
+            try {
+              await secondServer?.stop();
+            } finally {
+              await secondConnection.end({ timeout: 5 });
+            }
           }
         }
 
