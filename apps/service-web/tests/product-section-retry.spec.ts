@@ -14,7 +14,7 @@ const english = {
 };
 
 const scenarios = [
-  [english, 'links', 'ProductOnProductLinks', 'Official links', 'Fixture website'],
+  [english, 'links', 'ProductOnProductLinks', 'Product links', 'Fixture website'],
   [korean, 'screenshot', 'GetPhotosOnProductPhotos', '스크린샷', 'Touch preview 1'],
   [english, 'features', 'ProductWithFeaturesOnProductFeatureList', 'Features', 'Touch feature'],
   [english, 'company-info', 'ProductBySlugOnProductCompany', 'Company Information', 'Fixture Company'],
@@ -30,6 +30,77 @@ test.beforeEach(async ({ page }) => {
     return ['localhost', '127.0.0.1'].includes(url.hostname) ? route.continue() : route.fulfill({ status: 204 });
   });
 });
+
+for (const [locale, width, groupName, labels] of [
+  ['ko', 1280, '상품 링크', ['문서', '공식 홈페이지', 'Linear 공식 사이트']],
+  ['en', 390, 'Product links', ['Documentation', 'Official Website', 'Linear 공식 사이트']],
+] as const) {
+  test(`${locale} product links use the designated link and role label`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    const researchLogo = 'https://research-logo.example/linear.png';
+    await page.route(researchLogo, route =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"><rect width="22" height="22" fill="violet"/></svg>',
+      })
+    );
+    await page.route(
+      'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
+      route =>
+        route.fulfill({
+          contentType: 'image/svg+xml',
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"><circle cx="11" cy="11" r="8" fill="white"/></svg>',
+        })
+    );
+    const errors: string[] = [];
+    const unapprovedIconRequests: string[] = [];
+    page.on('request', request => {
+      if (new URL(request.url()).hostname === 'third-party.example') unapprovedIconRequests.push(request.url());
+    });
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('console', message => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await page.goto(`/${locale}/products/product-link-roles`);
+
+    const group = page.getByRole('group', { name: groupName });
+    const links = group.getByRole('link');
+    await expect(links).toHaveText([...labels]);
+    await expect(links.first()).toHaveAttribute('href', 'https://example.com/docs');
+    await expect(links.first().locator('span').first()).toHaveClass(/bg-dark-900/);
+    const globe = links.first().locator('img');
+    await expect(globe).toBeVisible();
+    await expect(globe.locator('..')).toHaveCSS('background-color', 'rgb(17, 17, 17)');
+    await expect(links.nth(1).locator('img')).toHaveCount(0);
+    const officialIcon = links.nth(2).locator('img');
+    await expect(officialIcon).toHaveAttribute('src', researchLogo);
+    await expect(officialIcon).toHaveAttribute('referrerpolicy', 'no-referrer');
+    await expect
+      .poll(() => officialIcon.evaluate(image => (image as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
+    await expect(links.nth(1).locator('span').first()).toHaveClass(/bg-white/);
+    await expect(links.first()).toHaveAttribute('rel', 'noopener noreferrer');
+    await links.first().focus();
+    await page.keyboard.press('Tab');
+    await expect(links.nth(1)).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    expect(errors).toEqual([]);
+    expect(unapprovedIconRequests).toEqual([]);
+    await group.screenshot({ path: info.outputPath('product-link-order.png') });
+
+    if (locale === 'en') {
+      await page.route(
+        'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
+        route => route.fulfill({ contentType: 'image/svg+xml', body: 'invalid image bytes' })
+      );
+      await page.reload();
+      await expect(links.first()).toHaveText('Documentation');
+      await expect(links.first().locator('img')).toHaveCount(0);
+      await expect(links.first().locator('svg').first()).toBeVisible();
+      expect(errors).toEqual([]);
+    }
+  });
+}
 
 for (const [messages, sectionId, operation, heading, recoveredText] of scenarios) {
   const scenario = { ...messages, section: sectionId, operation, heading, recovered: recoveredText };
@@ -97,6 +168,8 @@ for (const [messages, sectionId, operation, heading, recoveredText] of scenarios
             link: 'https://example.com/',
             displayLink: '',
             iconUrl: '',
+            role: null,
+            isPrimary: true,
           },
         ];
       }

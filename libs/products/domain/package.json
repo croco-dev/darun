@@ -7,7 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./info": "./src/info/ProductInfo.ts",
-    "./link": "./src/link/ProductLinkUrl.ts",
+    "./link": "./src/link/index.ts",
     "./research": "./src/research/ProductResearchLimits.ts",
     "./visual-ui-elements": "./src/visual-ui-elements/VisualUiElementOptions.ts"
   },

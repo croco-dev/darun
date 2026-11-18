@@ -7,19 +7,22 @@ import { ProductLinkTable } from '../ProductLinkTable';
 
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }));
 
+const researchLogo = 'https://linear.example/logo.png';
 const initialLink = {
   __typename: 'Link',
   id: 'link-a',
   isPrimary: true,
+  role: null,
   title: 'Original title',
   link: 'https://example.com',
   displayLink: 'example.com',
-  iconUrl: null,
+  iconUrl: researchLogo,
 };
 const otherLink = {
   ...initialLink,
   id: 'link-b',
   title: 'Other link',
+  iconUrl: '/images/second-link.svg',
   isPrimary: false,
 };
 const clients: ApolloClient[] = [];
@@ -30,15 +33,15 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function setup({ failSave = false, delaySave = false } = {}) {
-  let saved = initialLink;
+function setup({ failSave = false, delaySave = false, firstTitle = initialLink.title } = {}) {
+  let links = [{ ...initialLink, title: firstTitle }, otherLink];
   const reads: Array<(error?: Error) => void> = [];
   const writes: Operation[] = [];
   const pendingSaves: Array<() => void> = [];
   const product = () => ({
     __typename: 'Product',
     id: 'product-a',
-    links: [saved, otherLink],
+    links,
   });
   const client = new ApolloClient({
     cache: new InMemoryCache(),
@@ -62,14 +65,20 @@ function setup({ failSave = false, delaySave = false } = {}) {
               return;
             }
             const complete = () => {
-              const { title, link, displayLink, iconUrl } = operation.variables.input;
-              saved = {
-                ...saved,
-                title: title ?? saved.title,
-                link: link ?? saved.link,
-                displayLink: displayLink ?? saved.displayLink,
-                iconUrl: iconUrl ?? saved.iconUrl,
-              };
+              const { id, input } = operation.variables;
+              links = links.map(link => {
+                const isPrimary = input.makePrimary ? link.id === id : link.isPrimary;
+                if (link.id !== id) return { ...link, isPrimary };
+                return {
+                  ...link,
+                  isPrimary,
+                  title: input.title ?? link.title,
+                  link: input.link ?? link.link,
+                  displayLink: input.displayLink ?? link.displayLink,
+                  iconUrl: input.iconUrl ?? link.iconUrl,
+                  role: input.role === undefined ? link.role : input.role,
+                };
+              });
               observer.next({
                 data: { updateProductLink: { product: product() } },
               });
@@ -137,14 +146,8 @@ describe('상품 링크 재편집', () => {
     save();
     await fixture.resolveRead();
     expect(fixture.writes.map(write => write.variables.input)).toEqual([
-      expect.objectContaining({
-        title: 'Updated title',
-        displayLink: 'example.com',
-      }),
-      expect.objectContaining({
-        title: 'Updated title',
-        displayLink: 'New display',
-      }),
+      { title: 'Updated title' },
+      { displayLink: 'New display' },
     ]);
   });
 
@@ -194,7 +197,7 @@ describe('상품 링크 재편집', () => {
     fireEvent.change(screen.getByPlaceholderText('ex) toss.im'), { target: { value: 'New display' } });
     save();
     await fixture.resolveSave();
-    expect(fixture.writes[1]?.variables.input).toMatchObject({ title: 'Updated title', displayLink: 'New display' });
+    expect(fixture.writes[1]?.variables.input).toEqual({ displayLink: 'New display' });
     await fixture.resolveRead();
   });
 
@@ -234,6 +237,48 @@ describe('상품 링크 재편집', () => {
     );
     expect(titleInput().value).toBe('Unsaved draft');
     expect(fixture.writes).toHaveLength(1);
+  });
+
+  it('한국어와 영어의 공개 문구 및 변경된 대표 순서를 저장 전에 미리 본다', async () => {
+    const fixture = setup({ firstTitle: '공식 홈페이지' });
+    await fixture.resolveRead();
+    const researchIcon = screen.getByText('공식 홈페이지').closest('tr')?.querySelector('img');
+    expect(researchIcon?.getAttribute('src')).toBe(researchLogo);
+    expect(researchIcon?.getAttribute('referrerpolicy')).toBe('no-referrer');
+    edit('공식 홈페이지');
+    expect(
+      within(dialog()!).getByRole('option', {
+        name: '현재 아이콘',
+        selected: true,
+      })
+    ).toHaveProperty('value', researchLogo);
+    expect(within(dialog()!).getByRole('option', { name: '아이콘을 선택해 주세요' })).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByText('취소', { selector: 'button' }));
+    edit('Other link');
+    const modal = within(dialog()!);
+    fireEvent.change(modal.getByLabelText('링크 역할'), {
+      target: { value: 'official' },
+    });
+    fireEvent.change(titleInput(), { target: { value: '' } });
+    fireEvent.click(modal.getByLabelText('이 링크를 대표로 지정'));
+    const preview = within(modal.getByRole('region', { name: '공개 링크 미리보기' }));
+    const labels = (language: string) =>
+      within(preview.getByRole('list', { name: language }))
+        .getAllByRole('listitem')
+        .map(item => item.textContent);
+    expect(labels('한국어')).toEqual(['공식 사이트 (대표 링크)', '공식 홈페이지']);
+    expect(labels('영어')).toEqual(['Official website (Primary link)', 'Official Website']);
+    expect(fixture.writes).toHaveLength(0);
+
+    save();
+    await fixture.resolveRead();
+    expect(fixture.writes[0].variables).toMatchObject({
+      id: 'link-b',
+      input: { title: '', role: 'official', makePrimary: true },
+    });
+    const primary = screen.getByText('공식 사이트').closest('tr')!;
+    expect(within(primary).getByText('대표 링크')).toBeTruthy();
+    expect(primary.querySelector('img')?.getAttribute('src')).toBe('/images/second-link.svg');
   });
 
   it('저장 성공과 재조회 실패를 구분하고 목록 재시도 후 저장값으로 편집한다', async () => {

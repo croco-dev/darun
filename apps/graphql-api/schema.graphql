@@ -7,6 +7,7 @@ input AddProductLinkInput {
   displayLink: String!
   iconUrl: String!
   link: String!
+  role: ProductLinkRole
   title: String!
 }
 
@@ -232,6 +233,7 @@ type Link {
   id: ID!
   isPrimary: Boolean!
   link: String!
+  role: ProductLinkRole
   title: String!
 }
 
@@ -444,6 +446,14 @@ type ProductEdge {
 input ProductFlowStepInput {
   caption: String!
   screenshotId: ID!
+}
+
+enum ProductLinkRole {
+  documentation
+  download
+  official
+  other
+  social
 }
 
 type ProductResearchDraftGraph {
@@ -750,6 +760,8 @@ input UpdateProductLinkInput {
   displayLink: String
   iconUrl: String
   link: String
+  makePrimary: Boolean
+  role: ProductLinkRole
   title: String
 }
 

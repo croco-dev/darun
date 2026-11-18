@@ -26,13 +26,7 @@ const nextConfig = {
   redirects: () => [],
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.externals = [
-        ...(config.externals || []),
-        'vitest',
-        'jsdom',
-        '@vitest/runner',
-        '@vitest/utils',
-      ];
+      config.externals = [...(config.externals || []), 'vitest', 'jsdom', '@vitest/runner', '@vitest/utils'];
     }
     return config;
   },

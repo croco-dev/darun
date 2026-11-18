@@ -1,5 +1,6 @@
 import { Field, InputType, ObjectType } from 'type-graphql';
 import { Product } from './Product';
+import { ProductLinkRole } from './ProductLinkRole';
 
 @ObjectType('UpdateProductLinkPayload')
 export class UpdateProductLinkPayload {
@@ -20,4 +21,10 @@ export class UpdateProductLinkInput {
 
   @Field({ nullable: true })
   iconUrl?: string;
+
+  @Field(() => ProductLinkRole, { nullable: true })
+  role?: ProductLinkRole | null;
+
+  @Field(() => Boolean, { nullable: true })
+  makePrimary?: boolean | null;
 }

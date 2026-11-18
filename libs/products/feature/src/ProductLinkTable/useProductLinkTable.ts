@@ -2,13 +2,13 @@ import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 import {
   EditProductLinkItemFragment,
+  EditProductLinkItemFragmentDoc,
   ProductLinkTableFragmentDoc,
   TempProductBySlugOnProductLinkTableDocument,
   useFragment,
 } from '@darun/provider-graphql';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnProductLinkTable($slug: String!) {
     tempProductBySlug(slug: $slug) {
@@ -27,6 +27,7 @@ export function useProductLinkTable({ slug }: ProductLinkTableProps) {
     variables: { slug },
   });
   const product = useFragment(ProductLinkTableFragmentDoc, data?.tempProductBySlug ?? null);
+  const links = useFragment(EditProductLinkItemFragmentDoc, product?.links) ?? undefined;
 
   const [edit, setEdit] = useState<{
     slug: string;
@@ -71,7 +72,7 @@ export function useProductLinkTable({ slug }: ProductLinkTableProps) {
   }, [loading, observable, refreshLinks, savedRefresh]);
 
   return {
-    links: product?.links,
+    links,
     loading: loading || savedRefresh?.slug === slug,
     error,
     refreshLinks,

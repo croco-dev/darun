@@ -3,6 +3,7 @@ export type { VisualSaveCursor } from './repositories/VisualSaveCursor';
 export { ProductFeature } from './entities/ProductFeature';
 export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';
 export { ProductLink } from './entities/ProductLink';
+export { ProductLinkRole } from './link/ProductLinkRole';
 export { ProductScreenshot } from './entities/ProductScreenshot';
 export { ProductTag } from './entities/ProductTag';
 export { Tag } from './entities/Tag';

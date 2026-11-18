@@ -42,7 +42,50 @@ const nativeTouchProduct = {
 };
 
 const companyRead = Promise.withResolvers<void>();
-const delayedCompany = { id: 'delayed-company', name: 'Delayed Company', type: '', address: '', startAt: null };
+const delayedCompany = {
+  id: 'delayed-company',
+  name: 'Delayed Company',
+  type: '',
+  address: '',
+  startAt: null,
+};
+const productWithDesignatedLink = {
+  ...nativeTouchProduct,
+  slug: 'product-link-roles',
+  links: [
+    {
+      __typename: 'Link',
+      id: 'legacy-link',
+      title: '공식 홈페이지',
+      link: 'https://example.com/home',
+      displayLink: '',
+      iconUrl: '//third-party.example/legacy-icon.svg',
+      isPrimary: false,
+      role: null,
+    },
+    {
+      __typename: 'Link',
+      id: 'docs-link',
+      title: '',
+      link: 'https://example.com/docs',
+      displayLink: '',
+      iconUrl:
+        'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
+      isPrimary: true,
+      role: 'documentation',
+    },
+    {
+      __typename: 'Link',
+      id: 'official-link',
+      title: 'Linear 공식 사이트',
+      link: 'https://example.com/visit',
+      displayLink: '',
+      iconUrl: 'https://research-logo.example/linear.png',
+      isPrimary: false,
+      role: 'official',
+    },
+  ],
+};
 
 // Both SSR and browser reads use this loopback-only fixture. No database or external API is involved.
 createServer((request, response) => {
@@ -86,11 +129,16 @@ createServer((request, response) => {
     }
     const companyDelayed = variables?.slug === 'delayed-company' && readsCompany;
     if (companyDelayed) await companyRead.promise;
-    const product = companyDelayed ? { ...nativeTouchProduct, ownedCompany: delayedCompany } : nativeTouchProduct;
+    const product = variables?.slug === 'product-link-roles' ? productWithDesignatedLink : nativeTouchProduct;
     response.end(
       JSON.stringify({
         data: {
-          productBySlug: variables?.slug === 'missing-fixture-product' ? null : product,
+          productBySlug:
+            variables?.slug === 'missing-fixture-product'
+              ? null
+              : companyDelayed
+                ? { ...product, ownedCompany: delayedCompany }
+                : product,
           searchProducts: variables?.query === 'section-retry-fixture' ? [nativeTouchProduct] : [],
           categories: [],
           rankedProducts: [],

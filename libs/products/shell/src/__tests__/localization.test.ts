@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  getLocalizedCompanyAddress,
-  getLocalizedCompanyType,
-  getLocalizedLinkTitle,
-  getLocalizedTag,
-} from '../utils/localization';
+import { getLocalizedCompanyAddress, getLocalizedCompanyType, getLocalizedTag } from '../utils/localization';
 
 describe('localization utils', () => {
   describe('getLocalizedTag', () => {
@@ -19,21 +14,6 @@ describe('localization utils', () => {
 
     it('returns original tag when English translation is not found', () => {
       expect(getLocalizedTag('미등록태그', 'en')).toBe('미등록태그');
-    });
-  });
-
-  describe('getLocalizedLinkTitle', () => {
-    it('returns English translation when locale is en and title is known', () => {
-      expect(getLocalizedLinkTitle('공식 홈페이지', 'en')).toBe('Official Website');
-      expect(getLocalizedLinkTitle('고객센터', 'en')).toBe('Customer Support');
-    });
-
-    it('returns original title when locale is ko', () => {
-      expect(getLocalizedLinkTitle('공식 홈페이지', 'ko')).toBe('공식 홈페이지');
-    });
-
-    it('returns original title when translation is not found', () => {
-      expect(getLocalizedLinkTitle('기타 링크', 'en')).toBe('기타 링크');
     });
   });
 

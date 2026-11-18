@@ -1,88 +1,67 @@
 'use client';
 
 import { gql } from '@apollo/client';
-import { EditProductLinkItemFragment, EditProductLinkItemFragmentDoc, useFragment } from '@darun/provider-graphql';
+import type { EditProductLinkItemFragment } from '@darun/provider-graphql';
 import { Button, cn, Globe, Link2, Pencil } from '@darun/ui';
 import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
+import {
+  getProductLinkIconSource,
+  getProductLinkLabel,
+  productLinkIconNeedsDarkBackground,
+  productLinkRoleLabels,
+} from '../productLinkPresentation';
 import { useProductLinkTable } from './useProductLinkTable';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   fragment ProductLinkTable on Product {
     links {
-      id
-      isPrimary
       ...EditProductLinkItem
     }
   }
 `;
 
-type ProductLinkTableLinkRef = {
-  id: string;
-  isPrimary: boolean;
-  ' $fragmentRefs'?: {
-    EditProductLinkItemFragment: EditProductLinkItemFragment;
-  };
-};
-
 type ProductLinkRowProps = {
-  linkRef: ProductLinkTableLinkRef;
+  link: EditProductLinkItemFragment;
   onEdit: (link: EditProductLinkItemFragment) => void;
 };
 
-function LinkIcon({ iconUrl, title, isPrimary }: { iconUrl?: string; title: string; isPrimary: boolean }) {
+function LinkIcon({
+  src,
+  role,
+  isPrimary,
+}: Pick<EditProductLinkItemFragment, 'role' | 'isPrimary'> & {
+  src: string | null;
+}) {
   const [hasError, setHasError] = useState(false);
-  const [prevIconUrl, setPrevIconUrl] = useState(iconUrl);
-
-  if (iconUrl !== prevIconUrl) {
-    setPrevIconUrl(iconUrl);
-    setHasError(false);
-  }
-
-  const normalizedTitle = title?.trim().toLowerCase() ?? '';
-  const isOfficialWebsite =
-    normalizedTitle === '공식 홈페이지' ||
-    normalizedTitle === '공식홈페이지' ||
-    normalizedTitle === '공식 웹사이트' ||
-    normalizedTitle === '공식웹사이트' ||
-    normalizedTitle === '홈페이지' ||
-    normalizedTitle === '웹사이트' ||
-    normalizedTitle === 'official website' ||
-    normalizedTitle === 'website' ||
-    normalizedTitle === 'home' ||
-    normalizedTitle === 'homepage' ||
-    Boolean(iconUrl?.includes('pvjgv9btsktstjkoarrl'));
-
-  if (isOfficialWebsite) {
+  if (!src || hasError) {
+    const FallbackIcon = role === 'official' ? Globe : Link2;
     return (
-      <Globe
-        className={cn('h-5 w-5 stroke-[2] shrink-0', isPrimary ? 'text-white' : 'text-dark-800')}
-        aria-hidden="true"
-      />
+      <FallbackIcon className={cn('h-5 w-5 shrink-0', isPrimary ? 'text-white' : 'text-dark-500')} aria-hidden="true" />
     );
-  }
-
-  if (!iconUrl || hasError) {
-    return <Link2 className={cn('h-5 w-5 shrink-0', isPrimary ? 'text-white' : 'text-dark-500')} aria-hidden="true" />;
   }
 
   return (
     <img
-      src={iconUrl}
-      alt={`${title} 아이콘`}
+      src={src}
+      alt=""
+      referrerPolicy="no-referrer"
       loading="lazy"
       onError={() => setHasError(true)}
-      className="h-6 w-6 object-contain"
+      className={cn(
+        'h-6 w-6 rounded-md p-0.5 object-contain',
+        productLinkIconNeedsDarkBackground(src) ? 'bg-dark-900' : 'bg-white'
+      )}
     />
   );
 }
 
-function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
-  const link = useFragment(EditProductLinkItemFragmentDoc, linkRef);
-
+function ProductLinkRow({ link, onEdit }: ProductLinkRowProps) {
+  const label = getProductLinkLabel(link);
+  const roleLabel = link.role ? productLinkRoleLabels[link.role].ko : '미분류';
+  const iconSrc = getProductLinkIconSource(link.iconUrl);
   return (
     <tr className="border-b border-dark-200 hover:bg-surface-100 transition last:border-b-0">
       <td className="border-r border-dark-200 px-4 py-3">
@@ -90,17 +69,18 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
           <div
             className={cn(
               'flex items-center justify-center rounded-xl p-2 text-center h-10 w-10 shrink-0 border',
-              linkRef.isPrimary ? 'bg-black border-black text-white' : 'bg-white border-dark-200 text-dark-800'
+              link.isPrimary ? 'bg-black border-black text-white' : 'bg-white border-dark-200 text-dark-800'
             )}
           >
-            <LinkIcon iconUrl={link.iconUrl} title={link.title} isPrimary={linkRef.isPrimary} />
+            <LinkIcon key={iconSrc} src={iconSrc} role={link.role} isPrimary={link.isPrimary} />
           </div>
         </div>
       </td>
       <td className="border-r border-dark-200 px-4 py-3">
-        <div className="truncate text-sm font-medium text-dark-900" title={link.title}>
-          {link.title}
+        <div className="truncate text-sm font-medium text-dark-900" title={label}>
+          {label}
         </div>
+        {label !== roleLabel && <div className="text-xs text-dark-500">{roleLabel}</div>}
       </td>
       <td className="border-r border-dark-200 px-4 py-3">
         <div className="truncate text-sm text-dark-900">
@@ -122,7 +102,7 @@ function ProductLinkRow({ linkRef, onEdit }: ProductLinkRowProps) {
         </div>
       </td>
       <td className="border-r border-dark-200 px-4 py-3 text-center">
-        {linkRef.isPrimary ? (
+        {link.isPrimary ? (
           <span className="inline-flex items-center rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700">
             대표 링크
           </span>
@@ -199,7 +179,7 @@ function ProductLinkRows({
             </th>
             <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900">링크</th>
             <th className="border-b border-r border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 text-center w-[120px]">
-              주 링크 여부
+              대표 링크
             </th>
             <th className="border-b border-dark-200 px-4 py-3 text-sm font-medium text-dark-900 last:border-r-0 w-[120px]">
               <span className="sr-only">수정</span>
@@ -207,8 +187,8 @@ function ProductLinkRows({
           </tr>
         </thead>
         <tbody className="bg-white">
-          {links.map(linkRef => (
-            <ProductLinkRow key={linkRef.id} linkRef={linkRef as ProductLinkTableLinkRef} onEdit={editLink} />
+          {links.map(link => (
+            <ProductLinkRow key={link.id} link={link} onEdit={editLink} />
           ))}
         </tbody>
       </table>
@@ -221,7 +201,9 @@ export const ProductLinkTable = bind(
   ({ links, loading, error, refreshLinks, editLink, closeEditModal, finishEdit, link, slug }) => (
     <>
       <ProductLinkRows links={links} loading={loading} error={error} refreshLinks={refreshLinks} editLink={editLink} />
-      {link && <EditProductLinkItem slug={slug} link={link} onSubmit={finishEdit} onCancel={closeEditModal} />}
+      {link && (
+        <EditProductLinkItem slug={slug} link={link} links={links} onSubmit={finishEdit} onCancel={closeEditModal} />
+      )}
     </>
   )
 );

@@ -38,20 +38,6 @@ export const TAG_TRANSLATIONS: Record<string, string> = {
   커뮤니티: 'Community',
 };
 
-export const LINK_TITLE_TRANSLATIONS: Record<string, string> = {
-  '공식 홈페이지': 'Official Website',
-  홈페이지: 'Website',
-  웹사이트: 'Website',
-  고객센터: 'Customer Support',
-  문의하기: 'Contact Us',
-  블로그: 'Blog',
-  다운로드: 'Download',
-  앱스토어: 'App Store',
-  구글플레이: 'Google Play',
-  문서: 'Documentation',
-  '가격 안내': 'Pricing',
-};
-
 export const COMPANY_TYPE_TRANSLATIONS: Record<string, string> = {
   주식회사: 'Corporation',
   유한회사: 'Limited Liability Company',
@@ -77,13 +63,6 @@ export function getLocalizedTag(tag: string, locale = 'ko'): string {
     return TAG_TRANSLATIONS[tag] ?? tag;
   }
   return tag;
-}
-
-export function getLocalizedLinkTitle(title: string, locale = 'ko'): string {
-  if (locale === 'en') {
-    return LINK_TITLE_TRANSLATIONS[title] ?? title;
-  }
-  return title;
 }
 
 export function getLocalizedCompanyType(type?: string | null, locale = 'ko'): string | undefined {

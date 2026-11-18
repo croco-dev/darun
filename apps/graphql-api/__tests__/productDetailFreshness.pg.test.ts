@@ -11,6 +11,7 @@ import {
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
 import {
+  AddProductLink,
   CreateProduct,
   EditProduct,
   GetAllProducts,
@@ -25,6 +26,7 @@ import {
   GetProductsByCategory,
   GetVisualScreenshots,
   UpdateProductCategories,
+  UpdateProductLink,
   UpdateProductScreenshot,
 } from '@darun/products-domain';
 import {
@@ -139,13 +141,49 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   let db: Drizzle;
   let selectCount = 0;
   let selectQueries: string[] = [];
-  beforeAll(async () => {
+  async function openFixtureConnection(
+    options: Pick<postgres.Options<Record<string, never>>, 'prepare' | 'connect_timeout' | 'connection'>
+  ) {
     const target = new URL(url!);
-    if (!['localhost', '127.0.0.1'].includes(target.hostname) || target.pathname !== '/darun_detail_freshness') {
-      throw new Error('Requires isolated local darun_detail_freshness database');
+    const database = 'darun_detail_freshness';
+    if (
+      !['postgres:', 'postgresql:'].includes(target.protocol) ||
+      !['localhost', '127.0.0.1'].includes(target.hostname) ||
+      target.pathname !== `/${database}` ||
+      target.search
+    ) {
+      throw new Error('Requires the isolated local darun_detail_freshness database without startup options');
     }
-    writer = postgres(url!, { max: 1, connect_timeout: 5 });
-    reader = postgres(url!, { max: 1, connect_timeout: 5 });
+    const username = decodeURIComponent(target.username);
+    const password = decodeURIComponent(target.password);
+    if (!username || [username, password].some(value => /\p{Cc}/u.test(value))) {
+      throw new Error('Product detail tests require an explicit database user and valid credentials');
+    }
+    const session = postgres({
+      ...options,
+      host: target.hostname,
+      port: target.port ? Number(target.port) : 5432,
+      database,
+      username,
+      password,
+      max: 1,
+      connection: { ...options.connection, search_path: 'public' },
+    });
+    try {
+      const [current] = await session`select current_database() as name, current_schema() as schema`;
+      if (current?.name !== database || current.schema !== 'public') {
+        throw new Error('Product detail test fixture connected to the wrong database or schema');
+      }
+      return session;
+    } catch (error) {
+      await session.end({ timeout: 5 });
+      throw error;
+    }
+  }
+
+  beforeAll(async () => {
+    writer = await openFixtureConnection({ connect_timeout: 5 });
+    reader = await openFixtureConnection({ connect_timeout: 5 });
     await migrate(drizzle(writer), {
       migrationsFolder: resolve(__dirname, '../scripts/migrations'),
     });
@@ -865,7 +903,9 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         }`,
         });
         if (result.data) {
-          const rows = result.data.recentProducts as Array<{ features: Array<{ id: string }> }>;
+          const rows = result.data.recentProducts as Array<{
+            features: Array<{ id: string }>;
+          }>;
           rows.forEach(row => row.features.sort((a, b) => a.id.localeCompare(b.id)));
         }
         return result;
@@ -1282,7 +1322,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
   describe('상품 대표 링크의 전체 순서', () => {
     beforeEach(async () => {
-      await writer`delete from product_links`;
+      await writer`delete from product_links where product_id in ('link-parent-a', 'link-parent-b')`;
       await writer`insert into products (id, name, slug, summary, logo_url) values
         ('link-parent-a', 'Link A', 'link-parent-a', '', ''),
         ('link-parent-b', 'Link B', 'link-parent-b', '', '')`;
@@ -1301,7 +1341,8 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     });
 
     afterEach(async () => {
-      await writer`delete from product_links`;
+      await writer`delete from product_content_sync_intents where product_id in ('link-parent-a', 'link-parent-b')`;
+      await writer`delete from product_links where product_id in ('link-parent-a', 'link-parent-b')`;
       await writer`delete from products where id in ('link-parent-a', 'link-parent-b')`;
     });
 
@@ -1346,19 +1387,242 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       const result = await graphql({
         schema,
         source: `{
-          admin: tempProductBySlug(slug: "link-parent-a") { links { id isPrimary } }
-          public: productBySlug(slug: "link-parent-a", locale: "ko") { links { id isPrimary } }
+          admin: tempProductBySlug(slug: "link-parent-a") { links { id role isPrimary } }
+          public: productBySlug(slug: "link-parent-a", locale: "ko") { links { id role isPrimary } }
         }`,
       });
       expect(result.errors).toBeUndefined();
       const expected = {
         links: [
-          { id: 'a-tie-a', isPrimary: true },
-          { id: 'a-tie-z', isPrimary: false },
-          { id: 'a-new', isPrimary: false },
+          { id: 'a-tie-a', role: null, isPrimary: true },
+          { id: 'a-tie-z', role: null, isPrimary: false },
+          { id: 'a-new', role: null, isPrimary: false },
         ],
       };
       expect(result.data).toEqual({ admin: expected, public: expected });
+    });
+
+    it('관리자에게만 역할 저장과 대표 교체를 허용하고 공개·관리자에 같은 링크를 반환한다', async () => {
+      await writer`update products set published_at = '2026-01-01' where id = 'link-parent-a'`;
+      const product = new PostgresqlProductRepository(db);
+      const links = new PostgresqlProductLinkRepository(db);
+      const getProductUseCase = new GetProduct(product);
+      const resolvers = new Map([
+        [
+          ProductQueryResolver,
+          Object.assign(Object.create(ProductQueryResolver.prototype), {
+            getProductUseCase,
+            getPublishedProductUseCase: new GetPublishedProduct(product),
+            getProductLinksUseCase: new GetProductLinks(links),
+          }),
+        ],
+        [
+          ProductMutationResolver,
+          Object.assign(Object.create(ProductMutationResolver.prototype), {
+            getProductUseCase,
+            addProductLinkUseCase: new AddProductLink(links),
+            updateProductLinkUseCase: new UpdateProductLink(links),
+          }),
+        ],
+      ]);
+      const server = new ApolloServer({
+        schema: buildSchemaSync({
+          resolvers: [ProductQueryResolver, ProductMutationResolver],
+          authChecker: createAuthChecker(),
+          container: { get: resolver => resolvers.get(resolver) },
+        }),
+        formatError: (formatted, error) => formatServerError(formatted, error, false),
+      });
+      const run = async (query: string, variables: Record<string, unknown> = {}, roles = ['admin']) => {
+        const result = await server.executeOperation(
+          { query, variables },
+          { contextValue: { getRoles: async () => roles } }
+        );
+        if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+        return result.body.singleResult;
+      };
+      const update = `mutation Link($id: String!, $input: UpdateProductLinkInput!) {
+        updateProductLink(slug: "link-parent-a", id: $id, input: $input) { product { id } }
+      }`;
+      const reads = `{
+        admin: tempProductBySlug(slug: "link-parent-a") { links { id title role isPrimary } }
+        public: productBySlug(slug: "link-parent-a", locale: "en") { links { id title role isPrimary } }
+      }`;
+      const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
+        ? Container.get(ProductContentSyncRegistrarToken)
+        : undefined;
+      Container.set(ProductContentSyncRegistrarToken, {
+        register: registerProductContentSync,
+      });
+      try {
+        await writer`update product_links set icon_url = 'https://example.com/a-new.svg' where id = 'a-new'`;
+        const vars = {
+          id: 'a-new',
+          input: { role: 'documentation', makePrimary: true },
+        };
+        expect((await run(update, vars, [])).errors).toHaveLength(1);
+        expect((await run(update, { ...vars, id: 'b-new' })).errors).toMatchObject([
+          { extensions: { code: 'product/invalid-args' } },
+        ]);
+        expect((await run(update, { ...vars, input: { role: 'unrecognized' } })).errors).toHaveLength(1);
+        expect(
+          await writer`select id from product_links where product_id in ('link-parent-a', 'link-parent-b')
+          and (role is not null or is_designated_primary)`
+        ).toEqual([]);
+
+        const loadIntents = () => writer`
+          select l.kind, l.source_revision, p.content_revision
+          from product_content_sync_intents l join products p on l.product_id = p.id
+          where p.id = 'link-parent-a' order by l.source_revision`;
+        const readMetadata = () =>
+          writer`select title, link, display_link, icon_url from product_links where id = 'a-new'`;
+        const originalMetadata = [
+          {
+            title: 'a-new',
+            link: 'https://example.com/a-new',
+            display_link: 'a-new',
+            icon_url: 'https://example.com/a-new.svg',
+          },
+        ];
+        expect((await run(update, { ...vars, input: { role: 'documentation' } })).errors).toBeUndefined();
+        expect(await readMetadata()).toEqual(originalMetadata);
+        expect(await loadIntents()).toEqual([{ kind: 'search', source_revision: '1', content_revision: '1' }]);
+        expect((await run(update, { ...vars, input: { makePrimary: true } })).errors).toBeUndefined();
+        expect(await readMetadata()).toEqual(originalMetadata);
+        expect(await loadIntents()).toEqual([
+          { kind: 'search', source_revision: '1', content_revision: '2' },
+          { kind: 'search', source_revision: '2', content_revision: '2' },
+        ]);
+        expect((await run(update, vars)).errors).toBeUndefined();
+        expect(
+          (
+            await run(update, {
+              id: 'a-new',
+              input: { title: '공식 홈페이지' },
+            })
+          ).errors
+        ).toBeUndefined();
+        expect(
+          (
+            await run(update, {
+              id: 'a-tie-z',
+              input: { makePrimary: true, role: 'social' },
+            })
+          ).errors
+        ).toBeUndefined();
+        const expected = {
+          links: [
+            { id: 'a-tie-a', title: 'a-tie-a', role: null, isPrimary: false },
+            {
+              id: 'a-tie-z',
+              title: 'a-tie-z',
+              role: 'social',
+              isPrimary: true,
+            },
+            {
+              id: 'a-new',
+              title: '공식 홈페이지',
+              role: 'documentation',
+              isPrimary: false,
+            },
+          ],
+        };
+        const result = await run(reads);
+        expect(result.errors).toBeUndefined();
+        expect(result.data).toEqual({ admin: expected, public: expected });
+        expect(
+          await writer`select kind from product_content_sync_intents where product_id = 'link-parent-a' order by source_revision`
+        ).toEqual([{ kind: 'search' }, { kind: 'search' }, { kind: 'search' }, { kind: 'search' }]);
+
+        expect(
+          (
+            await run(
+              `mutation AddLink($input: AddProductLinkInput!) {
+              addProductLink(slug: "link-parent-a", input: $input) { product { links { title role isPrimary } } }
+            }`,
+              {
+                input: {
+                  role: 'download',
+                  title: '',
+                  link: 'https://example.com/download',
+                  displayLink: 'example.com',
+                  iconUrl: '',
+                },
+              }
+            )
+          ).data
+        ).toMatchObject({
+          addProductLink: {
+            product: {
+              links: expect.arrayContaining([{ title: '', role: 'download', isPrimary: false }]),
+            },
+          },
+        });
+      } finally {
+        await server.stop();
+        if (previousRegistrar) Container.set(ProductContentSyncRegistrarToken, previousRegistrar);
+        else Container.remove(ProductContentSyncRegistrarToken);
+      }
+    });
+
+    it('서로 다른 요청이 대표를 바꿔도 대표는 하나이며 동기화 실패 시 기존 대표와 역할을 보존한다', async () => {
+      await writer`update product_links set is_designated_primary = true where id = 'b-new'`;
+      const writeLink = new UpdateProductLink(new PostgresqlProductLinkRepository(drizzle(writer)));
+      const readLink = new UpdateProductLink(new PostgresqlProductLinkRepository(db));
+      await Promise.all([
+        writeLink.execute({
+          productId: 'link-parent-a',
+          linkId: 'a-new',
+          makePrimary: true,
+        }),
+        readLink.execute({
+          productId: 'link-parent-a',
+          linkId: 'a-tie-z',
+          makePrimary: true,
+        }),
+      ]);
+      const readRows = () => writer`select id, role, is_designated_primary from product_links
+        where product_id in ('link-parent-a', 'link-parent-b') order by id`;
+      const rows = await readRows();
+      expect(rows).toHaveLength(6);
+      const designated = rows.filter(row => row.is_designated_primary);
+      expect(designated).toContainEqual({ id: 'b-new', role: null, is_designated_primary: true });
+      const designatedA = designated.filter(row => row.id !== 'b-new');
+      expect(designatedA).toHaveLength(1);
+      expect(['a-new', 'a-tie-z']).toContain(designatedA[0].id);
+      await expect(
+        writer`update product_links set is_designated_primary = true where id = 'a-tie-a'`
+      ).rejects.toMatchObject({ code: '23505' });
+
+      const [before] = await writer`update products set published_at = '2026-01-01'
+        where id = 'link-parent-a' returning content_revision`;
+      const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
+        ? Container.get(ProductContentSyncRegistrarToken)
+        : undefined;
+      Container.set(ProductContentSyncRegistrarToken, {
+        register: async (tx, input) => {
+          await registerProductContentSync(tx, input);
+          throw new Error('fixture registration failure');
+        },
+      });
+      try {
+        await expect(
+          readLink.execute({
+            productId: 'link-parent-a',
+            linkId: 'a-tie-a',
+            makePrimary: true,
+            role: 'official',
+          })
+        ).rejects.toThrow('fixture registration failure');
+        expect(await readRows()).toEqual(rows);
+        expect(await writer`select content_revision from products where id = 'link-parent-a'`).toEqual([before]);
+        expect(await writer`select id from product_content_sync_intents where product_id = 'link-parent-a'`).toEqual(
+          []
+        );
+      } finally {
+        if (previousRegistrar) Container.set(ProductContentSyncRegistrarToken, previousRegistrar);
+        else Container.remove(ProductContentSyncRegistrarToken);
+      }
     });
   });
 
@@ -1488,7 +1752,6 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
     beforeAll(async () => {
       const options = {
-        max: 1,
         prepare: false,
         connection: {
           application_name: applicationName,
@@ -1496,8 +1759,8 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           lock_timeout: 4000,
         },
       };
-      first = postgres(url!, options);
-      second = postgres(url!, options);
+      first = await openFixtureConnection(options);
+      second = await openFixtureConnection(options);
       await writer`insert into products (id, name, slug, summary, logo_url)
         values (${targetId}, 'Visual fixture', ${applicationName}, 'summary', 'https://example.com/logo.png')`;
       for (const id of [targetId, otherTargetId]) {

@@ -14,6 +14,8 @@ gql`
         link
         title
         iconUrl
+        role
+        isPrimary
       }
     }
   }

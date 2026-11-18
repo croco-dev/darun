@@ -27,12 +27,17 @@ describe('useEditProductLinkItem', () => {
       link: 'https://example.com',
       displayLink: 'Example',
       iconUrl: 'https://example.com/icon.png',
+      isPrimary: true,
+      role: null,
       __typename: 'Link' as const,
     },
   };
   type MockMutationOptions = MutationHookOptions<unknown, Record<string, unknown>, unknown, ApolloCache>;
   let mutateFn: ReturnType<typeof vi.fn>;
-  let mutationOptions: { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void };
+  let mutationOptions: {
+    onCompleted?: (data: unknown) => void;
+    onError?: (e: Error) => void;
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,7 +45,11 @@ describe('useEditProductLinkItem', () => {
     mutationOptions = {};
 
     vi.mocked(useMutation).mockImplementation(((_document?: DocumentNode, options?: MockMutationOptions) => {
-      mutationOptions = (options as { onCompleted?: (data: unknown) => void; onError?: (e: Error) => void }) || {};
+      mutationOptions =
+        (options as {
+          onCompleted?: (data: unknown) => void;
+          onError?: (e: Error) => void;
+        }) || {};
       mutateFn.mockImplementation(async () => {
         const data = { updateProductLink: { product: { id: 'product-1' } } };
         mutationOptions.onCompleted?.(data);
@@ -124,6 +133,8 @@ describe('useEditProductLinkItem', () => {
       link: defaultProps.link.link,
       displayLink: defaultProps.link.displayLink,
       iconUrl: defaultProps.link.iconUrl,
+      role: '',
+      makePrimary: false,
     });
   });
 
@@ -162,6 +173,8 @@ describe('useEditProductLinkItem', () => {
       link: updatedLink.link,
       displayLink: updatedLink.displayLink,
       iconUrl: updatedLink.iconUrl,
+      role: '',
+      makePrimary: false,
     });
     act(() => result.current.form.setFieldValue('title', 'New draft'));
     rerender({ ...defaultProps, link: { ...updatedLink } });
@@ -173,10 +186,25 @@ describe('useEditProductLinkItem', () => {
         id: updatedLink.id,
         input: {
           title: 'New draft',
-          link: updatedLink.link,
-          displayLink: updatedLink.displayLink,
-          iconUrl: updatedLink.iconUrl,
         },
+      },
+    });
+  });
+
+  it('omits untouched metadata when assigning a role and primary from an earlier read', async () => {
+    const { result, rerender } = renderHook(props => useEditProductLinkItem(props), { initialProps: defaultProps });
+    rerender({
+      ...defaultProps,
+      link: { ...defaultProps.link, link: 'https://updated.example', title: 'New destination' },
+    });
+    act(() => result.current.form.setValues({ role: 'official', makePrimary: true }));
+    await act(async () => result.current.submit(result.current.form.getValues()));
+
+    expect(mutateFn).toHaveBeenCalledWith({
+      variables: {
+        slug: defaultProps.slug,
+        id: defaultProps.link.id,
+        input: { role: 'official', makePrimary: true },
       },
     });
   });

@@ -3,6 +3,7 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { ErrorLink } from '@apollo/client/link/error';
 import { HttpLink } from '@apollo/client/link/http';
 import { RetryLink } from '@apollo/client/link/retry';
+import { productLinkSchemaCompatibility } from '@darun/products-shell';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 import { normalizeLocale, type PublicLocale } from '../lib/seo/url';
@@ -50,6 +51,7 @@ function createApolloClient() {
       }),
       httpErrorLink,
       createTimeoutLink(),
+      productLinkSchemaCompatibility,
       httpLink,
     ]),
   });

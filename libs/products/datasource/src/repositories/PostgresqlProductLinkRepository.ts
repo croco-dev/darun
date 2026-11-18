@@ -82,10 +82,24 @@ export class PostgresqlProductLinkRepository implements ProductLinkRepository {
           throw productInvalidArgs();
         }
 
+        const wasDesignatedPrimary = prevLink.isDesignatedPrimary;
         const next = modifier(prevLink);
+        if (next.isDesignatedPrimary && !wasDesignatedPrimary) {
+          await tx
+            .update(productLinks)
+            .set({ isDesignatedPrimary: false })
+            .where(and(eq(productLinks.productId, productId), eq(productLinks.isDesignatedPrimary, true)));
+        }
         const updated = await tx
           .update(productLinks)
-          .set({ title: next.title, link: next.link, displayLink: next.displayLink, iconUrl: next.iconUrl })
+          .set({
+            title: next.title,
+            link: next.link,
+            displayLink: next.displayLink,
+            iconUrl: next.iconUrl,
+            role: next.role,
+            isDesignatedPrimary: next.isDesignatedPrimary,
+          })
           .where(and(eq(productLinks.id, linkId), eq(productLinks.productId, productId)))
           .returning();
 
