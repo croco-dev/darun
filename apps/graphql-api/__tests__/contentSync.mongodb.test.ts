@@ -2680,6 +2680,16 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     expect((await intents(product.id)).find(row => row.kind === 'search' && row.sourceRevision === 2n)!.status).toBe(
       'failed'
     );
+    const replay = await mutate('mutation($id:String!){ retryTranslationJob(id:$id){ id status retryOfJobId } }', {
+      id: oldJob!.id,
+    });
+    expect(replay.errors).toBeUndefined();
+    expect(replay.data.retryTranslationJob).toEqual({
+      id: after.translationJobId,
+      status: 'pending',
+      retryOfJobId: oldJob!.id,
+    });
+    expect(await entityJobRows(product.id)).toHaveLength(2);
     await runTranslation(after.translationJobId!, product.id);
     expect((await sync.latestStatus(product.slug)).translationJobStatus).toBe('completed');
     await expect(sync.retry(product.slug)).rejects.toMatchObject({
@@ -2773,7 +2783,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       );
       expect(competing?.translationJobId).toBeDefined();
       const loser = await retryService.retryProductTranslationJob(failedJob!.id);
-      expect(loser.retryOfJobId).toBe(failedJob!.id);
+      expect(loser).toMatchObject({ id: retry.id, retryOfJobId: failedJob!.id, status: 'superseded' });
       expect((await intents(product.id)).find(row => row.id === competing!.id)?.translationJobId).toBe(
         competing!.translationJobId
       );
@@ -2949,6 +2959,16 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     expect(afterTick.nextDispatchAt.getTime()).toBeGreaterThan(beforeTick.nextDispatchAt.getTime());
     await runTranslation(retryId, product.id);
     expect((await entityJobRows(product.id)).find(job => job.id === retryId)?.status).toBe('completed');
+    const replay = await mutate('mutation($id:String!){ retryTranslationJob(id:$id){ id status retryOfJobId } }', {
+      id: failedJob!.id,
+    });
+    expect(replay.errors).toBeUndefined();
+    expect(replay.data.retryTranslationJob).toEqual({
+      id: retryId,
+      status: 'completed',
+      retryOfJobId: failedJob!.id,
+    });
+    expect(await entityJobRows(product.id)).toHaveLength(2);
     expect((await entityJobRows(product.id)).find(job => job.id === failedJob!.id)?.status).toBe('failed');
     const latest = await sync.latestStatus(product.slug);
     expect(latest.translationJobId).toBe(retryId);

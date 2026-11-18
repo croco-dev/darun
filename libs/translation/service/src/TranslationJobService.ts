@@ -75,9 +75,12 @@ export class TranslationJobService {
       throw new Error(`재시도할 수 없는 번역 작업 상태입니다: ${job.status}`);
     const entityType = this.entityType(job.entityType);
     translationFields({ entityType, entityId: job.entityId, fields: job.fields ?? null });
-    // 실패한 job의 새 logical retry 등록과 최신 intent 연결은 앱 adapter가 한 commit에 저장한다.
+    // 실패 작업의 후속 작업과 최신 intent 연결은 앱 adapter가 같은 트랜잭션에서 처리한다.
     const retry = job.status === 'failed' ? await this.sourceStore.createRetryJob(job.id) : job;
-    const queued = await this.sendToQueue({ jobId: retry.id, entityType, entityId: retry.entityId });
+    const queued =
+      retry.status === 'in_progress' ||
+      (retry.status === 'pending' &&
+        (await this.sendToQueue({ jobId: retry.id, entityType, entityId: retry.entityId })));
     return { ...retry, queued };
   }
 

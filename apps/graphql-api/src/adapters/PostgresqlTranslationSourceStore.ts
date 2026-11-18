@@ -4,7 +4,6 @@ import {
   computeSourceHash,
   translationFields,
   TranslationSourceStoreToken,
-  type TranslationEntityType,
   type TranslationJobEntity,
   type TranslationSourceRequest,
   type TranslationSourceSnapshot,
@@ -13,9 +12,8 @@ import {
   type TranslationCommitResult,
 } from '@darun/translation-domain';
 import { JOB_COMMIT_MARGIN_MS } from '@darun/utils-llm';
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
-import { randomUUID } from 'node:crypto';
 import { magazines } from '../../../../libs/magazines/datasource/src/entities/MagazineSchema';
 import { productContentSyncIntents } from '../../../../libs/products/datasource/src/entities/ProductContentSyncIntentSchema';
 import { productFeatures } from '../../../../libs/products/datasource/src/entities/ProductFeaturesSchema';
@@ -35,19 +33,12 @@ export class PostgresqlTranslationSourceStore implements TranslationSourceStore 
   }
 
   /**
-   * 실패한 job의 새 logical retry 등록과 최신 translation intent 포인터 갱신을
+   * 실패한 job의 retry 조회·등록과 최신 translation intent 포인터 갱신을
    * Product-first 잠금 안 같은 commit에 저장한다. 최신 intent가 previousJob을
    * 가리키지 않으면 포인터는 옮기지 않고 retry만 등록한다.
    */
   async createRetryJob(previousJobId: string): Promise<TranslationJobEntity> {
     return this.db.transaction(async tx => {
-      const [previous] = await tx.select().from(translationJobs).where(eq(translationJobs.id, previousJobId));
-      if (!previous) throw new Error('CONTENT_SYNC_RETRY_IDENTITY_INVALID');
-      const fields = translationFields({
-        entityType: previous.entityType as TranslationEntityType,
-        entityId: previous.entityId,
-        fields: previous.fields ?? null,
-      });
       const [owner] = await tx
         .select({ productId: productContentSyncIntents.productId })
         .from(productContentSyncIntents)
@@ -64,19 +55,18 @@ export class PostgresqlTranslationSourceStore implements TranslationSourceStore 
               eq(productContentSyncIntents.kind, 'translation')
             )
           )
-          .orderBy(sql`${productContentSyncIntents.sourceRevision} desc`)
+          .orderBy(desc(productContentSyncIntents.sourceRevision))
           .limit(1)
           .for('update');
       }
-      const retry = await new PostgresqlTranslationJobRepository(tx).createJob({
-        entityType: previous.entityType,
-        entityId: previous.entityId,
-        locale: previous.locale,
-        fields,
-        retryOfJobId: previous.id,
-        idempotencyKey: `retry:${previous.id}:${randomUUID()}`,
-        status: 'pending',
-      });
+      const retry = await PostgresqlTranslationJobRepository.findOrCreateRetryJob(
+        tx,
+        previousJobId,
+        ({ entityType, entityId }) =>
+          entityType === 'Product'
+            ? this.findIntentLinkedRetryId(tx, entityId, previousJobId)
+            : Promise.resolve(undefined)
+      );
       if (!latest || latest.translationJobId !== previousJobId || latest.status === 'superseded') return retry;
       if (retry.entityType !== 'Product' || retry.entityId !== latest.productId)
         throw new Error('CONTENT_SYNC_RETRY_IDENTITY_INVALID');
@@ -86,6 +76,30 @@ export class PostgresqlTranslationSourceStore implements TranslationSourceStore 
         .where(eq(productContentSyncIntents.id, latest.id));
       return retry;
     });
+  }
+
+  private async findIntentLinkedRetryId(tx: Tx, productId: string, previousJobId: string): Promise<string | undefined> {
+    // The intent may already point to a later descendant of the original successor.
+    const [retry] = await tx.execute<{ id: string }>(sql`
+      with recursive retry_chain(id, first_retry_id) as (
+        select job.id, job.id
+        from ${translationJobs} as job
+        where job.entity_type = 'Product' and job.entity_id = ${productId}
+          and job.retry_of_job_id = ${previousJobId}
+        union
+        select job.id, retry_chain.first_retry_id
+        from retry_chain
+        join ${translationJobs} as job on job.retry_of_job_id = retry_chain.id
+        where job.entity_type = 'Product' and job.entity_id = ${productId}
+      )
+      select retry_chain.first_retry_id as id
+      from retry_chain
+      join ${productContentSyncIntents} as intent on intent.translation_job_id = retry_chain.id
+      where intent.product_id = ${productId} and intent.kind = 'translation'
+      order by intent.source_revision desc
+      limit 1
+    `);
+    return retry?.id;
   }
 
   private async readLocked(tx: Tx, request: TranslationSourceRequest): Promise<TranslationSourceSnapshot> {

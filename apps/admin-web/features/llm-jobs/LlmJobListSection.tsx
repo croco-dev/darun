@@ -317,10 +317,27 @@ export function LlmJobListSection() {
     setRetryingKeys(new Set(activeRetries.current));
     try {
       if (job.jobType === 'translation') {
-        await retryTranslation({
+        const response = await retryTranslation({
           variables: { id: job.id },
         });
         if (!isCurrent()) return;
+        const retry = response.data?.retryTranslationJob;
+        if (!retry) throw new Error('번역 작업을 확인하지 못했습니다.');
+        if (retry.status === 'failed') {
+          notifications.show({
+            title: '후속 번역 작업 실패',
+            message: `번역 작업 (${retry.id})이 실패했습니다. 목록에서 후속 작업을 재시도하세요.`,
+            color: 'red',
+          });
+        } else {
+          const status = STATUS_FILTERS.find(filter => filter.value === retry.status)?.label ?? retry.status;
+          const isPending = retry.status === 'pending';
+          notifications.show({
+            title: isPending ? '재시도 요청 성공' : '번역 작업 상태',
+            message: `번역 작업 (${retry.id}) · ${status}`,
+            color: isPending ? 'teal' : 'gray',
+          });
+        }
       } else {
         const requestId = getProductDescriptionRequestId({
           retryJobId: job.id,
@@ -335,12 +352,12 @@ export function LlmJobListSection() {
         router.push(
           `/products/${encodeURIComponent(retry.productSlug)}?descriptionJobId=${encodeURIComponent(retry.id)}`
         );
+        notifications.show({
+          title: '재시도 요청 성공',
+          message: `${job.jobTypeLabel} (${job.id}) 작업이 대기열에 다시 등록되었습니다.`,
+          color: 'teal',
+        });
       }
-      notifications.show({
-        title: '재시도 요청 성공',
-        message: `${job.jobTypeLabel} (${job.id}) 작업이 대기열에 다시 등록되었습니다.`,
-        color: 'teal',
-      });
       await refetchAll();
       if (!isCurrent()) return;
     } catch (err) {

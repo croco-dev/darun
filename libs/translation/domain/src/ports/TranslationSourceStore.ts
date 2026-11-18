@@ -30,7 +30,7 @@ export interface TranslationSourceStore {
   read(request: TranslationSourceRequest): Promise<TranslationSourceSnapshot>;
   commit(input: TranslationCommit): Promise<TranslationCommitResult>;
   /**
-   * 실패한 job의 새 logical retry를 등록한다. Product 발행 동기화와 연결된 job이면
+   * 실패한 job의 기존 후속 작업을 반환하거나 새 후속 작업을 등록한다. Product 발행 동기화와 연결된 job이면
    * 최신 translation intent의 포인터 갱신까지 같은 commit에 저장해, 등록/포인터
    * 갱신 실패나 commit 전 중단이 새 runnable job을 남기지 않는다. 최신 intent가
    * 이전 job을 가리키지 않으면 포인터는 옮기지 않는다.

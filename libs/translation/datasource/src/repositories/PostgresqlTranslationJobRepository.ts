@@ -12,7 +12,7 @@ import {
 import { JOB_DISPATCH_RESERVATION_MS, JOB_MAX_ATTEMPTS, jobDispatchStatus, jobRetryDelay } from '@darun/utils-llm';
 import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
-import { translationJobs } from '../entities/TranslationJobSchema';
+import { translationJobs, type TranslationJobRow } from '../entities/TranslationJobSchema';
 
 type TranslationJobStatusOptions = {
   message?: string | null;
@@ -83,6 +83,67 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
     }
 
     return this.toEntity(row);
+  }
+
+  static async findOrCreateRetryJob(
+    tx: JobDbTx,
+    previousJobId: string,
+    findLinkedRetryId?: (previous: Pick<TranslationJobRow, 'entityType' | 'entityId'>) => Promise<string | undefined>
+  ): Promise<TranslationJobEntity> {
+    // Both retry entry points lock the original job before looking for its successor.
+    // When an intent is involved, the caller already holds the Product lock.
+    const [previous] = await tx
+      .select()
+      .from(translationJobs)
+      .where(eq(translationJobs.id, previousJobId))
+      .for('update');
+    if (!previous || (previous.status !== 'failed' && previous.status !== 'superseded')) {
+      throw new Error('CONTENT_SYNC_RETRY_IDENTITY_INVALID');
+    }
+
+    const repository = new PostgresqlTranslationJobRepository(tx);
+    const idempotencyKey = `translation-retry:${previous.id}`;
+    const successors = await tx
+      .select()
+      .from(translationJobs)
+      .where(
+        and(
+          eq(translationJobs.entityType, previous.entityType),
+          eq(translationJobs.entityId, previous.entityId),
+          eq(translationJobs.locale, previous.locale),
+          eq(translationJobs.retryOfJobId, previous.id)
+        )
+      )
+      .orderBy(asc(translationJobs.createdAt), asc(translationJobs.id));
+    const canonical = successors.find(job => job.idempotencyKey === idempotencyKey);
+    if (canonical) return repository.toEntity(canonical);
+    const [first] = successors;
+    if (first) {
+      // A legacy duplicate can sort before the successor the Product intent actually used.
+      const linkedId = successors.length > 1 ? await findLinkedRetryId?.(previous) : undefined;
+      const existing = successors.find(job => job.id === linkedId) ?? first;
+      // Keep legacy selection stable as the intent advances to later retries.
+      const [adopted] = await tx
+        .update(translationJobs)
+        .set({ idempotencyKey })
+        .where(eq(translationJobs.id, existing.id))
+        .returning();
+      if (!adopted) throw new Error('CONTENT_SYNC_RETRY_IDENTITY_INVALID');
+      return repository.toEntity(adopted);
+    }
+
+    return repository.createJob({
+      entityType: previous.entityType,
+      entityId: previous.entityId,
+      locale: previous.locale,
+      fields: translationFields({
+        entityType: previous.entityType as TranslationEntityType,
+        entityId: previous.entityId,
+        fields: previous.fields,
+      }),
+      retryOfJobId: previous.id,
+      idempotencyKey,
+    });
   }
 
   private toEntity(row: {

@@ -726,7 +726,12 @@ describe('list retry authority through real Apollo hooks and default cache', () 
       })
     );
     expect(push).not.toHaveBeenCalled();
-    expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ title: '재시도 요청 성공' }));
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: '재시도 요청 성공',
+        message: expect.stringContaining('translation-new'),
+      })
+    );
     await fixture.lists();
     await waitFor(() =>
       expect(
@@ -734,5 +739,28 @@ describe('list retry authority through real Apollo hooks and default cache', () 
           .disabled
       ).toBe(false)
     );
+  });
+
+  it.each([
+    ['failed', '후속 번역 작업 실패', '목록에서 후속 작업을 재시도하세요.'],
+    ['completed', '번역 작업 상태', '완료'],
+    ['superseded', '번역 작업 상태', '폐기'],
+  ])('기존 후속 번역 작업의 %s 상태와 ID를 알린다', async (status, title, detail) => {
+    const fixture = setup(true);
+    await fixture.lists();
+    const row = screen.getByText('product-2').closest('tr')!;
+    const button = within(row).getByRole('button', { name: '재시도' });
+    await flush(() => fireEvent.click(button));
+    const request = await fixture.take('RetryTranslationJobOnAdmin');
+    expect(request.variables).toEqual({ id: 'translation-A' });
+    await flush(() => request.resolve({ retryTranslationJob: translationRow(500, status) }));
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ title, message: expect.stringContaining('translation-500') })
+    );
+    expect(notifications.show).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining(detail) })
+    );
+    expect(push).not.toHaveBeenCalled();
+    await fixture.lists();
   });
 });
