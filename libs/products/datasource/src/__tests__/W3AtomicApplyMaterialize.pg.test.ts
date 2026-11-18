@@ -1010,7 +1010,7 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     baselineTag: string,
     run: (session: Sql, database: PostgresJsDatabase, migrationsSchema: string) => Promise<void>
   ) {
-    const name = `request_migration_${randomUUID().replaceAll('-', '')}`;
+    const name = `request_migration_${randomUUID().split('-').join('')}`;
     const folder = await mkdtemp(join(tmpdir(), 'darun-request-migration-'));
     let session: Sql | undefined;
     let created = false;
