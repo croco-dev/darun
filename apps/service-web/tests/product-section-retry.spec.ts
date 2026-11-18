@@ -65,7 +65,10 @@ for (const [locale, width, groupName, labels] of [
     await expect(globe).toBeVisible();
     await expect(globe.locator('..')).toHaveCSS('background-color', 'rgb(17, 17, 17)');
     await expect(links.nth(1).locator('img')).toHaveCount(0);
-    await expect(links.nth(2).locator('img')).toHaveAttribute('src', '/images/default-product-icon.svg');
+    const officialIcon = links.nth(2).locator('img');
+    await expect
+      .poll(() => officialIcon.evaluate(image => (image as HTMLImageElement).src))
+      .toBe(new URL('/images/default-product-icon.svg', page.url()).href);
     await expect(links.nth(1).locator('span').first()).toHaveClass(/bg-white/);
     await expect(links.first()).toHaveAttribute('rel', 'noopener noreferrer');
     await links.first().focus();
