@@ -69,13 +69,19 @@ function PreviewFrame({
         createPortal(
           <ContentArea
             as="main"
+            tabIndex={0}
             className="flex min-h-dvh flex-col gap-5 bg-surface-50 py-6"
             onClickCapture={event => event.preventDefault()}
             onAuxClickCapture={event => event.preventDefault()}
           >
             {children}
             {/* Tab at the end of the frame does not reach the dialog's keyboard handler. */}
-            <button type="button" className="sr-only" onFocus={onTabEnd}>
+            <button
+              type="button"
+              className="sr-only"
+              style={{ position: 'fixed', inset: '0 auto auto 0' }}
+              onFocus={onTabEnd}
+            >
               미리보기 도구로 돌아가기
             </button>
           </ContentArea>,
