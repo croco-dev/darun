@@ -48,6 +48,21 @@ let homeScenario: (typeof homeScenarios)[number] | 'count-error' = 'count-positi
 const heldProductCounts = new Set<ServerResponse>();
 const countErrorResponse = JSON.stringify({ data: null, errors: [{ message: 'Fixture count unavailable' }] });
 
+function applyHomeScenario(scenario: string): number {
+  if (scenario === 'release-count') {
+    homeScenario = 'count-error';
+    const hadPendingCount = heldProductCounts.size > 0;
+    for (const countResponse of heldProductCounts) countResponse.end(countErrorResponse);
+    heldProductCounts.clear();
+    return hadPendingCount ? 204 : 409;
+  }
+
+  const selected = homeScenarios.find(value => value === scenario);
+  if (!selected) return 404;
+  homeScenario = selected;
+  return 204;
+}
+
 const homeCategory = {
   __typename: 'Category',
   id: 'home-productivity',
@@ -104,21 +119,7 @@ const productWithDesignatedLink = {
 createServer((request, response) => {
   if (request.method === 'POST' && request.url?.startsWith('/home-scenario/')) {
     const scenario = request.url.slice('/home-scenario/'.length);
-    const selected = homeScenarios.find(value => value === scenario);
-    if (scenario === 'release-count') {
-      homeScenario = 'count-error';
-      const hadPendingCount = heldProductCounts.size > 0;
-      for (const countResponse of heldProductCounts) countResponse.end(countErrorResponse);
-      heldProductCounts.clear();
-      response.writeHead(hadPendingCount ? 204 : 409).end();
-      return;
-    }
-    if (!selected) {
-      response.writeHead(404).end();
-      return;
-    }
-    homeScenario = selected;
-    response.writeHead(204).end();
+    response.writeHead(applyHomeScenario(scenario)).end();
     return;
   }
   if (request.url === '/release-company' && request.method === 'POST') {
