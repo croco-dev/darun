@@ -86,9 +86,12 @@ describe('useEditProductFeatureItem', () => {
     expect(useMutation).toHaveBeenCalledWith(UpdateProductFeatureOnEditProductFeatureItemDocument, expect.any(Object));
     const { refetchQueries } = mutationOptions;
     if (typeof refetchQueries !== 'function') throw new Error('Expected a refresh for the saved feature');
-    expect(refetchQueries({ data: { updateProductFeature: { feature: { id: 'feature-1' } } } })).toEqual([
-      TempProductBySlugOnProductFeatureTableDocument,
-    ]);
+    expect(
+      refetchQueries({
+        data: { updateProductFeature: { feature: { id: 'feature-1' } } },
+        dataState: 'complete',
+      })
+    ).toEqual([TempProductBySlugOnProductFeatureTableDocument]);
     expect(onSaved).toHaveBeenCalledExactlyOnceWith('feature-1');
   });
 
