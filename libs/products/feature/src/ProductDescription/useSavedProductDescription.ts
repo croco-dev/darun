@@ -13,7 +13,7 @@ type DescriptionProduct = NonNullable<DescriptionResult['tempProductBySlug']>;
 type DescriptionQuery = typeof TempProductBySlugOnEditProductDescriptionDocument;
 type DescriptionRead = Promise<DescriptionResult | undefined>;
 type DescriptionRequests = {
-  publication?: { sequence: number; source: 'read' | 'save' };
+  publication?: { sequence: number; source: 'load' | 'refresh' | 'save' };
   pending?: DescriptionRead;
 };
 
@@ -41,15 +41,19 @@ export function beginProductDescriptionSave(client: ApolloClient, slug: string) 
   const variables = { slug };
   return (product: DescriptionProduct) => {
     const current = client.readQuery({ query, variables })?.tempProductBySlug;
-    if ((requests.publication && requests.publication.sequence > request) || (current && current.id !== product.id)) {
+    const publication = requests.publication;
+    // The initial view load can finish during a save and does not supersede the acknowledged write.
+    const superseded = publication && publication.source !== 'load' && publication.sequence > request;
+    if (superseded || (current && current.id !== product.id)) {
       // An older command response cannot establish what the server holds now.
       void readSavedProductDescription(client, slug, query, true).catch(() => {});
-      return;
+      return current?.id === product.id ? current : product;
     }
     requests.pending = undefined;
     requests.publication = { sequence: ++requestCount, source: 'save' };
     const savedProduct = { ...product, __typename: 'Product' };
     client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
+    return product;
   };
 }
 
@@ -82,7 +86,7 @@ export function readSavedProductDescription(
         // A confirmed save or an independent conflict read supersedes older requests for this slug.
         if (requests.pending !== read) return supersedingResult();
         if (data) {
-          requests.publication = { sequence: ++requestCount, source: 'read' };
+          requests.publication = { sequence: ++requestCount, source: fresh ? 'refresh' : 'load' };
           client.writeQuery({ query, variables, data });
         }
         return data;

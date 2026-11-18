@@ -23,12 +23,21 @@ afterEach(() => {
 
 function setup(
   initialDescription = '<p>Original saved introduction</p>',
-  candidateDescription = '<p>Accepted AI candidate</p>'
+  candidateDescription = '<p>Accepted AI candidate</p>',
+  holdInitialRead = false
 ) {
   let savedDescription = initialDescription;
   let failNextRead: boolean | string = false;
   let waitForRead: Promise<boolean> | undefined;
-  let waitForApply: Promise<void> | undefined;
+  const pendingMutationResponses = new Map<string, Promise<void>>();
+  const holdNextEditorRead = () => {
+    let release!: (fail: boolean) => void;
+    waitForRead = new Promise<boolean>(resolve => {
+      release = resolve;
+    });
+    return release;
+  };
+  const releaseInitialRead = holdInitialRead ? holdNextEditorRead() : undefined;
   const operations: string[] = [];
   const failedReads: string[] = [];
   const job = {
@@ -86,14 +95,6 @@ function setup(
                     job: { ...job, appliedAt: '2026-10-29T09:00:00.000Z' },
                   },
                 };
-                if (waitForApply) {
-                  void waitForApply.then(() => {
-                    observer.next({ data });
-                    observer.complete();
-                  });
-                  waitForApply = undefined;
-                  return;
-                }
                 break;
               case 'EditProductOnEditProductDescription':
                 if (operation.getContext().darunExpectedDescriptionHash !== hash(savedDescription)) {
@@ -125,8 +126,17 @@ function setup(
                 }
                 data = { tempProductBySlug: product() };
             }
-            observer.next({ data });
-            observer.complete();
+            const respond = () => {
+              observer.next({ data });
+              observer.complete();
+            };
+            const delay = pendingMutationResponses.get(name);
+            if (delay) {
+              pendingMutationResponses.delete(name);
+              void delay.then(respond);
+            } else {
+              respond();
+            }
           });
         })
     ),
@@ -159,18 +169,18 @@ function setup(
     failNextRead: (operationName?: string) => {
       failNextRead = operationName ?? true;
     },
-    holdNextEditorRead: () => {
-      let release!: (fail: boolean) => void;
-      waitForRead = new Promise<boolean>(resolve => {
-        release = resolve;
-      });
-      return release;
-    },
-    holdNextApplyResponse: () => {
+    holdNextEditorRead,
+    releaseInitialRead,
+    holdNextMutationResponse: (
+      operation: 'ApplyProductDescriptionCandidate' | 'EditProductOnEditProductDescription'
+    ) => {
       let release!: () => void;
-      waitForApply = new Promise<void>(resolve => {
-        release = resolve;
-      });
+      pendingMutationResponses.set(
+        operation,
+        new Promise<void>(resolve => {
+          release = resolve;
+        })
+      );
       return release;
     },
   };
@@ -231,7 +241,7 @@ it('AI 적용 응답이 늦어도 뒤이어 저장한 수동 본문을 되돌리
     expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1');
   });
 
-  const release = fixture.holdNextApplyResponse();
+  const release = fixture.holdNextMutationResponse('ApplyProductDescriptionCandidate');
   let applying!: Promise<void>;
   act(() => {
     applying = fixture.result.current.candidate.handleApply();
@@ -252,6 +262,58 @@ it('AI 적용 응답이 늦어도 뒤이어 저장한 수동 본문을 되돌리
   expect(fixture.cachedDescription()).toBe(draft);
   expect(fixture.result.current.display.description).toBe(draft);
   expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
+});
+
+it('첫 조회가 늦어도 이전 본문 대신 확인된 AI 적용 결과를 표시한다', async () => {
+  const original = '<p>첫 조회 시 저장된 본문</p>';
+  const candidate = '<p>AI 적용 후 저장된 본문</p>';
+  const fixture = setup(original, candidate, true);
+  await waitFor(() => expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1'));
+  expect(fixture.result.current.display.loading).toBe(true);
+
+  const releaseApply = fixture.holdNextMutationResponse('ApplyProductDescriptionCandidate');
+  let applying!: Promise<void>;
+  act(() => {
+    applying = fixture.result.current.candidate.handleApply();
+  });
+  await waitFor(() => expect(fixture.savedDescription()).toBe(candidate));
+  await act(async () => fixture.releaseInitialRead!(false));
+  expect(fixture.result.current.display.description).toBe(original);
+
+  fixture.failNextRead();
+  await act(async () => {
+    releaseApply();
+    await applying;
+  });
+  expect(fixture.cachedDescription()).toBe(candidate);
+  expect(fixture.result.current.display.description).toBe(candidate);
+  expect(fixture.result.current.editor.form.getValues().description).toBe(candidate);
+});
+
+it('수동 저장 응답이 늦어도 AI가 되돌린 본문을 편집 기준으로 사용한다', async () => {
+  const original = '<p>처음 저장된 소개</p>';
+  const intermediate = '<p>수동으로 수정한 소개</p>';
+  const fixture = setup(original, original);
+  await waitFor(() => {
+    expect(fixture.result.current.editor.descriptionReady).toBe(true);
+    expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1');
+  });
+  const release = fixture.holdNextMutationResponse('EditProductOnEditProductDescription');
+  let saving!: Promise<void>;
+  act(() => {
+    saving = fixture.result.current.editor.submit({ description: intermediate });
+  });
+  await waitFor(() => expect(fixture.savedDescription()).toBe(intermediate));
+  await act(async () => fixture.result.current.candidate.handleApply());
+  expect(fixture.savedDescription()).toBe(original);
+  fixture.failNextRead();
+  await act(async () => {
+    release();
+    await saving;
+  });
+  expect(fixture.result.current.editor.form.getValues().description).toBe(original);
+  await act(async () => fixture.result.current.editor.submit({ description: '<p>이어서 편집한 소개</p>' }));
+  expect(fixture.savedDescription()).toBe('<p>이어서 편집한 소개</p>');
 });
 
 it('충돌 조회가 늦으면 편집기에 이미 확인한 AI 적용 본문을 표시한다', async () => {
@@ -292,7 +354,7 @@ it('이전 AI 적용의 응답과 충돌 조회가 겹쳐도 다른 관리자가
     expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1');
   });
 
-  const releaseApply = fixture.holdNextApplyResponse();
+  const releaseApply = fixture.holdNextMutationResponse('ApplyProductDescriptionCandidate');
   let applying!: Promise<void>;
   act(() => {
     applying = fixture.result.current.candidate.handleApply();

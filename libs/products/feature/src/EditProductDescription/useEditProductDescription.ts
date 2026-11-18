@@ -195,10 +195,10 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
       });
       const product = result.data?.editProduct?.product;
       if (!product?.id) return;
-      confirmSave(product);
+      const current = confirmSave(product);
       onSaved?.(product.id);
       if (productSessionRef.current !== productSession) return;
-      resetDraft(product.description ?? null);
+      resetDraft(current.description ?? null);
       setConflict(null);
       notifications.show({ message: '수정되었습니다!', color: 'teal' });
       onSubmit?.();
