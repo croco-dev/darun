@@ -36,6 +36,15 @@ describe('markdown-builder helpers', () => {
   });
 
   describe('htmlToMarkdown', () => {
+    it('그림마다 이미지 바로 다음에 캡션과 출처를 둔다', () => {
+      const html =
+        '<figure data-editor-image=""><img src="https://example.com/search.png" alt="검색 화면"><figcaption><span>최근 검색어 확인</span> <small><a href="https://example.com/docs?a=1&amp;b=2">검색 안내</a></small></figcaption></figure>' +
+        '<figure data-editor-image=""><img src="https://example.com/settings.png" alt=""><figcaption><small>설정 도움말</small></figcaption></figure>';
+      expect(htmlToMarkdown(html)).toBe(
+        '![검색 화면](https://example.com/search.png)\n\n최근 검색어 확인 [검색 안내](https://example.com/docs?a=1&amp;b=2)\n\n![](https://example.com/settings.png)\n\n설정 도움말'
+      );
+    });
+
     it('링크·이미지·시작 번호와 중첩 목록을 보존한다', () => {
       expect(htmlToMarkdown(contentHtml)).toBe(contentMarkdown);
     });

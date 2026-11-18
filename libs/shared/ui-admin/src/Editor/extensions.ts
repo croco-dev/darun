@@ -1,4 +1,3 @@
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Table from '@tiptap/extension-table';
 import TableCell from '@tiptap/extension-table-cell';
@@ -8,6 +7,7 @@ import Typography from '@tiptap/extension-typography';
 import { Plugin } from '@tiptap/pm/state';
 import { Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { CaptionedImage } from './CaptionedImage';
 import { getEditorDocumentTableError, readTableRowSpan } from './tableLimits';
 
 // Read native DOM spans so HTML bounds apply before ProseMirror allocates its grid.
@@ -42,23 +42,7 @@ export function createAdminEditorExtensions(onTableRejected?: (message: string) 
       },
     }),
     StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-    Image.extend({
-      addAttributes() {
-        return {
-          ...this.parent?.(),
-          // TipTap otherwise coerces numeric-looking HTML attributes when reopening the document.
-          ...Object.fromEntries(
-            ['src', 'alt', 'title'].map(name => [
-              name,
-              {
-                default: null,
-                parseHTML: (element: HTMLElement) => element.getAttribute(name),
-              },
-            ])
-          ),
-        };
-      },
-    }),
+    CaptionedImage,
     Typography,
     Table,
     TableRow,

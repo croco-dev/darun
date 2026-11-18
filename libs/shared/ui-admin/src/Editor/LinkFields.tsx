@@ -2,7 +2,7 @@
 
 import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 import { AdminInput } from '../AdminInput';
-import { isCompleteLinkAddress } from './linkSelection';
+import { isCompleteLinkAddress } from './linkAddress';
 import { menuItemVariants } from './MenuItem';
 
 type LinkFieldsProps = {

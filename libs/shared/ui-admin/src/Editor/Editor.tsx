@@ -1,7 +1,7 @@
 'use client';
 
 import { EditorContent, useEditor } from '@tiptap/react';
-import { useEffect, useState } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 import { createAdminEditorExtensions } from './extensions';
 import { MenuBar } from './MenuBar';
 import { getEditorTableError, getEditorTablePasteError } from './tableLimits';
@@ -14,6 +14,12 @@ type EditorProps = {
   editable?: boolean;
   disabled?: boolean;
 };
+
+function preventCaptionLinkNavigation(event: MouseEvent<HTMLDivElement>) {
+  if (event.target instanceof Element && event.target.closest('figure[data-editor-image] figcaption a')) {
+    event.preventDefault();
+  }
+}
 
 export function Editor({
   value,
@@ -127,7 +133,9 @@ export function Editor({
       <MenuBar editor={editor} disabled={!isEditable} onImageUploadingChange={onImageUploadingChange} />
       <EditorContent
         editor={editor}
-        className="min-h-72 min-w-0 overflow-x-auto rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none [&_a]:underline [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-dark-200 [&_th]:bg-surface-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_td]:border [&_td]:border-dark-200 [&_td]:px-3 [&_td]:py-2"
+        onClickCapture={preventCaptionLinkNavigation}
+        onAuxClickCapture={preventCaptionLinkNavigation}
+        className="min-h-72 min-w-0 overflow-x-auto rounded-card border border-dark-200 bg-white p-4 [&_.ProseMirror]:min-h-60 [&_.ProseMirror]:outline-none [&_a]:underline [&_figure]:my-3 [&_figure_img]:h-auto [&_figure_img]:max-w-full [&_figcaption]:mt-2 [&_figcaption]:text-sm [&_figcaption]:[overflow-wrap:anywhere] [&_figcaption_small]:block [&_figcaption_small]:text-dark-600 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-dark-200 [&_th]:bg-surface-100 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_td]:border [&_td]:border-dark-200 [&_td]:px-3 [&_td]:py-2"
       />
     </div>
   );
