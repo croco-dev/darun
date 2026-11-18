@@ -8,7 +8,7 @@ import { useProductDescription } from './useProductDescription';
 
 type DOMPurify = typeof import('dompurify').default;
 
-export function SavedProductDescription({ description }: { description?: string | null }) {
+export function SavedProductDescription({ description }: Readonly<{ description?: string | null }>) {
   const [domPurify, setDomPurify] = useState<DOMPurify | null>(null);
 
   useEffect(() => {

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createHash, webcrypto } from 'node:crypto';
 import { useGenerateProductDescriptionButton } from '../../GenerateProductDescriptionButton/useGenerateProductDescriptionButton';
+import { useProductDescription } from '../../ProductDescription/useProductDescription';
 import { useEditProductDescription } from '../useEditProductDescription';
 
 vi.stubGlobal('crypto', webcrypto);
@@ -123,6 +124,7 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
   const hook = renderHook(
     () => ({
       editor: useEditProductDescription({ slug: 'sample' }),
+      display: useProductDescription({ slug: 'sample' }),
       candidate: useGenerateProductDescriptionButton('sample', 'candidate-1'),
     }),
     { wrapper }
@@ -134,6 +136,12 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
     cachedDescription: () =>
       client.readQuery({ query: TempProductBySlugOnEditProductDescriptionDocument, variables: { slug: 'sample' } })
         ?.tempProductBySlug?.description,
+    writeCachedDescription: (description: string) =>
+      client.writeQuery({
+        query: TempProductBySlugOnEditProductDescriptionDocument,
+        variables: { slug: 'sample' },
+        data: { tempProductBySlug: { ...product(), description } },
+      }),
     writeElsewhere: (description: string) => {
       savedDescription = description;
     },
@@ -255,6 +263,7 @@ it.each([false, true])(
     await waitFor(() => {
       expect(reads()).toBeGreaterThan(readsBeforeRelease);
       expect(fixture.cachedDescription()).toBe(revised);
+      expect(fixture.result.current.display.description).toBe(revised);
     });
     expect(fixture.result.current.editor.hasServerChange).toBe(false);
     expect(fixture.result.current.editor.descriptionReady).toBe(true);
@@ -265,3 +274,46 @@ it.each([false, true])(
     );
   }
 );
+
+it('충돌로 최신 본문을 읽은 뒤 수동 저장 없이 다음 AI 채택 결과를 반영한다', async () => {
+  const fixture = setup();
+  const latest = '<p>다른 관리자의 소개</p>';
+  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
+  fixture.writeElsewhere(latest);
+  await act(async () => fixture.result.current.editor.submit({ description: '<p>오래된 초안</p>' }));
+  act(() => fixture.result.current.editor.acceptLatestDescription());
+  expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+  await act(async () => fixture.result.current.candidate.handleApply());
+  await waitFor(() =>
+    expect(fixture.result.current.editor.form.getValues().description).toBe('<p>Accepted AI candidate</p>')
+  );
+});
+
+it('이전 저장의 조회가 완료되어도 새로 확인한 본문을 교체하지 않는다', async () => {
+  const fixture = setup();
+  const latest = '<p>다른 관리자의 최신 소개</p>';
+  const reads = () => fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length;
+  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
+  const slowSaveRefresh = fixture.holdNextEditorRead();
+  const initialReads = reads();
+  await act(async () => fixture.result.current.editor.submit({ description: '<p>방금 저장한 소개</p>' }));
+  await waitFor(() => expect(reads()).toBe(initialReads + 1));
+  try {
+    act(() => fixture.writeCachedDescription('<p>예전 조회의 본문</p>'));
+    fixture.writeElsewhere(latest);
+    await act(async () => fixture.result.current.editor.submit({ description: '<p>오래된 초안</p>' }));
+    act(() => fixture.result.current.editor.acceptLatestDescription());
+    expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+    const newerRefresh = fixture.holdNextEditorRead();
+    const readsBeforeRelease = reads();
+    try {
+      await act(async () => slowSaveRefresh(false));
+      await waitFor(() => expect(reads()).toBeGreaterThan(readsBeforeRelease));
+      expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+    } finally {
+      await act(async () => newerRefresh(false));
+    }
+  } finally {
+    await act(async () => slowSaveRefresh(false));
+  }
+});

@@ -73,16 +73,16 @@ const EditProductDescriptionForm = bind(
       {(hasServerChange || conflictRefresh) && (
         <div role="alert" className="mt-3 rounded-lg border border-dark-200 p-3 text-sm text-dark-800">
           <p>저장된 소개가 변경되었습니다. 작성 중인 초안은 보관했습니다.</p>
-          {conflictRefresh === 'loading' ? (
-            <p>최신 본문을 불러오는 중입니다.</p>
-          ) : conflictRefresh === 'failed' ? (
+          {conflictRefresh === 'loading' && <p>최신 본문을 불러오는 중입니다.</p>}
+          {conflictRefresh === 'failed' && (
             <>
               <p>최신 본문을 불러오지 못했습니다.</p>
               <Button type="button" variant="contained" color="secondary" onClick={refreshAfterConflict}>
                 최신 본문 다시 불러오기
               </Button>
             </>
-          ) : (
+          )}
+          {!conflictRefresh && (
             <>
               <p className="mt-1">최신 본문을 사용하거나, 현재 초안으로 저장된 소개를 덮어쓸 수 있습니다.</p>
               <details className="mt-2 overflow-x-auto [overflow-wrap:anywhere]">

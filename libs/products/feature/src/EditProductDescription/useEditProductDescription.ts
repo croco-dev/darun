@@ -82,6 +82,7 @@ export function useEditProductDescription({
     if (!active || previousForm.slug !== slug) setAcceptedConflict(false);
   }
   const savePending = useRef(false);
+  const currentRefresh = useRef(0);
   const imageUploadPending = useRef(false);
   const [imageUploading, setImageUploading] = useState(false);
   const onImageUploadingChange = useCallback((uploading: boolean) => {
@@ -152,22 +153,35 @@ export function useEditProductDescription({
 
   const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument);
 
-  const refreshAfterSave = async () => {
+  const refreshDescriptionViews = async () => {
     const queries = [TempProductBySlugOnEditProductDescriptionDocument, TempProductBySlugOnProductDescriptionDocument];
     const targets = queries.map(query => ({
       query,
       watches: [...client.getObservableQueries([query])].filter(watch => watch.variables.slug === slug),
     }));
     const earlierReads = targets.flatMap(({ watches }) => watches.filter(watch => watch.getCurrentResult().loading));
-    // An older watched result may populate the cache after the successful mutation.
+    // Older responses can replace the current description in Apollo's shared cache.
     await Promise.allSettled(earlierReads.map(query => query.refetch()));
-    await Promise.allSettled(
-      targets.flatMap<Promise<unknown>>(({ query, watches }) =>
-        watches.length > 0
+    const [editorResults] = await Promise.all(
+      targets.map(({ query, watches }) => {
+        const reads: Promise<unknown>[] = watches.length
           ? watches.map(watch => watch.refetch())
-          : [client.query({ query, variables: { slug }, fetchPolicy: 'network-only' })]
-      )
+          : [client.query({ query, variables: { slug }, fetchPolicy: 'network-only' })];
+        return Promise.allSettled(reads);
+      })
     );
+    return editorResults.some(result => result.status === 'fulfilled');
+  };
+
+  const reconcileDescriptionViews = () => {
+    const productSession = productSessionRef.current;
+    const refresh = ++currentRefresh.current;
+    setAcceptedConflict(true);
+    void refreshDescriptionViews().then(refreshed => {
+      if (refreshed && currentRefresh.current === refresh && productSessionRef.current === productSession) {
+        setAcceptedConflict(false);
+      }
+    });
   };
 
   const refreshAfterConflict = async () => {
@@ -223,10 +237,7 @@ export function useEditProductDescription({
       if (product?.id) {
         resetDraft(product.description ?? null);
         setConflict(null);
-        setAcceptedConflict(true);
-        void refreshAfterSave().finally(() => {
-          if (productSessionRef.current === productSession) setAcceptedConflict(false);
-        });
+        reconcileDescriptionViews();
         onSaved?.(product.id);
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         onSubmit?.();
@@ -271,7 +282,7 @@ export function useEditProductDescription({
     refreshAfterConflict,
     acceptLatestDescription: () => {
       // Requests begun before conflict recovery can still update the shared cache.
-      if (conflict?.status === 'ready') setAcceptedConflict(true);
+      if (conflict?.status === 'ready') reconcileDescriptionViews();
       lastObservedSourceRef.current = { slug, description };
       resetDraft(latestDescription);
       setConflict(null);
