@@ -5,6 +5,8 @@ import {
   PostgresqlProductFeatureRepository,
   PostgresqlProductFeatureScreenshotRepository,
   PostgresqlProductDescriptionJobRepository,
+  PostgresqlProductDescriptionApplyStore,
+  PostgresqlProductDescriptionEvidenceAssembler,
   PostgresqlProductFlowRepository,
   PostgresqlProductLinkRepository,
   PostgresqlProductRepository,
@@ -12,6 +14,7 @@ import {
 } from '@darun/products-datasource';
 import {
   AddProductLink,
+  ApplyProductDescriptionCandidate,
   CreateProduct,
   EditProduct,
   GetAllProducts,
@@ -60,6 +63,7 @@ import {
   type AllProductsOnProductListTableQuery,
   type AllProductsOnProductListTableQueryVariables,
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
+  EditProductOnEditProductDescriptionDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
 } from '../../../libs/__generated__/graphql';
@@ -579,12 +583,20 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     );
   });
 
-  describe('상품 기본 정보의 문자 수 경계와 공개 GraphQL 오류', () => {
+  describe('상품 편집 검증과 공개 GraphQL 오류', () => {
     const slugs: string[] = [];
     let server: ReturnType<typeof createServer>;
     const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
       ? Container.get(ProductContentSyncRegistrarToken)
       : undefined;
+    const run = async (query: string, variables: Record<string, unknown>) => {
+      const result = await server.executeOperation(
+        { query, variables },
+        { contextValue: { getRoles: async () => ['admin'] } }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+      return result.body.singleResult;
+    };
     beforeAll(async () => {
       Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
       const repository = new PostgresqlProductRepository(db);
@@ -607,6 +619,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     });
     afterEach(async () => {
       for (const slug of slugs.splice(0)) {
+        await writer`delete from product_description_jobs where product_id in (select id from products where slug = ${slug})`;
         await writer`delete from translation_jobs where entity_id in (select id from products where slug = ${slug})`;
         await writer`delete from product_content_sync_intents where product_id in (select id from products where slug = ${slug})`;
         await writer`delete from products where slug = ${slug}`;
@@ -617,6 +630,74 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       if (previousRegistrar) Container.set(ProductContentSyncRegistrarToken, previousRegistrar);
       else Container.remove(ProductContentSyncRegistrarToken);
     });
+
+    it.each(['manual', 'candidate'] as const)(
+      '%s 저장 이후 오래된 소개 초안을 거절하고 revision과 동기화 기록을 보존한다',
+      async firstWriter => {
+        const id = randomUUID().slice(0, 26);
+        const slug = `description-${id}`;
+        slugs.push(slug);
+        const original = '<p>Original introduction</p>';
+        const savedDescription = '<p>Newer introduction</p>';
+        await writer`insert into products (id, slug, name, summary, description, logo_url, published_at)
+          values (${id}, ${slug}, 'Description fixture', '', ${original}, '', now())`;
+        const mutation = print(EditProductOnEditProductDescriptionDocument);
+        const save = (description: string, expectedDescription: string | null) =>
+          run(mutation, {
+            slug,
+            input: { description, expectedDescription },
+          });
+
+        if (firstWriter === 'candidate') {
+          const candidateDb = drizzle(writer);
+          const evidence = await new PostgresqlProductDescriptionEvidenceAssembler(candidateDb).assemble(id);
+          const jobs = new PostgresqlProductDescriptionJobRepository(candidateDb);
+          const job = await jobs.createJob({ productId: id });
+          const lease = {
+            jobId: job.id,
+            leaseToken: id,
+            leaseUntil: new Date(Date.now() + 60_000),
+          };
+          await jobs.claimJobLease(lease);
+          await jobs.completeJobLease(job.id, lease.leaseToken, 'completed', {
+            candidateHtml: savedDescription,
+            evidenceHash: evidence.evidenceHash,
+            evidenceHashVersion: evidence.evidenceHashVersion,
+            baseDescriptionHash: evidence.baseDescriptionHash,
+          });
+          const apply = new ApplyProductDescriptionCandidate(new PostgresqlProductDescriptionApplyStore(candidateDb));
+          expect((await apply.execute({ jobId: job.id })).product.description).toBe(savedDescription);
+        } else {
+          const manualSave = await save(savedDescription, original);
+          expect(manualSave.errors).toBeUndefined();
+          expect(manualSave.data?.editProduct).toMatchObject({
+            product: { description: savedDescription },
+          });
+        }
+
+        const product = () => writer`select description, content_revision from products where id = ${id}`;
+        const intents = () => writer`select kind, source_revision, status from product_content_sync_intents
+          where product_id = ${id} order by source_revision, kind`;
+        const jobs = () => writer`select id, status from translation_jobs where entity_id = ${id} order by id`;
+        const savedIntents = await intents();
+        const savedJobs = await jobs();
+        expect(savedIntents.map(intent => intent.kind)).toEqual(['search', 'translation']);
+        expect(savedJobs).toHaveLength(1);
+        const conflict = await save('<p>Stale draft</p>', original);
+        expect(conflict.errors?.[0]?.extensions?.code).toBe('DESCRIPTION_EDIT_CONFLICT');
+        expect(await product()).toEqual([{ description: savedDescription, content_revision: '1' }]);
+        expect(await intents()).toEqual(savedIntents);
+        expect(await jobs()).toEqual(savedJobs);
+
+        const cleared = await save('', savedDescription);
+        expect(cleared.errors).toBeUndefined();
+        expect(cleared.data?.editProduct).toMatchObject({
+          product: { description: '' },
+        });
+        expect(await product()).toEqual([{ description: '', content_revision: '2' }]);
+      }
+    );
+
     it.each(['a', '한', '😀'])(
       '255개의 %s 문자를 저장하고 초과 입력은 원문·revision·intent를 보존한다',
       async character => {
@@ -624,14 +705,6 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         slugs.push(slug);
         const name = character.repeat(255);
         const summary = character.repeat(255);
-        const run = async (query: string, variables: Record<string, unknown>) => {
-          const result = await server.executeOperation(
-            { query, variables },
-            { contextValue: { getRoles: async () => ['admin'] } }
-          );
-          if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
-          return result.body.singleResult;
-        };
         const create =
           'mutation($input: CreateProductInput!) { createProduct(input: $input) { product { id name summary } } }';
         const edit =

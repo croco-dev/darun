@@ -4,6 +4,7 @@ import { Button } from '@darun/ui';
 import { Editor, AdminActions, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
 import type { ReactNode } from 'react';
+import { SavedProductDescription } from '../ProductDescription/ProductDescription';
 import {
   normalizeProductDescriptionDraft,
   useEditProductDescription,
@@ -32,6 +33,9 @@ const EditProductDescriptionForm = bind(
     descriptionReady,
     retryDescription,
     hasServerChange,
+    latestDescription,
+    conflictRefresh,
+    refreshAfterConflict,
     acceptLatestDescription,
     overwriteWithDraft,
     renderPreview,
@@ -66,30 +70,47 @@ const EditProductDescriptionForm = bind(
           본문 이미지를 업로드하고 있습니다. 완료 후 저장할 수 있습니다.
         </p>
       )}
-      {hasServerChange && (
+      {(hasServerChange || conflictRefresh) && (
         <div role="alert" className="mt-3 rounded-lg border border-dark-200 p-3 text-sm text-dark-800">
           <p>저장된 소개가 변경되었습니다. 작성 중인 초안은 보관했습니다.</p>
-          <p className="mt-1">최신 본문을 사용하거나, 현재 초안으로 저장된 소개를 덮어쓸 수 있습니다.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="contained"
-              color="secondary"
-              onClick={acceptLatestDescription}
-              disabled={!descriptionReady || loading || imageUploading}
-            >
-              초안을 버리고 최신 본문 사용
-            </Button>
-            <Button
-              type="button"
-              variant="contained"
-              color="primary"
-              onClick={overwriteWithDraft}
-              disabled={!descriptionReady || loading || imageUploading}
-            >
-              초안으로 덮어쓰기
-            </Button>
-          </div>
+          {conflictRefresh === 'loading' ? (
+            <p>최신 본문을 불러오는 중입니다.</p>
+          ) : conflictRefresh === 'failed' ? (
+            <>
+              <p>최신 본문을 불러오지 못했습니다.</p>
+              <Button type="button" variant="contained" color="secondary" onClick={refreshAfterConflict}>
+                최신 본문 다시 불러오기
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="mt-1">최신 본문을 사용하거나, 현재 초안으로 저장된 소개를 덮어쓸 수 있습니다.</p>
+              <details className="mt-2 overflow-x-auto [overflow-wrap:anywhere]">
+                <summary className="cursor-pointer">최신 본문 확인</summary>
+                <SavedProductDescription description={latestDescription} />
+              </details>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="contained"
+                  color="secondary"
+                  onClick={acceptLatestDescription}
+                  disabled={!descriptionReady || loading || imageUploading}
+                >
+                  초안을 버리고 최신 본문 사용
+                </Button>
+                <Button
+                  type="button"
+                  variant="contained"
+                  color="primary"
+                  onClick={overwriteWithDraft}
+                  disabled={!descriptionReady || loading || imageUploading}
+                >
+                  초안으로 덮어쓰기
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       )}
       {saveError && (
@@ -121,7 +142,7 @@ const EditProductDescriptionForm = bind(
           variant="contained"
           color="primary"
           className="active:scale-[0.98] motion-reduce:transform-none"
-          disabled={!descriptionReady || loading || imageUploading || hasServerChange}
+          disabled={!descriptionReady || loading || imageUploading || hasServerChange || Boolean(conflictRefresh)}
         >
           {loading ? '저장 중...' : '저장'}
         </Button>

@@ -1,5 +1,6 @@
 import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
+import { productDescriptionEditConflict } from '../errors/productDescriptionError';
 import { productInvalidArgs } from '../errors/productError';
 import { getProductInfoLengthError } from '../info/ProductInfo';
 import type { ProductRepository } from '../repositories/ProductRepository';
@@ -17,18 +18,28 @@ export class EditProduct {
     name,
     summary,
     description,
+    expectedDescription,
     logoUrl,
   }: {
     id: string;
     name?: string;
     summary?: string;
     description?: string;
+    expectedDescription?: string | null;
     logoUrl?: string;
   }): Promise<Product> {
     const lengthError = getProductInfoLengthError('name', name) ?? getProductInfoLengthError('summary', summary);
     if (lengthError) throw productInvalidArgs(lengthError);
 
     return this.productRepository.updateById(id, product => {
+      if (
+        description !== undefined &&
+        expectedDescription !== undefined &&
+        (product.description ?? null) !== expectedDescription
+      ) {
+        throw productDescriptionEditConflict();
+      }
+
       product.update({
         name,
         summary,

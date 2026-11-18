@@ -17,6 +17,7 @@ afterEach(() => {
 
 function setup() {
   let savedDescription = '<p>Original saved introduction</p>';
+  let failNextRead = false;
   const operations: string[] = [];
   const job = {
     __typename: 'ProductDescriptionJob',
@@ -62,6 +63,18 @@ function setup() {
                 };
                 break;
               case 'EditProductOnEditProductDescription':
+                if (operation.variables.input.expectedDescription !== savedDescription) {
+                  observer.next({
+                    errors: [
+                      {
+                        message: 'Stored description changed',
+                        extensions: { code: 'DESCRIPTION_EDIT_CONFLICT' },
+                      },
+                    ],
+                  });
+                  observer.complete();
+                  return;
+                }
                 savedDescription = operation.variables.input.description;
                 data = {
                   editProduct: {
@@ -71,6 +84,11 @@ function setup() {
                 };
                 break;
               default:
+                if (failNextRead) {
+                  failNextRead = false;
+                  observer.error(new Error('Description read failed'));
+                  return;
+                }
                 data = { tempProductBySlug: product() };
             }
             observer.next({ data });
@@ -90,7 +108,17 @@ function setup() {
     }),
     { wrapper }
   );
-  return { ...hook, operations, savedDescription: () => savedDescription };
+  return {
+    ...hook,
+    operations,
+    savedDescription: () => savedDescription,
+    writeElsewhere: (description: string) => {
+      savedDescription = description;
+    },
+    failNextRead: () => {
+      failNextRead = true;
+    },
+  };
 }
 
 describe('AI candidate application and manual description drafts on one Apollo client', () => {
@@ -127,4 +155,38 @@ describe('AI candidate application and manual description drafts on one Apollo c
       }
     }
   );
+});
+
+it('다른 편집자의 저장을 감지해 초안을 보존하고 최신 본문 조회를 다시 시도할 수 있다', async () => {
+  const fixture = setup();
+  const draft = '<p>Unsaved human draft</p>';
+  const latest = '<p>Another editor saved this</p>';
+  const newer = '<p>One more save</p>';
+  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
+  act(() => fixture.result.current.editor.form.getInputProps('description').onChange(draft));
+  fixture.writeElsewhere(latest);
+  fixture.failNextRead();
+
+  await act(async () => fixture.result.current.editor.submit({ description: draft }));
+  expect(fixture.result.current.editor.conflictRefresh).toBe('failed');
+  expect(fixture.result.current.editor.descriptionReady).toBe(true);
+  expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
+  await act(async () => fixture.result.current.editor.overwriteWithDraft());
+  expect(fixture.operations.filter(name => name === 'EditProductOnEditProductDescription')).toHaveLength(1);
+  expect(fixture.savedDescription()).toBe(latest);
+
+  await act(async () => fixture.result.current.editor.refreshAfterConflict());
+  expect(fixture.result.current.editor.hasServerChange).toBe(true);
+  expect(fixture.result.current.editor.latestDescription).toBe(latest);
+  expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
+
+  fixture.writeElsewhere(newer);
+  await act(async () => fixture.result.current.editor.overwriteWithDraft());
+  expect(fixture.savedDescription()).toBe(newer);
+  await waitFor(() => expect(fixture.result.current.editor.latestDescription).toBe(newer));
+  expect(fixture.result.current.editor.form.getValues().description).toBe(draft);
+
+  await act(async () => fixture.result.current.editor.overwriteWithDraft());
+  expect(fixture.savedDescription()).toBe(draft);
+  expect(fixture.result.current.editor.hasServerChange).toBe(false);
 });

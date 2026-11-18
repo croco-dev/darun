@@ -98,7 +98,10 @@ describe('description form synchronization', () => {
     expect(mutate).toHaveBeenLastCalledWith({
       variables: {
         slug: 'product-1',
-        input: { description: '<p>Human draft</p>' },
+        input: {
+          description: '<p>Human draft</p>',
+          expectedDescription: '<p>Accepted AI candidate</p>',
+        },
       },
     });
     expect(result.current.form.isDirty()).toBe(false);
@@ -185,7 +188,10 @@ describe('description form synchronization', () => {
       expect(mutate).toHaveBeenCalledWith({
         variables: {
           slug: 'product-1',
-          input: { description: editedDescription },
+          input: {
+            description: editedDescription,
+            expectedDescription: loadedDescription,
+          },
         },
       });
       expect(notifications.show).not.toHaveBeenCalled();
@@ -276,7 +282,10 @@ describe('description validation', () => {
     await act(async () => result.current.form.onSubmit(result.current.submit)());
 
     expect(mutate).toHaveBeenCalledExactlyOnceWith({
-      variables: { slug: 'product-1', input: { description: '' } },
+      variables: {
+        slug: 'product-1',
+        input: { description: '', expectedDescription: '<p>기존 소개</p>' },
+      },
     });
   });
 
@@ -313,8 +322,22 @@ describe('description validation', () => {
 
     await act(async () => result.current.form.onSubmit(result.current.submit)());
     expect(mutate.mock.calls).toEqual([
-      [{ variables: { slug: 'product-1', input: { description: '' } } }],
-      [{ variables: { slug: 'product-1', input: { description: '' } } }],
+      [
+        {
+          variables: {
+            slug: 'product-1',
+            input: { description: '', expectedDescription: '<p>기존 소개</p>' },
+          },
+        },
+      ],
+      [
+        {
+          variables: {
+            slug: 'product-1',
+            input: { description: '', expectedDescription: '<p>기존 소개</p>' },
+          },
+        },
+      ],
     ]);
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
@@ -326,7 +349,10 @@ describe('description validation', () => {
       const { result } = renderHook(() => useEditProductDescription({ slug: 'product-1' }));
       await act(async () => result.current.submit({ description: draft }));
       expect(mutate).toHaveBeenCalledExactlyOnceWith({
-        variables: { slug: 'product-1', input: { description: draft } },
+        variables: {
+          slug: 'product-1',
+          input: { description: draft, expectedDescription: null },
+        },
       });
       expect(notifications.show).not.toHaveBeenCalled();
     }
