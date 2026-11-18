@@ -24,20 +24,22 @@ afterEach(() => {
 function setup(
   initialDescription = '<p>Original saved introduction</p>',
   candidateDescription = '<p>Accepted AI candidate</p>',
-  holdInitialRead = false
+  initialReadSnapshot?: 'before' | 'after'
 ) {
   let savedDescription = initialDescription;
   let failNextRead: boolean | string = false;
   let waitForRead: Promise<boolean> | undefined;
+  let snapshotOnResponse = false;
   const pendingMutationResponses = new Map<string, Promise<void>>();
-  const holdNextEditorRead = () => {
+  const holdNextEditorRead = (takeSnapshotOnResponse = false) => {
     let release!: (fail: boolean) => void;
+    snapshotOnResponse = takeSnapshotOnResponse;
     waitForRead = new Promise<boolean>(resolve => {
       release = resolve;
     });
     return release;
   };
-  const releaseInitialRead = holdInitialRead ? holdNextEditorRead() : undefined;
+  const releaseInitialRead = initialReadSnapshot && holdNextEditorRead(initialReadSnapshot === 'after');
   const operations: string[] = [];
   const failedReads: string[] = [];
   const job = {
@@ -64,13 +66,13 @@ function setup(
           const name = operation.operationName ?? 'unknown';
           operations.push(name);
           if (name === 'TempProductBySlugOnEditProductDescription' && waitForRead) {
-            const snapshot = product();
+            const snapshot = snapshotOnResponse ? undefined : product();
             void waitForRead.then(fail => {
               if (fail) {
                 observer.error(new Error('Earlier description read failed'));
                 return;
               }
-              observer.next({ data: { tempProductBySlug: snapshot } });
+              observer.next({ data: { tempProductBySlug: snapshot ?? product() } });
               observer.complete();
             });
             waitForRead = undefined;
@@ -267,7 +269,7 @@ it('AI 적용 응답이 늦어도 뒤이어 저장한 수동 본문을 되돌리
 it('첫 조회가 늦어도 이전 본문 대신 확인된 AI 적용 결과를 표시한다', async () => {
   const original = '<p>첫 조회 시 저장된 본문</p>';
   const candidate = '<p>AI 적용 후 저장된 본문</p>';
-  const fixture = setup(original, candidate, true);
+  const fixture = setup(original, candidate, 'before');
   await waitFor(() => expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1'));
   expect(fixture.result.current.display.loading).toBe(true);
 
@@ -288,6 +290,34 @@ it('첫 조회가 늦어도 이전 본문 대신 확인된 AI 적용 결과를 �
   expect(fixture.cachedDescription()).toBe(candidate);
   expect(fixture.result.current.display.description).toBe(candidate);
   expect(fixture.result.current.editor.form.getValues().description).toBe(candidate);
+});
+
+it('첫 조회가 AI 적용보다 새로운 외부 저장을 발견하면 늦은 적용 응답 뒤에도 최신 본문을 표시한다', async () => {
+  const original = '<p>처음 저장된 본문</p>';
+  const candidate = '<p>AI로 저장한 본문</p>';
+  const latest = '<p>AI 적용 뒤 다른 관리자가 저장한 본문</p>';
+  const fixture = setup(original, candidate, 'after');
+  await waitFor(() => expect(fixture.result.current.candidate.candidateJob?.id).toBe('candidate-1'));
+
+  const releaseApply = fixture.holdNextMutationResponse('ApplyProductDescriptionCandidate');
+  let applying!: Promise<void>;
+  act(() => {
+    applying = fixture.result.current.candidate.handleApply();
+  });
+  await waitFor(() => expect(fixture.savedDescription()).toBe(candidate));
+  fixture.writeElsewhere(latest);
+  await act(async () => fixture.releaseInitialRead!(false));
+  expect(fixture.result.current.display.description).toBe(latest);
+  const releaseVerification = fixture.holdNextEditorRead(true);
+  await act(async () => {
+    releaseApply();
+    await applying;
+  });
+  expect(fixture.cachedDescription()).toBe(latest);
+  await act(async () => releaseVerification(false));
+  await waitFor(() => expect(fixture.result.current.display.description).toBe(latest));
+  expect(fixture.cachedDescription()).toBe(latest);
+  expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
 });
 
 it('수동 저장 응답이 늦어도 AI가 되돌린 본문을 편집 기준으로 사용한다', async () => {

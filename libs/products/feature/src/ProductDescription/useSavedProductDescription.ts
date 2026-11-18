@@ -42,6 +42,7 @@ export function beginProductDescriptionSave(client: ApolloClient, slug: string) 
   return (product: DescriptionProduct) => {
     const current = client.readQuery({ query, variables })?.tempProductBySlug;
     const publication = requests.publication;
+    const overlappingRead = publication?.source === 'load' && publication.sequence > request;
     // The initial view load can finish during a save and does not supersede the acknowledged write.
     const superseded = publication && publication.source !== 'load' && publication.sequence > request;
     if (superseded || (current && current.id !== product.id)) {
@@ -49,10 +50,20 @@ export function beginProductDescriptionSave(client: ApolloClient, slug: string) 
       void readSavedProductDescription(client, slug, query, true).catch(() => {});
       return current?.id === product.id ? current : product;
     }
-    requests.pending = undefined;
-    requests.publication = { sequence: ++requestCount, source: 'save' };
-    const savedProduct = { ...product, __typename: 'Product' };
-    client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
+    const publishSave = () => {
+      requests.pending = undefined;
+      requests.publication = { sequence: ++requestCount, source: 'save' };
+      const savedProduct = { ...product, __typename: 'Product' };
+      client.writeQuery({ query, variables, data: { tempProductBySlug: savedProduct } });
+    };
+    if (overlappingRead && current?.description !== product.description) {
+      // The load might have seen a different administrator's write after this command committed.
+      void readSavedProductDescription(client, slug, query, true).catch(() => {
+        if (requests.publication === publication && !requests.pending) publishSave();
+      });
+      return current ?? product;
+    }
+    publishSave();
     return product;
   };
 }
