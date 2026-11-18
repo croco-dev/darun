@@ -5,9 +5,12 @@ const scenarioURL = 'http://127.0.0.1:16470/home-scenario';
 test.use({ isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
 
 test.beforeAll(async ({ request }) => {
-  // Compile the destination before timing the interaction with the home page.
-  const response = await request.get('/ko/search/product?query=%EB%85%B8%EC%85%98');
-  expect(response.ok()).toBe(true);
+  // Warm up the destination routes before asserting navigation from the home page.
+  const responses = await Promise.all([
+    request.get('/ko/search/product?query=%EB%85%B8%EC%85%98'),
+    request.get('/ko/categories/productivity'),
+  ]);
+  for (const response of responses) expect(response.ok()).toBe(true);
 });
 
 test.beforeEach(async ({ page }) => {
@@ -18,9 +21,9 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-for (const [locale, width, headline, keyword, category] of [
-  ['ko', 390, '다른 서비스를 발견하세요', '노션', '생산성 도구'],
-  ['en', 1280, 'Discover alternative services', 'Notion', 'Productivity tools'],
+for (const [locale, width, headline, keyword, category, searchHeading] of [
+  ['ko', 390, '다른 서비스를 발견하세요', '노션', '생산성 도구', '‘노션’ 검색 결과'],
+  ['en', 1280, 'Discover alternative services', 'Notion', 'Productivity tools', '‘Notion’ search results'],
 ] as const) {
   test(`${locale} home offers discovery before and after the count request fails`, async ({ page, request }, info) => {
     expect((await request.post(`${scenarioURL}/count-delayed-error`)).status()).toBe(204);
@@ -34,10 +37,14 @@ for (const [locale, width, headline, keyword, category] of [
     const search = page.getByTestId('home-hero').getByRole('link', { name: keyword, exact: true });
     const heading = home.getByRole('heading', { name: headline, level: 1, exact: true });
     const links = [
-      [search, `/${locale}/search/product?query=${encodeURIComponent(keyword)}`],
-      [home.getByRole('link', { name: category, exact: true }), `/${locale}/categories/productivity`],
-      [home.getByRole('link', { name: /Figma E2E/ }), `/${locale}/products/figma-e2e?from=trending`],
-      [home.getByRole('link', { name: /Recent Fixture/ }), `/${locale}/products/recent-fixture?from=recent`],
+      [search, `/${locale}/search/product?query=${encodeURIComponent(keyword)}`, searchHeading],
+      [home.getByRole('link', { name: category, exact: true }), `/${locale}/categories/productivity`, category],
+      [home.getByRole('link', { name: /Figma E2E/ }), `/${locale}/products/figma-e2e?from=trending`, 'Figma E2E'],
+      [
+        home.getByRole('link', { name: /Recent Fixture/ }),
+        `/${locale}/products/recent-fixture?from=recent`,
+        'Recent Fixture',
+      ],
     ] as const;
     const assertDiscovery = async () => {
       await expect(heading).toBeVisible();
@@ -67,6 +74,15 @@ for (const [locale, width, headline, keyword, category] of [
     await page.screenshot({ path: info.outputPath('home-without-count.png') });
     await search.press('Enter');
     await expect(page).toHaveURL(links[0][1]);
+    await expect(page.getByRole('heading', { name: searchHeading, level: 1, exact: true })).toBeVisible();
+
+    for (const [link, href, destinationHeading] of links.slice(1)) {
+      await page.goto(`/${locale}`);
+      await page.waitForFunction(() => (window as Window & { __NEXT_HYDRATED?: boolean }).__NEXT_HYDRATED === true);
+      await link.click();
+      await expect(page).toHaveURL(href);
+      await expect(page.getByRole('heading', { name: destinationHeading, level: 1, exact: true })).toBeVisible();
+    }
   });
 }
 

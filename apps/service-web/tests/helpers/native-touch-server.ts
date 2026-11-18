@@ -70,6 +70,13 @@ const homeCategory = {
   labelKo: '생산성 도구',
   labelEn: 'Productivity tools',
 };
+const homeRecentProduct = { ...nativeTouchProduct, id: 'home-recent', slug: 'recent-fixture', name: 'Recent Fixture' };
+const homeCategoryProducts = {
+  __typename: 'ProductConnection',
+  totalCount: 1,
+  edges: [{ __typename: 'ProductEdge', node: nativeTouchProduct }],
+  pageInfo: { __typename: 'PageInfo', hasNextPage: false, endCursor: null },
+};
 const delayedCompany = {
   id: 'delayed-company',
   name: 'Delayed Company',
@@ -114,6 +121,12 @@ const productWithDesignatedLink = {
     },
   ],
 };
+
+function getFixtureProduct(slug?: string) {
+  if (slug === homeRecentProduct.slug) return homeRecentProduct;
+  if (slug === productWithDesignatedLink.slug) return productWithDesignatedLink;
+  return nativeTouchProduct;
+}
 
 // Both SSR and browser reads use this loopback-only fixture. No database or external API is involved.
 createServer((request, response) => {
@@ -183,7 +196,7 @@ createServer((request, response) => {
     }
     const companyDelayed = variables?.slug === 'delayed-company' && readsCompany;
     if (companyDelayed) await companyRead.promise;
-    const product = variables?.slug === 'product-link-roles' ? productWithDesignatedLink : nativeTouchProduct;
+    const product = getFixtureProduct(variables?.slug);
     response.end(
       JSON.stringify({
         data: {
@@ -195,10 +208,10 @@ createServer((request, response) => {
                 : product,
           searchProducts: variables?.query === 'section-retry-fixture' ? [nativeTouchProduct] : [],
           categories: [],
+          categoryBySlug: variables?.slug === homeCategory.slug ? homeCategory : null,
+          productsByCategory: homeCategoryProducts,
           rankedProducts: operationName === 'TrendingProductsOnTrendingProductSection' ? [nativeTouchProduct] : [],
-          recentProducts: [
-            { ...nativeTouchProduct, id: 'home-recent', slug: 'recent-fixture', name: 'Recent Fixture' },
-          ],
+          recentProducts: [homeRecentProduct],
         },
       })
     );
