@@ -6,7 +6,9 @@ import { NodeSelection } from '@tiptap/pm/state';
 import { type Editor, useEditorState } from '@tiptap/react';
 import { useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { AdminModalOpenContext } from '../AdminModal';
+import type { ImageCaption } from './CaptionedImage';
 import { ImageAltFields } from './ImageAltFields';
+import { ImageCaptionFields } from './ImageCaptionFields';
 import { LinkFields } from './LinkFields';
 import { applyLink, getCurrentLinkSelection, getLinkSelection, type LinkSelection } from './linkSelection';
 import { MenuItem, menuItemVariants } from './MenuItem';
@@ -17,7 +19,7 @@ type MenuBarProps = {
   onImageUploadingChange?: (uploading: boolean) => void;
 };
 
-type ImageDraft = { file: File } | { selection: NodeSelection };
+type ImageDraft = { kind: 'upload'; file: File } | { kind: 'alt' | 'caption'; selection: NodeSelection };
 
 function getSelectedImage(editor: Editor) {
   const { selection } = editor.state;
@@ -32,6 +34,7 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
   const [imageDraft, setImageDraft] = useState<ImageDraft | null>(null);
   const [linkDraft, setLinkDraft] = useState<LinkSelection | null>(null);
   if (!modalOpen && linkDraft) setLinkDraft(null);
+  if (!modalOpen && imageDraft?.kind === 'caption') setImageDraft(null);
   const [isUploading, setIsUploading] = useState(false);
   const activeUpload = useRef<{
     controller: AbortController;
@@ -127,27 +130,32 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
       return;
     }
 
-    setImageDraft({ file });
+    setImageDraft({ kind: 'upload', file });
   };
+
+  function closeImageFields() {
+    setImageDraft(null);
+    if (!disabled && editor.isEditable) editor.commands.focus();
+  }
+
+  function updateImage(selection: NodeSelection, attributes: { alt: string } | ImageCaption) {
+    if (disabled || !editor.isEditable || activeUpload.current) return;
+    if (editor.state.doc !== selection.$from.doc) {
+      notifications.show({
+        message: '본문에서 이미지를 다시 선택해 주세요.',
+        color: 'red',
+      });
+    } else {
+      editor.chain().setNodeSelection(selection.from).updateAttributes('image', attributes).run();
+    }
+    closeImageFields();
+  }
 
   const confirmImage = async (alt: string) => {
     if (disabled || !editor.isEditable || !imageDraft || activeUpload.current) return;
 
-    if ('selection' in imageDraft) {
-      const { selection } = imageDraft;
-      if (editor.state.doc !== selection.$from.doc) {
-        setImageDraft(null);
-        notifications.show({
-          message: '본문에서 이미지를 다시 선택해 주세요.',
-          color: 'red',
-        });
-        editor.commands.focus();
-        return;
-      }
-      editor.chain().setNodeSelection(selection.from).updateAttributes('image', { alt }).focus().run();
-      setImageDraft(null);
-      return;
-    }
+    if (imageDraft.kind === 'alt') return updateImage(imageDraft.selection, { alt });
+    if (imageDraft.kind !== 'upload') return;
 
     const { file } = imageDraft;
     const pending = {
@@ -303,11 +311,22 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         <button
           type="button"
           className={menuItemVariants()}
+          disabled={toolbarDisabled || !activeFormats.imageSelected}
+          onClick={() => {
+            const selection = getSelectedImage(editor);
+            if (selection) setImageDraft({ kind: 'caption', selection });
+          }}
+        >
+          이미지 캡션·출처 편집
+        </button>
+        <button
+          type="button"
+          className={menuItemVariants()}
           ref={editImageButtonRef}
           disabled={toolbarDisabled || !activeFormats.imageSelected}
           onClick={() => {
             const selection = getSelectedImage(editor);
-            if (selection) setImageDraft({ selection });
+            if (selection) setImageDraft({ kind: 'alt', selection });
           }}
         >
           이미지 대체 텍스트 수정
@@ -330,16 +349,21 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
           onCancel={() => closeLinkEditor(true)}
         />
       )}
-      {imageDraft && (
+      {imageDraft?.kind === 'caption' && (
+        <ImageCaptionFields
+          initial={imageDraft.selection.node.attrs as ImageCaption}
+          disabled={disabled}
+          onApply={attributes => updateImage(imageDraft.selection, attributes)}
+          onCancel={closeImageFields}
+        />
+      )}
+      {imageDraft && imageDraft.kind !== 'caption' && (
         <ImageAltFields
-          adding={'file' in imageDraft}
-          initialAlt={'selection' in imageDraft ? (imageDraft.selection.node.attrs.alt as string | null) : null}
+          adding={imageDraft.kind === 'upload'}
+          initialAlt={imageDraft.kind === 'alt' ? (imageDraft.selection.node.attrs.alt as string | null) : null}
           disabled={disabled || isUploading}
           onConfirm={confirmImage}
-          onCancel={() => {
-            setImageDraft(null);
-            editor.commands.focus();
-          }}
+          onCancel={closeImageFields}
         />
       )}
     </>

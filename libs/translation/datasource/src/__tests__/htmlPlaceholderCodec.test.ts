@@ -4,6 +4,29 @@ import { describe, expect, it } from 'vitest';
 import { assertDocumentStructure, decodeHtml, encodeHtml } from '../codecs/htmlPlaceholderCodec';
 
 describe('Document placeholder fidelity', () => {
+  it('이미지별 캡션과 출처 이름을 번역하고 이미지와 출처 링크의 대응을 보존한다', () => {
+    const source =
+      '<figure data-editor-image=""><img src="/search.png" alt="검색 화면"><figcaption><span>최근 검색어 확인</span> <small><a href="https://example.com/search?a=1&amp;b=2">검색 안내</a></small></figcaption></figure>' +
+      '<figure data-editor-image=""><img src="/settings.png" alt=""><figcaption><small>설정 도움말</small></figcaption></figure>' +
+      '<figure data-editor-image=""><img src="/limits.png"><figcaption><small><a href="HTTPS://example.com/자료" data-image-default-credit="">이미지 출처</a></small></figcaption></figure>';
+    const encoded = encodeHtml(source);
+    const translated = decodeHtml(
+      encoded.encodedText
+        .replace('검색 화면', 'Search screen')
+        .replace('최근 검색어 확인', 'Review recent searches')
+        .replace('검색 안내', 'Search guide')
+        .replace('설정 도움말', 'Settings help')
+        .replace('이미지 출처', 'Image source'),
+      encoded
+    );
+    expect(translated).toBe(
+      '<figure data-editor-image=""><img src="/search.png" alt="Search screen"><figcaption><span>Review recent searches</span> <small><a href="https://example.com/search?a=1&amp;b=2">Search guide</a></small></figcaption></figure>' +
+        '<figure data-editor-image=""><img src="/settings.png" alt=""><figcaption><small>Settings help</small></figcaption></figure>' +
+        '<figure data-editor-image=""><img src="/limits.png"><figcaption><small><a href="HTTPS://example.com/자료" data-image-default-credit="">Image source</a></small></figcaption></figure>'
+    );
+    expect(() => assertDocumentStructure(source, translated)).not.toThrow();
+  });
+
   it('보호할 바이트를 그대로 유지하며 quoted >, comment, entity, brand, URL, 숫자와 리터럴을 번역하지 않는다', () => {
     const source =
       '<p data-note="a > b">한국어 Darun 42 &amp; ⟦HTML_0000⟧ <a href="https://example.com/a?x=1&y=2">링크</a><!-- comment > --></p>';
