@@ -6,7 +6,6 @@ import { RetryLink } from '@apollo/client/link/retry';
 import { productLinkSchemaCompatibility } from '@darun/products-feature';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
-import { descriptionPreconditionLink } from './descriptionPreconditionLink';
 
 const httpErrorLink = new ErrorLink(({ error }) => {
   if (CombinedGraphQLErrors.is(error)) {
@@ -46,10 +45,15 @@ const httpLink = new HttpLink({
   credentials: 'include',
 });
 
-const screenshotRegistrationLink = new ApolloLink((operation, forward) => {
-  const { screenshotRegistrationId, http } = operation.getContext();
+const operationExtensionsLink = new ApolloLink((operation, forward) => {
+  const { screenshotRegistrationId, darunExpectedDescriptionHash, http } = operation.getContext();
   if (screenshotRegistrationId !== undefined) {
     operation.extensions.screenshotRegistrationId = screenshotRegistrationId;
+  }
+  if (darunExpectedDescriptionHash !== undefined) {
+    operation.extensions.darunExpectedDescriptionHash = darunExpectedDescriptionHash;
+  }
+  if (screenshotRegistrationId !== undefined || darunExpectedDescriptionHash !== undefined) {
     operation.setContext({ http: { ...http, includeExtensions: true } });
   }
   return forward(operation);
@@ -73,8 +77,7 @@ const apolloClient = new ApolloClient({
     httpErrorLink,
     createTimeoutLink(),
     productLinkSchemaCompatibility,
-    screenshotRegistrationLink,
-    descriptionPreconditionLink,
+    operationExtensionsLink,
     httpLink,
   ]),
 });

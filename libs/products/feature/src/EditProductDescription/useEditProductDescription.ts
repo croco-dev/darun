@@ -55,31 +55,24 @@ export function normalizeProductDescriptionDraft(draft: string) {
 
 export type UseEditProductDescriptionProps = {
   slug: string;
-  active?: boolean;
   onSaved?: (productId: string) => void;
   onSubmit?: () => void;
   onCancel?: () => void;
 };
 
-export function useEditProductDescription({
-  slug,
-  active = true,
-  onSaved,
-  onSubmit,
-  onCancel,
-}: UseEditProductDescriptionProps) {
-  const [previousForm, setPreviousForm] = useState({ slug, active });
+export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }: UseEditProductDescriptionProps) {
+  const [previousSlug, setPreviousSlug] = useState(slug);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<DescriptionConflict | null>(null);
-  const [acceptedConflict, setAcceptedConflict] = useState(false);
+  const [hasConfirmedDescription, setHasConfirmedDescription] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
   const [loading, setLoading] = useState(false);
-  if (previousForm.slug !== slug || previousForm.active !== active) {
-    setPreviousForm({ slug, active });
-    if (previousForm.slug !== slug) {
-      setConflict(null);
-      setLoading(false);
-    }
-    if (!active || previousForm.slug !== slug) setAcceptedConflict(false);
+  if (previousSlug !== slug) {
+    setPreviousSlug(slug);
+    setConflict(null);
+    setHasConfirmedDescription(false);
+    setReconciling(false);
+    setLoading(false);
   }
   const savePending = useRef(false);
   const currentRefresh = useRef(0);
@@ -99,7 +92,8 @@ export function useEditProductDescription({
     variables: { slug },
   });
   const product = data?.tempProductBySlug;
-  const descriptionReady = Boolean(product && !descriptionError) || conflict !== null || acceptedConflict;
+  const hasCurrentDescription = Boolean(product && !descriptionError);
+  const descriptionReady = hasCurrentDescription || conflict !== null || hasConfirmedDescription;
   const description = product?.description ?? null;
   const formDescription = description ?? '';
   const sourceRef = useRef({ slug, description });
@@ -137,7 +131,7 @@ export function useEditProductDescription({
   );
 
   useEffect(() => {
-    if (!descriptionReady || loading || conflict || acceptedConflict) return;
+    if (!hasCurrentDescription || loading || conflict || reconciling) return;
     const lastObserved = lastObservedSourceRef.current;
     if (lastObserved.slug === slug && lastObserved.description === description) return;
     lastObservedSourceRef.current = { slug, description };
@@ -149,7 +143,7 @@ export function useEditProductDescription({
     } else {
       setHasObservedChange(description !== sourceRef.current.description);
     }
-  }, [slug, description, descriptionReady, loading, conflict, acceptedConflict, getValues, resetDraft]);
+  }, [slug, description, hasCurrentDescription, loading, conflict, reconciling, getValues, resetDraft]);
 
   const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument);
 
@@ -162,7 +156,7 @@ export function useEditProductDescription({
     const earlierReads = targets.flatMap(({ watches }) => watches.filter(watch => watch.getCurrentResult().loading));
     // Older responses can replace the current description in Apollo's shared cache.
     await Promise.allSettled(earlierReads.map(query => query.refetch()));
-    const [editorResults] = await Promise.all(
+    await Promise.all(
       targets.map(({ query, watches }) => {
         const reads: Promise<unknown>[] = watches.length
           ? watches.map(watch => watch.refetch())
@@ -170,16 +164,16 @@ export function useEditProductDescription({
         return Promise.allSettled(reads);
       })
     );
-    return editorResults.some(result => result.status === 'fulfilled');
   };
 
   const reconcileDescriptionViews = () => {
     const productSession = productSessionRef.current;
     const refresh = ++currentRefresh.current;
-    setAcceptedConflict(true);
-    void refreshDescriptionViews().then(refreshed => {
-      if (refreshed && currentRefresh.current === refresh && productSessionRef.current === productSession) {
-        setAcceptedConflict(false);
+    setHasConfirmedDescription(true);
+    setReconciling(true);
+    void refreshDescriptionViews().then(() => {
+      if (currentRefresh.current === refresh && productSessionRef.current === productSession) {
+        setReconciling(false);
       }
     });
   };
