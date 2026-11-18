@@ -37,7 +37,7 @@ function checkMigrations(sqlFiles: Record<string, string>) {
 }
 
 describe('check:migrations', () => {
-  it('rejects an unregistered data migration before schema generation', () => {
+  it('미등록 데이터 migration이 있으면 스키마 생성 전에 실패한다', () => {
     const result = checkMigrations({
       '0000_baseline.sql': 'CREATE TABLE example (id integer);',
       '0001_backfill.sql': 'SELECT 1;',
@@ -50,16 +50,16 @@ describe('check:migrations', () => {
 
   it.each<{ problem: string; files: Record<string, string>; error: string }>([
     {
-      problem: 'missing',
+      problem: '없는',
       files: {},
       error: 'Migration journal references missing SQL: 0000_baseline.sql.',
     },
     {
-      problem: 'empty',
+      problem: '비어 있는',
       files: { '0000_baseline.sql': ' \n' },
       error: 'Migration SQL is empty: 0000_baseline.sql.',
     },
-  ])('rejects a journal entry with $problem SQL', ({ files, error }) => {
+  ])('journal이 가리키는 SQL이 $problem 경우 실패한다', ({ files, error }) => {
     const result = checkMigrations(files);
 
     expect(result.status).toBe(1);
@@ -67,7 +67,7 @@ describe('check:migrations', () => {
     expect(result.stdout).not.toContain('No schema changes');
   });
 
-  it('continues to schema generation when the journal and SQL agree', () => {
+  it('journal과 SQL이 일치하면 스키마 생성을 계속한다', () => {
     const result = checkMigrations({ '0000_baseline.sql': 'SELECT 1;' });
 
     expect(result.status).toBe(0);

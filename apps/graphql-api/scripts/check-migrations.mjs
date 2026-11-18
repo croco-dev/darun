@@ -17,7 +17,9 @@ const migrationFiles = new Set(
     .map(file => file.name)
 );
 const missingFiles = [...journalFiles].filter(file => !migrationFiles.has(file));
-const unregisteredFiles = [...migrationFiles].filter(file => !journalFiles.has(file)).sort();
+const unregisteredFiles = [...migrationFiles]
+  .filter(file => !journalFiles.has(file))
+  .sort((left, right) => left.localeCompare(right));
 const fileErrors = [];
 if (missingFiles.length > 0) {
   fileErrors.push(`Migration journal references missing SQL: ${missingFiles.join(', ')}.`);
