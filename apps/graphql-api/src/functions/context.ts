@@ -1,3 +1,4 @@
+import type { ApolloServerPlugin } from '@apollo/server';
 import { GetAccount } from '@darun/accounts-domain';
 import { GraphQLError } from 'graphql';
 
@@ -8,6 +9,14 @@ export type GraphQLContext = {
   getUserId: () => Promise<string | undefined>;
   getUserIdOrThrow: () => Promise<string>;
   getRoles: () => Promise<string[]>;
+};
+
+// Apollo supplies a separate context for each operation, including operations in one HTTP batch.
+export const screenshotRegistrationPlugin: ApolloServerPlugin = {
+  async requestDidStart({ request, contextValue }) {
+    const screenshotRegistrationId = request.extensions?.['screenshotRegistrationId'];
+    if (screenshotRegistrationId !== undefined) Object.assign(contextValue, { screenshotRegistrationId });
+  },
 };
 
 export function createGraphQLContext({

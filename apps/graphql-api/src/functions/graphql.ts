@@ -11,7 +11,7 @@ import { Container } from 'typedi';
 import { resolvers } from '../app/resolvers';
 import { createPostgresConnection } from '../config/database';
 import { IS_LOCAL } from '../config/environment';
-import { createGraphQLContext } from './context';
+import { createGraphQLContext, screenshotRegistrationPlugin } from './context';
 
 export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
   createLambdaHandler(
@@ -26,7 +26,7 @@ export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
       },
       config: {
         playground: IS_LOCAL,
-        plugins: [createSentryApolloLogPlugin()],
+        plugins: [createSentryApolloLogPlugin(), screenshotRegistrationPlugin],
       },
     }),
     {

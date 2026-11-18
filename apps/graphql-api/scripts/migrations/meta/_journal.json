@@ -176,6 +176,13 @@
       "when": 1794974743141,
       "tag": "0024_alternative_product_exclusions",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795010772714,
+      "tag": "0025_product_screenshot_registration",
+      "breakpoints": true
     }
   ]
 }

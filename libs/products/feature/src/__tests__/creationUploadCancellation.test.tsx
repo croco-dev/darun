@@ -40,6 +40,7 @@ function deferred<T>() {
 function fixture(holdWrites = false, failures = 0) {
   const operations: string[] = [];
   const savedScreenshotInputs: Record<string, unknown>[] = [];
+  const attemptedScreenshotInputs: Record<string, unknown>[] = [];
   const writeUrls: string[] = [];
   const completeWrites: (() => void)[] = [];
   const client = new ApolloClient({
@@ -48,6 +49,12 @@ function fixture(holdWrites = false, failures = 0) {
       operation =>
         new Observable(observer => {
           operations.push(operation.operationName ?? '');
+          if (operation.operationName === 'AddProductScreenshotOnNewProductScreenshotForm') {
+            attemptedScreenshotInputs.push({
+              ...operation.variables.input,
+              requestId: operation.getContext().screenshotRegistrationId,
+            });
+          }
           const complete = () => {
             if (operation.operationName !== 'GetProductScreenshotsOnDetailSection') {
               writeUrls.push(operation.variables.input.logoUrl ?? operation.variables.input.imageUrl);
@@ -88,6 +95,7 @@ function fixture(holdWrites = false, failures = 0) {
   return {
     operations,
     savedScreenshotInputs,
+    attemptedScreenshotInputs,
     writeUrls,
     completeWrites,
     wrapper: ({ children }: { children: React.ReactNode }) => (
@@ -105,6 +113,37 @@ const productValues = {
   file,
 };
 const screenshotValues = { imageAlt: '검색 화면', file };
+
+it('등록 응답 유실 뒤 같은 스크린샷 입력은 같은 요청으로 재전송한다', async () => {
+  upload.mockResolvedValue('https://fixture.invalid/committed.png');
+  const f = fixture(false, 1);
+  const { result } = renderHook(() => useNewProductScreenshotForm(props), { wrapper: f.wrapper });
+  act(() => result.current.form.setValues(screenshotValues));
+  await act(async () => result.current.submit(result.current.form.getValues()));
+  expect(result.current.form.getValues()).toMatchObject(screenshotValues);
+  expect(navigate).not.toHaveBeenCalled();
+  await act(async () => result.current.submit(result.current.form.getValues()));
+  expect(f.attemptedScreenshotInputs[0]?.requestId).toEqual(expect.any(String));
+  expect(f.attemptedScreenshotInputs).toHaveLength(2);
+  expect(f.attemptedScreenshotInputs[1]).toEqual(f.attemptedScreenshotInputs[0]);
+  expect(upload).toHaveBeenCalledOnce();
+  expect(navigate).toHaveBeenCalledExactlyOnceWith('/products/parent-app');
+});
+
+it('스크린샷 내용을 바꾸면 새 요청을 쓰고 처음 내용으로 돌아가면 처음 요청을 재사용한다', async () => {
+  upload.mockResolvedValue('https://fixture.invalid/committed.png');
+  const f = fixture(false, 2);
+  const { result } = renderHook(() => useNewProductScreenshotForm(props), { wrapper: f.wrapper });
+  for (const imageAlt of ['검색 화면', '다른 설명', '  검색 화면  ']) {
+    act(() => result.current.form.setValues({ ...screenshotValues, imageAlt }));
+    await act(async () => result.current.submit(result.current.form.getValues()));
+  }
+  const [original, changed, replay] = f.attemptedScreenshotInputs;
+  expect(changed?.requestId).not.toBe(original?.requestId);
+  expect(replay).toEqual(original);
+  expect(upload).toHaveBeenCalledOnce();
+});
+
 const cases = [
   {
     name: 'product',

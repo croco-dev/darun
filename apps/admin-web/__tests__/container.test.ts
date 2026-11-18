@@ -1,9 +1,37 @@
 import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { AddProductScreenshotOnNewProductScreenshotFormDocument } from '@darun/provider-graphql';
 import { describe, expect, it, vi } from 'vitest';
 import { container, createAuthService, shouldRetryOperation } from '../app/container';
 
 describe('admin-web container', () => {
+  it('스크린샷 등록 ID를 구버전 API도 받을 수 있는 GraphQL 요청 확장에 넣는다', async () => {
+    const fetch = vi.fn(async (_uri: unknown, options: RequestInit) => {
+      const payload = JSON.parse(options.body as string);
+      expect(payload.variables).toEqual({
+        slug: 'fixture',
+        input: { imageUrl: 'https://fixture.invalid/screenshot.png', imageAlt: '검색 결과' },
+      });
+      expect(payload.extensions?.screenshotRegistrationId).toBe('44e604c9-d1f9-4958-a311-50b05ed94437');
+      return Response.json({ data: { addProductScreenshot: { product: { id: 'fixture', screenshots: [] } } } });
+    });
+    vi.stubGlobal('fetch', fetch);
+    try {
+      const result = await container.apolloClient.mutate({
+        mutation: AddProductScreenshotOnNewProductScreenshotFormDocument,
+        variables: {
+          slug: 'fixture',
+          input: { imageUrl: 'https://fixture.invalid/screenshot.png', imageAlt: '검색 결과' },
+        },
+        context: { screenshotRegistrationId: '44e604c9-d1f9-4958-a311-50b05ed94437' },
+      });
+      expect(result.data?.addProductScreenshot.product?.id).toBe('fixture');
+      expect(fetch).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('container exports stable singleton instances', () => {
     expect(container.authService).toBe(container.authService);
     expect(container.httpLink).toBe(container.httpLink);

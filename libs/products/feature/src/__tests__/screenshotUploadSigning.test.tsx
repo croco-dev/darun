@@ -55,9 +55,12 @@ describe('스크린샷 파일명과 업로드 서명', () => {
   ])('%s를 실제 서명 검증을 거쳐 같은 public_id로 업로드한다', async (filename, slug, expectedFolder) => {
     vi.stubEnv('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME', 'fixture-cloud');
     vi.stubEnv('NEXT_PUBLIC_CLOUDINARY_API_KEY', 'fixture-key');
+    const requestIds = ['6b166bd6-27b2-4d63-bfd3-086c32ea01d3', '9ed5a3ba-8012-4b9a-a3e0-6a84d74371af'] as const;
     vi.spyOn(crypto, 'randomUUID')
       .mockReturnValueOnce('01234567-89ab-4cde-8012-3456789abcde')
-      .mockReturnValueOnce('fedcba98-7654-4321-8012-3456789abcde');
+      .mockReturnValueOnce(requestIds[0])
+      .mockReturnValueOnce('fedcba98-7654-4321-8012-3456789abcde')
+      .mockReturnValueOnce(requestIds[1]);
 
     const signatures: { uploadFolder: string; displayName: string }[] = [];
     const signer = new SignImageUpload(
@@ -73,7 +76,7 @@ describe('스크린샷 파일명과 업로드 서명', () => {
       },
       { findOneBySlug: async requested => (requested === 'My_Product' ? { id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' } : null) }
     );
-    const savedInputs: { imageUrl: string; imageAlt: string }[] = [];
+    const savedInputs: { imageUrl: string; imageAlt: string; requestId: string }[] = [];
     const client = new ApolloClient({
       cache: new InMemoryCache(),
       link: new ApolloLink(
@@ -88,7 +91,10 @@ describe('스크린샷 파일명과 업로드 서명', () => {
                     },
                   });
                 } else if (operation.operationName === 'AddProductScreenshotOnNewProductScreenshotForm') {
-                  savedInputs.push(operation.variables.input);
+                  savedInputs.push({
+                    ...operation.variables.input,
+                    requestId: operation.getContext().screenshotRegistrationId,
+                  });
                   observer.next({
                     data: {
                       addProductScreenshot: {
@@ -159,6 +165,7 @@ describe('스크린샷 파일명과 업로드 서명', () => {
       expect(savedInputs[index]).toMatchObject({
         imageUrl: 'https://fixture.invalid/screen.png',
         imageAlt: '앱의 검색 화면',
+        requestId: requestIds[index],
       });
     }
     expect(file.name).toBe(filename);

@@ -21,6 +21,7 @@ vi.mock('type-graphql', () => {
     Args: () => methodDecorator,
     ArgsType: () => () => {},
     Authorized: methodDecorator,
+    Ctx: () => () => {},
     Field: () => () => {},
     FieldResolver: methodDecorator,
     GraphQLISODateTime: class GraphQLISODateTime {},
@@ -161,22 +162,25 @@ describe('ProductMediaMutationResolver', () => {
       const { resolver, getProduct, addProductScreenshot } = createResolver();
       const product = createProduct();
       getProduct.execute.mockResolvedValue(product);
-      addProductScreenshot.execute.mockResolvedValue(undefined);
+      const screenshot = { id: 'screenshot-1' };
+      addProductScreenshot.execute.mockResolvedValue(screenshot);
 
-      const result = await resolver.addProductScreenshot('test', {
-        imageUrl: 'https://example.com/img.png',
-        imageAlt: '이미지',
-      });
+      const result = await resolver.addProductScreenshot(
+        'test',
+        { imageUrl: 'https://example.com/img.png', imageAlt: '이미지' },
+        '44e604c9-d1f9-4958-a311-50b05ed94437'
+      );
 
       expect(addProductScreenshot.execute).toHaveBeenCalledWith({
         productId: 'prod-1',
+        requestId: '44e604c9-d1f9-4958-a311-50b05ed94437',
         imageUrl: 'https://example.com/img.png',
         imageAlt: '이미지',
         title: null,
         platform: null,
         screenType: null,
       });
-      expect(result).toEqual({ product });
+      expect(result).toEqual({ product, screenshot });
     });
   });
 
