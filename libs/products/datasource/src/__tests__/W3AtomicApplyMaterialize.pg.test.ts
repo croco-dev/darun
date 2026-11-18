@@ -1269,10 +1269,10 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       let edit!: Promise<unknown>;
       try {
         await db.transaction(async tx => {
-          await new PostgresqlProductRepository(tx as never).updateById(changing.id, value => {
-            value.update({ categoryIds: change === 'link' ? [category.id] : [] });
-            return value;
-          });
+          await new PostgresqlProductRepository(tx as never).replaceCategoryIds(
+            changing.id,
+            change === 'link' ? [category.id] : []
+          );
           const [holder] = await tx.execute(querySql`select pg_backend_pid() as pid`);
           edit = new PostgresqlCategoryRepository(writerDb as never).updateById(category.id, value => {
             value.labelKo = '확정된 새 분류';
@@ -1320,10 +1320,7 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
           return value;
         });
         const [holder] = await tx.execute(querySql`select pg_backend_pid() as pid`);
-        link = new PostgresqlProductRepository(writerDb as never).updateById(product.id, value => {
-          value.update({ categoryIds: [category.id] });
-          return value;
-        });
+        link = new PostgresqlProductRepository(writerDb as never).replaceCategoryIds(product.id, [category.id]);
         await waitForMembershipGate(Number(holder!.pid));
         expect((await syncState([product.id])).products).toEqual(before.products);
       });
