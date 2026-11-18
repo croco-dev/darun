@@ -9,10 +9,11 @@ import {
 import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
 import { createGraphQLDescriptionPrecondition } from '../src/app/graphqlDescriptionPrecondition';
 import { createGraphQLDiagnostics } from '../src/app/graphqlDiagnostics';
+import { screenshotRegistrationPlugin } from '../src/functions/context';
 
 it.each([false, true])('새 요청은 구·신 API에서 처리되고 배치 내 편집 기준은 요청마다 격리된다 (%s)', async enabled => {
   const server = new ApolloServer({
-    typeDefs: 'type Query { health: Boolean } type Mutation { save: String }',
+    typeDefs: 'type Query { health: Boolean } type Mutation { save: String, screenshotRegistration: String }',
     resolvers: {
       Mutation: {
         save: (_root: unknown, _args: unknown, { expectedDescriptionHash }: { expectedDescriptionHash?: unknown }) => {
@@ -20,12 +21,19 @@ it.each([false, true])('새 요청은 구·신 API에서 처리되고 배치 내
           if (expectedDescriptionHash === undefined) return 'none';
           return typeof expectedDescriptionHash === 'string' ? expectedDescriptionHash : 'invalid precondition';
         },
+        screenshotRegistration: (
+          _root: unknown,
+          _args: unknown,
+          { screenshotRegistrationId }: { screenshotRegistrationId?: unknown }
+        ) => (typeof screenshotRegistrationId === 'string' ? screenshotRegistrationId : 'none'),
       },
     },
     allowBatchedHttpRequests: true,
-    plugins: enabled ? [createGraphQLDescriptionPrecondition()] : [],
+    plugins: enabled
+      ? [createGraphQLDescriptionPrecondition(), screenshotRegistrationPlugin]
+      : [screenshotRegistrationPlugin],
   });
-  const query = 'mutation { save }';
+  const query = 'mutation { save screenshotRegistration }';
   const hash = 'a'.repeat(64);
   try {
     await server.start();
@@ -38,7 +46,7 @@ it.each([false, true])('새 요청은 구·신 API에서 처리되고 배치 내
         body: [
           { query, extensions: { darunExpectedDescriptionHash: hash } },
           { query, extensions: { darunExpectedDescriptionHash: { malformed: true } } },
-          { query },
+          { query, extensions: { screenshotRegistrationId: 'test-registration-id' } },
           { query, extensions: { darunExpectedDescriptionHash: null } },
         ],
       },
@@ -46,10 +54,10 @@ it.each([false, true])('새 요청은 구·신 API에서 처리되고 배치 내
     if (response.body.kind !== 'complete') throw new Error('Expected a complete batch response');
     expect(response.status ?? 200).toBe(200);
     expect(JSON.parse(response.body.string)).toEqual([
-      { data: { save: enabled ? hash : 'none' } },
-      { data: { save: enabled ? 'invalid precondition' : 'none' } },
-      { data: { save: 'none' } },
-      { data: { save: enabled ? 'absent description' : 'none' } },
+      { data: { save: enabled ? hash : 'none', screenshotRegistration: 'none' } },
+      { data: { save: enabled ? 'invalid precondition' : 'none', screenshotRegistration: 'none' } },
+      { data: { save: 'none', screenshotRegistration: 'test-registration-id' } },
+      { data: { save: enabled ? 'absent description' : 'none', screenshotRegistration: 'none' } },
     ]);
   } finally {
     await server.stop();

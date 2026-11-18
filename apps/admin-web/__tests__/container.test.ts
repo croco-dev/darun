@@ -1,6 +1,9 @@
 import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
-import { AddProductScreenshotOnNewProductScreenshotFormDocument } from '@darun/provider-graphql';
+import {
+  AddProductScreenshotOnNewProductScreenshotFormDocument,
+  EditProductOnEditProductDescriptionDocument,
+} from '@darun/provider-graphql';
 import { describe, expect, it, vi } from 'vitest';
 import { container, createAuthService, shouldRetryOperation } from '../app/container';
 
@@ -13,6 +16,7 @@ describe('admin-web container', () => {
         input: { imageUrl: 'https://fixture.invalid/screenshot.png', imageAlt: '검색 결과' },
       });
       expect(payload.extensions?.screenshotRegistrationId).toBe('44e604c9-d1f9-4958-a311-50b05ed94437');
+      expect(payload.extensions?.darunExpectedDescriptionHash).toBeUndefined();
       return Response.json({ data: { addProductScreenshot: { product: { id: 'fixture', screenshots: [] } } } });
     });
     vi.stubGlobal('fetch', fetch);
@@ -26,6 +30,28 @@ describe('admin-web container', () => {
         context: { screenshotRegistrationId: '44e604c9-d1f9-4958-a311-50b05ed94437' },
       });
       expect(result.data?.addProductScreenshot.product?.id).toBe('fixture');
+      expect(fetch).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('기준 본문이 없는 소개 편집은 null 기준을 요청 확장에 전달한다', async () => {
+    const fetch = vi.fn(async (_uri: unknown, options: RequestInit) => {
+      const payload = JSON.parse(options.body as string);
+      expect(payload.variables).toEqual({ slug: 'fixture', input: { description: '<p>새 소개</p>' } });
+      expect(payload.extensions?.darunExpectedDescriptionHash).toBeNull();
+      expect(payload.extensions?.screenshotRegistrationId).toBeUndefined();
+      return Response.json({ data: { editProduct: { product: { id: 'fixture', description: '<p>새 소개</p>' } } } });
+    });
+    vi.stubGlobal('fetch', fetch);
+    try {
+      const result = await container.apolloClient.mutate({
+        mutation: EditProductOnEditProductDescriptionDocument,
+        variables: { slug: 'fixture', input: { description: '<p>새 소개</p>' } },
+        context: { darunExpectedDescriptionHash: null },
+      });
+      expect(result.data?.editProduct.product.description).toBe('<p>새 소개</p>');
       expect(fetch).toHaveBeenCalledOnce();
     } finally {
       vi.unstubAllGlobals();
