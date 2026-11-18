@@ -2,7 +2,7 @@ export { ProductCard } from './ProductCard';
 export { CompareButton } from './CompareButton';
 export { ProductInformation } from './ProductInformation';
 export { ProductPhotos } from './ProductPhotos';
-export { ProductDescription } from './ProductDescription';
+export { ProductDescription, ProductDescriptionContent } from './ProductDescription';
 export { ProductTableOfContent } from './ProductTableOfContent';
 export { ProductUserAction } from './ProductUserAction';
 export { RecentProductList } from './RecentProductList';

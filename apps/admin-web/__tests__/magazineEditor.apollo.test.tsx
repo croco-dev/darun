@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MagazineEditSection } from '../features/magazines/MagazineEditSection/MagazineEditSection';
+import { installPreviewDialog, openDraftPreview } from './fixtures/draftPreview';
 
 const { upload } = vi.hoisted(() => ({ upload: vi.fn() }));
 vi.mock('@darun/utils-image-upload', () => ({
@@ -101,6 +102,44 @@ const flush = async (fn: () => void) => {
 };
 
 describe('magazine draft editor with real Apollo operations', () => {
+  it('미발행 글의 편집값을 미리 본 뒤 저장 요청 없이 초안을 유지한다', async () => {
+    const restoreDialog = installPreviewDialog();
+    try {
+      const fixture = setup();
+      const query = await fixture.take('MagazineOnAdminEditor');
+      await flush(() => query.resolve({ tempMagazineBySlug: draft }));
+      const title = screen.getByLabelText<HTMLInputElement>('글 제목');
+      const summary = screen.getByLabelText<HTMLInputElement>('한 줄 요약');
+      const editor = screen.getByRole<HTMLTextAreaElement>('textbox', { name: '본문' });
+      const content = '<h2>새 본문</h2><table><tbody><tr><th>기능</th><td>검색</td></tr></tbody></table>';
+      fireEvent.change(title, { target: { value: '저장 전 제목' } });
+      fireEvent.change(summary, { target: { value: '저장 전 요약' } });
+      fireEvent.change(editor, { target: { value: content } });
+
+      const { iframe, body } = openDraftPreview();
+      expect(iframe.width).toBe('390');
+      expect(body.getByRole('heading', { level: 1, name: '저장 전 제목' })).toBeDefined();
+      expect(body.getByText('저장 전 요약')).toBeDefined();
+      expect(body.getByRole('heading', { level: 2, name: '새 본문' })).toBeDefined();
+      expect(body.getByRole('cell', { name: '검색' })).toBeDefined();
+      expect(body.queryByRole('time')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: '1280px' }));
+      expect(iframe.width).toBe('1280');
+      fireEvent.click(screen.getByRole('button', { name: '미리보기 닫기' }));
+
+      expect(screen.queryByTitle('공개 화면')).toBeNull();
+      expect(screen.queryByRole('link', { name: '공개 글 보기' })).toBeNull();
+      expect(title.value).toBe('저장 전 제목');
+      expect(summary.value).toBe('저장 전 요약');
+      expect(editor.value).toBe(content);
+      expect(screen.getByText(/저장하지 않은 변경사항/)).toBeDefined();
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: '발행' }).disabled).toBe(true);
+      expect(fixture.requests).toEqual([]);
+    } finally {
+      restoreDialog();
+    }
+  });
+
   it.each([null, '2026-10-25T10:00:00Z'])(
     '배경만 교체하고 다시 열어도 저장한 배경을 표시한다 (발행일 %s)',
     async publishedAt => {

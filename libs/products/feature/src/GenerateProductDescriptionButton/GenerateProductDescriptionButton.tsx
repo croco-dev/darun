@@ -78,12 +78,14 @@ export function GenerateProductDescriptionButton({
             </div>
           )}
 
-          <div
-            className="max-h-[60vh] overflow-y-auto rounded-lg border border-dark-200 bg-surface-50 p-4 text-sm text-dark-800"
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(candidateJob?.candidateHtml ?? ''),
-            }}
-          />
+          {isPreviewOpen && (
+            <div
+              className="max-h-[60vh] overflow-y-auto rounded-lg border border-dark-200 bg-surface-50 p-4 text-sm text-dark-800"
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(candidateJob?.candidateHtml ?? ''),
+              }}
+            />
+          )}
 
           <div className="flex justify-end gap-2 pt-2 border-t border-dark-200">
             <Button

@@ -4,6 +4,7 @@ import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useApolloClient, useMutation, useQuery } from '@apollo/client/react';
 import { getMagazineBackgroundFileError, MAGAZINE_BACKGROUND_FILE_ACCEPT } from '@darun/magazines-feature';
+import { MagazineArticle } from '@darun/magazines-shell';
 import {
   MagazineOnAdminEditorDocument,
   EditMagazineOnAdminEditorDocument,
@@ -26,6 +27,7 @@ import {
 import { useImageUpload } from '@darun/utils-image-upload';
 import { Link } from '@darun/utils-router';
 import { useRef, useState } from 'react';
+import { DraftPreview } from '../../content/DraftPreview';
 
 gql`
   query MagazineOnAdminEditor($slug: String!) {
@@ -421,6 +423,16 @@ function MagazineEditor({ magazine }: { magazine: Magazine }) {
         <Button as={Link} href="/magazines" variant="contained" color="secondary" disabled={!!busy}>
           목록
         </Button>
+        <DraftPreview disabled={!!busy || uploading}>
+          <MagazineArticle
+            title={values.title}
+            summary={values.summary}
+            body={values.content}
+            badge="다른 매거진"
+            contentLabel="매거진 본문"
+            emptyLabel="아직 본문이 없습니다."
+          />
+        </DraftPreview>
         <Button type="submit" variant="contained" color="primary" disabled={!!busy || uploading || !dirty || conflict}>
           {busy === 'save' ? '저장 중...' : '저장'}
         </Button>
