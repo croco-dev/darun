@@ -145,7 +145,7 @@ it('rejects an unsafe or incomplete address and ignores cancelled changes', () =
   for (const value of ['javascript:alert(1)', 'https:example.com', 'https://', 'https://example.com/a\u0000b']) {
     updateUrl(dialog, value);
     fireEvent.keyDown(address, { key: 'Enter' });
-    expect(dialog.getByRole('alert').textContent).toContain('http://');
+    expect(dialog.getByRole('alert').textContent).toContain('HTTP 또는 HTTPS');
   }
   fireEvent.keyDown(address, { key: 'Escape' });
   expect(screen.queryByRole('dialog')).toBeNull();

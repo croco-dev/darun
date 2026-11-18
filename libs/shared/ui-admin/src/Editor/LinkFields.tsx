@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useId, useRef, useState } from 'react';
+import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 import { AdminInput } from '../AdminInput';
 import { isCompleteLinkAddress } from './linkSelection';
 import { menuItemVariants } from './MenuItem';
@@ -13,14 +13,14 @@ type LinkFieldsProps = {
   onCancel: () => void;
 };
 
-export function LinkFields({ initialText, initialHref, disabled, onApply, onCancel }: LinkFieldsProps) {
+export function LinkFields({ initialText, initialHref, disabled, onApply, onCancel }: Readonly<LinkFieldsProps>) {
   const [text, setText] = useState(initialText);
   const [href, setHref] = useState(initialHref ?? '');
   const [error, setError] = useState<{
     message: string;
     field?: 'text' | 'href';
   } | null>(null);
-  const fieldsRef = useRef<HTMLDivElement>(null);
+  const fieldsRef = useRef<HTMLDialogElement>(null);
   const textInput = useRef<HTMLInputElement>(null);
   const hrefInput = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -62,7 +62,7 @@ export function LinkFields({ initialText, initialHref, disabled, onApply, onCanc
     if (!isCompleteLinkAddress(address)) {
       setError({
         field: 'href',
-        message: 'http:// 또는 https://로 시작하는 전체 주소를 입력해 주세요.',
+        message: '프로토콜(HTTP 또는 HTTPS)과 도메인이 포함된 전체 웹 주소를 입력해 주세요.',
       });
       hrefInput.current?.focus();
       return;
@@ -71,18 +71,20 @@ export function LinkFields({ initialText, initialHref, disabled, onApply, onCanc
     if (message) setError({ message });
   }
 
+  function submitOnEnter(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    submit();
+  }
+
   return (
-    <div ref={fieldsRef} role="dialog" aria-labelledby={titleId}>
-      <fieldset
-        disabled={disabled}
-        className="grid min-w-0 gap-3 rounded-lg border border-dark-200 p-3 text-sm"
-        onKeyDown={event => {
-          if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement) || event.nativeEvent.isComposing)
-            return;
-          event.preventDefault();
-          submit();
-        }}
-      >
+    <dialog
+      open
+      ref={fieldsRef}
+      aria-labelledby={titleId}
+      className="static m-0 w-full max-w-none bg-transparent p-0 text-inherit"
+    >
+      <fieldset disabled={disabled} className="grid min-w-0 gap-3 rounded-lg border border-dark-200 p-3 text-sm">
         <legend id={titleId} className="px-1 font-medium">
           본문 링크 편집
         </legend>
@@ -91,6 +93,7 @@ export function LinkFields({ initialText, initialHref, disabled, onApply, onCanc
           <AdminInput
             ref={textInput}
             value={text}
+            onKeyDown={submitOnEnter}
             aria-invalid={error?.field === 'text' || undefined}
             aria-describedby={error?.field === 'text' ? errorId : undefined}
             onChange={event => {
@@ -105,6 +108,7 @@ export function LinkFields({ initialText, initialHref, disabled, onApply, onCanc
             ref={hrefInput}
             inputMode="url"
             value={href}
+            onKeyDown={submitOnEnter}
             aria-invalid={error?.field === 'href' || undefined}
             aria-describedby={error?.field === 'href' ? errorId : undefined}
             onChange={event => {
@@ -139,6 +143,6 @@ export function LinkFields({ initialText, initialHref, disabled, onApply, onCanc
           </button>
         </div>
       </fieldset>
-    </div>
+    </dialog>
   );
 }

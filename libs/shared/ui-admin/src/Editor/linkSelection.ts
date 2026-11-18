@@ -80,28 +80,27 @@ export function applyLink(editor: Editor, draft: LinkSelection, change: { text: 
   const { from, to, selection, storedMarks, mark } = draft;
   const { schema, tr } = editor.state;
   const link = schema.marks.link;
-  const labelChanged = change !== null && change.text !== draft.text;
+  const text = change?.text ?? draft.text;
+  const labelChanged = text !== draft.text;
+  const nextLink = change && link.create({ ...mark?.attrs, href: change.href });
 
   // Match the link extension's commands: explicit link edits must not trigger auto-linking.
   tr.setMeta('preventAutolink', true);
-  if (!change) {
+  if (!nextLink) {
     tr.removeMark(from, to, link);
+  } else if (!labelChanged) {
+    tr.addMark(from, to, nextLink);
   } else {
-    const nextLink = link.create({ ...mark?.attrs, href: change.href });
-    if (!labelChanged) {
-      tr.addMark(from, to, nextLink);
-    } else {
-      const $from = tr.doc.resolve(from);
-      let marks = from === to ? (storedMarks ?? $from.marks()) : ($from.nodeAfter?.marks ?? []);
-      tr.doc.nodesBetween(from, to, node => {
-        if (node.isText) marks = marks.filter(candidate => candidate.isInSet(node.marks));
-      });
-      tr.replaceWith(from, to, schema.text(change.text, nextLink.addToSet(marks)));
-    }
+    const $from = tr.doc.resolve(from);
+    let marks = from === to ? (storedMarks ?? $from.marks()) : ($from.nodeAfter?.marks ?? []);
+    tr.doc.nodesBetween(from, to, node => {
+      if (node.isText) marks = marks.filter(candidate => candidate.isInSet(node.marks));
+    });
+    tr.replaceWith(from, to, schema.text(text, nextLink.addToSet(marks)));
   }
 
   const nextSelection = labelChanged
-    ? TextSelection.create(tr.doc, from + change.text.length)
+    ? TextSelection.create(tr.doc, from + text.length)
     : selection.map(tr.doc, tr.mapping);
   tr.setSelection(nextSelection);
   const outsideLink = !change || labelChanged || selection.from === from || selection.from === to;
