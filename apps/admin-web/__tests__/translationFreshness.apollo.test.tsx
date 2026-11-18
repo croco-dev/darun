@@ -5,11 +5,14 @@ import { EditProductInfo } from '@darun/products-feature';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
+import { webcrypto } from 'node:crypto';
 import { TranslationRecovery } from '../features/llm-jobs/TranslationRecovery';
 import { ProductDetailDescriptionSection } from '../features/products/ProductDetailDescriptionSection/ProductDetailDescriptionSection';
 import { ProductDetailFeatureSection } from '../features/products/ProductDetailFeatureSection/ProductDetailFeatureSection';
 import { ProductDetailInfoSection } from '../features/products/ProductDetailInfoSection/ProductDetailInfoSection';
 import { installPreviewDialog, openDraftPreview } from './fixtures/draftPreview';
+
+vi.stubGlobal('crypto', webcrypto);
 
 vi.mock('@darun/products-feature', async () => ({
   ...(await import('../../../libs/products/feature/src/EditProductInfo/EditProductInfo')),

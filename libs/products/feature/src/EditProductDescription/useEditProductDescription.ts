@@ -35,6 +35,16 @@ type FormValues = {
   description?: string;
 };
 
+type DescriptionConflict = { status: 'loading' | 'failed' } | { status: 'ready'; description: string | null };
+
+async function hashDescription(description: string | null): Promise<string | null> {
+  if (description === null) return null;
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) throw new Error('보안 연결로 다시 접속한 뒤 저장해 주세요.');
+  const digest = await subtle.digest('SHA-256', new TextEncoder().encode(description));
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
 export function normalizeProductDescriptionDraft(draft: string) {
   if (!draft.trim()) return '';
   if (typeof DOMParser === 'undefined') return draft;
@@ -51,8 +61,16 @@ export type UseEditProductDescriptionProps = {
 };
 
 export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }: UseEditProductDescriptionProps) {
+  const [previousSlug, setPreviousSlug] = useState(slug);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [conflictRefresh, setConflictRefresh] = useState<'loading' | 'failed' | null>(null);
+  const [conflict, setConflict] = useState<DescriptionConflict | null>(null);
+  const [loading, setLoading] = useState(false);
+  if (previousSlug !== slug) {
+    setPreviousSlug(slug);
+    setConflict(null);
+    setLoading(false);
+  }
+  const savePending = useRef(false);
   const imageUploadPending = useRef(false);
   const [imageUploading, setImageUploading] = useState(false);
   const onImageUploadingChange = useCallback((uploading: boolean) => {
@@ -75,10 +93,13 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const sourceRef = useRef({ slug, description });
   const lastObservedSourceRef = useRef({ slug, description });
   const productSessionRef = useRef({ slug });
-  const [hasServerChange, setHasServerChange] = useState(false);
+  const [hasObservedChange, setHasObservedChange] = useState(false);
+  const hasServerChange = conflict !== null || hasObservedChange;
+  const latestDescription = conflict?.status === 'ready' ? conflict.description : description;
 
   useEffect(
     () => () => {
+      savePending.current = false;
       productSessionRef.current = { slug };
     },
     [slug]
@@ -90,31 +111,35 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   });
   const { setInitialValues, setValues, resetDirty, getValues } = form;
 
-  const acceptLatestDescription = useCallback(() => {
-    sourceRef.current = { slug, description };
-    setInitialValues({ description: formDescription });
-    setValues({ description: formDescription });
-    resetDirty({ description: formDescription });
-    setHasServerChange(false);
-    setSaveError(null);
-  }, [slug, description, formDescription, setInitialValues, setValues, resetDirty]);
+  const resetDraft = useCallback(
+    (pendingDescription: string | null) => {
+      sourceRef.current = { slug, description: pendingDescription };
+      const savedValues = { description: pendingDescription ?? '' };
+      setInitialValues(savedValues);
+      setValues(savedValues);
+      resetDirty(savedValues);
+      setHasObservedChange(false);
+      setSaveError(null);
+    },
+    [slug, setInitialValues, setValues, resetDirty]
+  );
 
   useEffect(() => {
-    if (!descriptionReady) return;
+    if (!descriptionReady || loading || conflict) return;
     const lastObserved = lastObservedSourceRef.current;
     if (lastObserved.slug === slug && lastObserved.description === description) return;
     lastObservedSourceRef.current = { slug, description };
     if (productSessionRef.current.slug !== slug) {
       productSessionRef.current = { slug };
-      acceptLatestDescription();
+      resetDraft(description);
     } else if (getValues().description === (sourceRef.current.description ?? '')) {
-      acceptLatestDescription();
+      resetDraft(description);
     } else {
-      setHasServerChange(description !== sourceRef.current.description);
+      setHasObservedChange(description !== sourceRef.current.description);
     }
-  }, [slug, description, descriptionReady, getValues, acceptLatestDescription]);
+  }, [slug, description, descriptionReady, loading, conflict, getValues, resetDraft]);
 
-  const [editDescription, { loading }] = useMutation(EditProductOnEditProductDescriptionDocument, {
+  const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument, {
     refetchQueries: ({ data }) => {
       const productId = data?.editProduct?.product?.id;
       if (productId) onSaved?.(productId);
@@ -128,24 +153,31 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
 
   const refreshAfterConflict = async () => {
     const productSession = productSessionRef.current;
-    setConflictRefresh('loading');
+    setConflict({ status: 'loading' });
     try {
-      // Refresh the cache without replacing the editor's query result with a refetch error.
+      // A read already in flight may have started before the rejected save.
       const result = await client.query({
         query: TempProductBySlugOnEditProductDescriptionDocument,
         variables: { slug },
-        fetchPolicy: 'network-only',
+        fetchPolicy: 'no-cache',
+        context: { queryDeduplication: false },
       });
       if (productSessionRef.current === productSession) {
-        setConflictRefresh(result.data?.tempProductBySlug ? null : 'failed');
+        const latest = result.data?.tempProductBySlug;
+        setConflict(latest ? { status: 'ready', description: latest.description ?? null } : { status: 'failed' });
       }
     } catch {
-      if (productSessionRef.current === productSession) setConflictRefresh('failed');
+      if (productSessionRef.current === productSession) setConflict({ status: 'failed' });
     }
   };
 
   const save = async (values: FormValues, expectedDescription: string | null) => {
-    if (!descriptionReady || loading || conflictRefresh || imageUploadPending.current) {
+    if (
+      !descriptionReady ||
+      savePending.current ||
+      (conflict && conflict.status !== 'ready') ||
+      imageUploadPending.current
+    ) {
       return;
     }
     const draft = values.description ?? '';
@@ -157,23 +189,19 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     const descriptionToSave = normalizeProductDescriptionDraft(draft);
     setSaveError(null);
     const productSession = productSessionRef.current;
+    savePending.current = true;
+    setLoading(true);
     try {
+      const expectedDescriptionHash = await hashDescription(expectedDescription);
+      if (productSessionRef.current !== productSession) return;
       const result = await editDescription({
-        variables: {
-          slug,
-          input: { description: descriptionToSave, expectedDescription },
-        },
+        variables: { slug, input: { description: descriptionToSave, expectedDescriptionHash } },
       });
       if (productSessionRef.current !== productSession) return;
       const product = result.data?.editProduct?.product;
       if (product?.id) {
-        const description = product.description ?? null;
-        sourceRef.current = { slug, description };
-        const savedValues = { description: description ?? '' };
-        setInitialValues(savedValues);
-        setValues(savedValues);
-        resetDirty(savedValues);
-        setHasServerChange(false);
+        resetDraft(product.description ?? null);
+        setConflict(null);
         notifications.show({ message: '수정되었습니다!', color: 'teal' });
         onSubmit?.();
       }
@@ -189,6 +217,11 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
       const message = error instanceof Error ? error.message : '설명 저장에 실패했습니다.';
       setSaveError(message);
       notifications.show({ message, color: 'red' });
+    } finally {
+      if (productSessionRef.current === productSession) {
+        savePending.current = false;
+        setLoading(false);
+      }
     }
   };
 
@@ -207,11 +240,15 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     submit,
     onCancel,
     hasServerChange,
-    latestDescription: description,
-    conflictRefresh,
+    latestDescription,
+    conflictRefresh: conflict?.status === 'ready' ? null : (conflict?.status ?? null),
     refreshAfterConflict,
-    acceptLatestDescription,
-    overwriteWithDraft: () => save(getValues(), description),
+    acceptLatestDescription: () => {
+      lastObservedSourceRef.current = { slug, description };
+      resetDraft(latestDescription);
+      setConflict(null);
+    },
+    overwriteWithDraft: () => save(getValues(), latestDescription),
     loading,
     imageUploading,
     onImageUploadingChange,

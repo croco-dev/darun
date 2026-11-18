@@ -71,7 +71,7 @@ export type EditMagazineInput = {
 
 export type EditProductInput = {
   description?: string | null | undefined;
-  expectedDescription?: string | null | undefined;
+  expectedDescriptionHash?: string | null | undefined;
   logoUrl?: string | null | undefined;
   name?: string | null | undefined;
   summary?: string | null | undefined;

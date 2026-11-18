@@ -22,5 +22,5 @@ export class EditProductInput {
   description?: string;
 
   @Field(() => String, { nullable: true })
-  expectedDescription?: string | null;
+  expectedDescriptionHash?: string | null;
 }

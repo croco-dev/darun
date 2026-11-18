@@ -45,7 +45,7 @@ import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-da
 import { SearchableProduct, SearchProduct } from '@darun/search-domain';
 import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
 import { TranslationService, computeSourceHash } from '@darun/translation-domain';
-import { createAuthChecker, createServer } from '@darun/utils-apollo-server';
+import { createAuthChecker } from '@darun/utils-apollo-server';
 import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -54,7 +54,7 @@ import postgres, { type Sql } from 'postgres';
 import { buildSchemaSync } from 'type-graphql';
 import { Container } from 'typedi';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
@@ -64,6 +64,7 @@ import {
   type AllProductsOnProductListTableQueryVariables,
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
   EditProductOnEditProductDescriptionDocument,
+  TempProductBySlugOnEditProductDescriptionDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
 } from '../../../libs/__generated__/graphql';
@@ -487,7 +488,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   });
 
   describe('관리자 상품 목록의 양방향 페이지 경계', () => {
-    let server: ReturnType<typeof createServer>;
+    let server: ApolloServer;
     beforeEach(() => vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'product-pagination-test-secret'));
     beforeAll(async () => {
       const unused = undefined!;
@@ -589,32 +590,44 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     const previousRegistrar = Container.has(ProductContentSyncRegistrarToken)
       ? Container.get(ProductContentSyncRegistrarToken)
       : undefined;
-    const run = async (query: string, variables: Record<string, unknown>) => {
-      const result = await server.executeOperation(
+    let holdRegistration: (() => Promise<void>) | undefined;
+    const run = async (query: string, variables: Record<string, unknown>, target = server) => {
+      const result = await target.executeOperation(
         { query, variables },
         { contextValue: { getRoles: async () => ['admin'] } }
       );
       if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
       return result.body.singleResult;
     };
-    beforeAll(async () => {
-      Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
-      const repository = new PostgresqlProductRepository(db);
-      const resolver = new ProductCoreMutationResolver(
+    const editingServer = (database: Drizzle) => {
+      const repository = new PostgresqlProductRepository(database);
+      const getProduct = new GetProduct(repository);
+      const mutations = new ProductCoreMutationResolver(
         new CreateProduct(repository),
         new EditProduct(repository),
         undefined as never,
-        new GetProduct(repository),
+        getProduct,
         undefined as never
       );
-      server = createServer({
-        options: {
+      const queries = Object.assign(Object.create(ProductQueryResolver.prototype), { getProductUseCase: getProduct });
+      return new ApolloServer({
+        schema: buildSchemaSync({
           resolvers: [ProductMutationResolver, ProductQueryResolver],
           authChecker: createAuthChecker(),
-          container: { get: () => resolver },
-        },
-        config: { playground: false },
+          container: { get: type => (type === ProductQueryResolver ? queries : mutations) },
+          skipCheck: true,
+        }),
+        formatError: (formatted, error) => formatServerError(formatted, error, false),
       });
+    };
+    beforeAll(async () => {
+      Container.set(ProductContentSyncRegistrarToken, {
+        register: async (...args: Parameters<typeof registerProductContentSync>) => {
+          await registerProductContentSync(...args);
+          await holdRegistration?.();
+        },
+      });
+      server = editingServer(db);
       await server.start();
     });
     afterEach(async () => {
@@ -642,11 +655,28 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         await writer`insert into products (id, slug, name, summary, description, logo_url, published_at)
           values (${id}, ${slug}, 'Description fixture', '', ${original}, '', now())`;
         const mutation = print(EditProductOnEditProductDescriptionDocument);
-        const save = (description: string, expectedDescription: string | null) =>
-          run(mutation, {
-            slug,
-            input: { description, expectedDescription },
-          });
+        const query = print(TempProductBySlugOnEditProductDescriptionDocument);
+        const readDescription = async (target = server) => {
+          const result = await run(query, { slug }, target);
+          expect(result.errors).toBeUndefined();
+          return (result.data?.tempProductBySlug as { description: string | null }).description;
+        };
+        const base = await readDescription();
+        expect(base).toBe(original);
+        const save = (description: string, expected: string | null, target = server) =>
+          run(
+            mutation,
+            {
+              slug,
+              input: {
+                description,
+                expectedDescriptionHash: expected === null ? null : createHash('sha256').update(expected).digest('hex'),
+              },
+            },
+            target
+          );
+        const staleDraft = '<p>Stale draft</p>';
+        let staleSave;
 
         if (firstWriter === 'candidate') {
           const candidateDb = drizzle(writer);
@@ -667,27 +697,63 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           });
           const apply = new ApplyProductDescriptionCandidate(new PostgresqlProductDescriptionApplyStore(candidateDb));
           expect((await apply.execute({ jobId: job.id })).product.description).toBe(savedDescription);
+          staleSave = await save(staleDraft, base);
         } else {
-          const manualSave = await save(savedDescription, original);
-          expect(manualSave.errors).toBeUndefined();
-          expect(manualSave.data?.editProduct).toMatchObject({
-            product: { description: savedDescription },
-          });
+          const applicationName = 'darun-description-competing-editor';
+          const secondConnection = postgres(url!, { max: 1, connection: { application_name: applicationName } });
+          const secondServer = editingServer(drizzle(secondConnection));
+          const registration = Promise.withResolvers<void>();
+          const commit = Promise.withResolvers<void>();
+          let firstRequest: ReturnType<typeof save> | undefined;
+          let secondRequest: ReturnType<typeof save> | undefined;
+          try {
+            await secondServer.start();
+            const secondBase = await readDescription(secondServer);
+            expect(secondBase).toBe(original);
+            holdRegistration = () => {
+              registration.resolve();
+              return commit.promise;
+            };
+            firstRequest = save(savedDescription, base);
+            await Promise.race([
+              registration.promise,
+              firstRequest.then(result => {
+                throw new Error(`First save ended before registering sync: ${result.errors?.[0]?.message}`);
+              }),
+            ]);
+            secondRequest = save(staleDraft, secondBase, secondServer);
+            await expect
+              .poll(async () => {
+                const [row] = await writer`select wait_event_type from pg_stat_activity
+                  where application_name = ${applicationName}`;
+                return row?.wait_event_type;
+              })
+              .toBe('Lock');
+            commit.resolve();
+            const firstSave = await firstRequest;
+            expect(firstSave.errors).toBeUndefined();
+            expect(firstSave.data?.editProduct).toMatchObject({ product: { description: savedDescription } });
+            staleSave = await secondRequest;
+          } finally {
+            commit.resolve();
+            await Promise.allSettled([firstRequest, secondRequest]);
+            holdRegistration = undefined;
+            await secondServer.stop();
+            await secondConnection.end({ timeout: 5 });
+          }
         }
 
         const product = () => writer`select description, content_revision from products where id = ${id}`;
         const intents = () => writer`select kind, source_revision, status from product_content_sync_intents
           where product_id = ${id} order by source_revision, kind`;
         const jobs = () => writer`select id, status from translation_jobs where entity_id = ${id} order by id`;
-        const savedIntents = await intents();
-        const savedJobs = await jobs();
-        expect(savedIntents.map(intent => intent.kind)).toEqual(['search', 'translation']);
-        expect(savedJobs).toHaveLength(1);
-        const conflict = await save('<p>Stale draft</p>', original);
-        expect(conflict.errors?.[0]?.extensions?.code).toBe('DESCRIPTION_EDIT_CONFLICT');
+        expect(staleSave.errors?.[0]?.extensions?.code).toBe('DESCRIPTION_EDIT_CONFLICT');
         expect(await product()).toEqual([{ description: savedDescription, content_revision: '1' }]);
-        expect(await intents()).toEqual(savedIntents);
-        expect(await jobs()).toEqual(savedJobs);
+        expect(await intents()).toEqual([
+          { kind: 'search', source_revision: '1', status: 'pending' },
+          { kind: 'translation', source_revision: '1', status: 'pending' },
+        ]);
+        expect(await jobs()).toEqual([{ id: expect.any(String), status: 'pending' }]);
 
         const cleared = await save('', savedDescription);
         expect(cleared.errors).toBeUndefined();

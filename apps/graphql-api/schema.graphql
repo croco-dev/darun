@@ -177,7 +177,7 @@ type EditMagazinePayload {
 
 input EditProductInput {
   description: String
-  expectedDescription: String
+  expectedDescriptionHash: String
   logoUrl: String
   name: String
   summary: String

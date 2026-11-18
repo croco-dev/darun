@@ -1,9 +1,13 @@
 import type { OperationVariables } from '@apollo/client';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { notifications } from '@mantine/notifications';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createHash, webcrypto } from 'node:crypto';
 import { useEditProductDescription } from '../useEditProductDescription';
+
+vi.stubGlobal('crypto', webcrypto);
+const hash = (description: string) => createHash('sha256').update(description).digest('hex');
 
 vi.mock('@apollo/client/react', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
@@ -100,7 +104,7 @@ describe('description form synchronization', () => {
         slug: 'product-1',
         input: {
           description: '<p>Human draft</p>',
-          expectedDescription: '<p>Accepted AI candidate</p>',
+          expectedDescriptionHash: hash('<p>Accepted AI candidate</p>'),
         },
       },
     });
@@ -151,6 +155,7 @@ describe('description form synchronization', () => {
     act(() => {
       saving = result.current.overwriteWithDraft();
     });
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     rerender({ slug: 'product-2' });
     expect(result.current.form.getValues().description).toBe(description);
     expect(result.current.hasServerChange).toBe(false);
@@ -185,12 +190,13 @@ describe('description form synchronization', () => {
       await act(async () => {
         await result.current.form.onSubmit(result.current.submit)();
       });
+      await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
       expect(mutate).toHaveBeenCalledWith({
         variables: {
           slug: 'product-1',
           input: {
             description: editedDescription,
-            expectedDescription: loadedDescription,
+            expectedDescriptionHash: loadedDescription === null ? null : hash(loadedDescription),
           },
         },
       });
@@ -249,6 +255,7 @@ describe('description validation', () => {
     act(() => {
       saving = result.current.submit({ description: '<p>기존 상품</p>' });
     });
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     unmount();
     await act(async () => {
       complete({
@@ -281,10 +288,11 @@ describe('description validation', () => {
     act(() => result.current.form.getInputProps('description').onChange(value));
     await act(async () => result.current.form.onSubmit(result.current.submit)());
 
+    await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
     expect(mutate).toHaveBeenCalledExactlyOnceWith({
       variables: {
         slug: 'product-1',
-        input: { description: '', expectedDescription: '<p>기존 소개</p>' },
+        input: { description: '', expectedDescriptionHash: hash('<p>기존 소개</p>') },
       },
     });
   });
@@ -316,17 +324,18 @@ describe('description validation', () => {
 
     act(() => result.current.form.getInputProps('description').onChange(emptyParagraph));
     await act(async () => result.current.form.onSubmit(result.current.submit)());
-    expect(result.current.saveError).toBe('저장 실패');
+    await waitFor(() => expect(result.current.saveError).toBe('저장 실패'));
     expect(result.current.form.getValues().description).toBe(emptyParagraph);
     expect(onSubmit).not.toHaveBeenCalled();
 
     await act(async () => result.current.form.onSubmit(result.current.submit)());
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(mutate.mock.calls).toEqual([
       [
         {
           variables: {
             slug: 'product-1',
-            input: { description: '', expectedDescription: '<p>기존 소개</p>' },
+            input: { description: '', expectedDescriptionHash: hash('<p>기존 소개</p>') },
           },
         },
       ],
@@ -334,7 +343,7 @@ describe('description validation', () => {
         {
           variables: {
             slug: 'product-1',
-            input: { description: '', expectedDescription: '<p>기존 소개</p>' },
+            input: { description: '', expectedDescriptionHash: hash('<p>기존 소개</p>') },
           },
         },
       ],
@@ -351,7 +360,7 @@ describe('description validation', () => {
       expect(mutate).toHaveBeenCalledExactlyOnceWith({
         variables: {
           slug: 'product-1',
-          input: { description: draft, expectedDescription: null },
+          input: { description: draft, expectedDescriptionHash: null },
         },
       });
       expect(notifications.show).not.toHaveBeenCalled();

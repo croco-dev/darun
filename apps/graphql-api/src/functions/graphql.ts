@@ -3,11 +3,11 @@ import 'reflect-metadata';
 import '../config';
 import { GetAccount } from '@darun/accounts-domain';
 import { createAuthChecker, createLambdaHandler, createServer } from '@darun/utils-apollo-server';
-import { createSentryApolloLogPlugin } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/aws-serverless';
 import { APIGatewayProxyHandlerV2 } from 'aws-lambda';
 import { GraphQLISODateTime } from 'type-graphql';
 import { Container } from 'typedi';
+import { createGraphQLDiagnostics } from '../app/graphqlDiagnostics';
 import { resolvers } from '../app/resolvers';
 import { createPostgresConnection } from '../config/database';
 import { IS_LOCAL } from '../config/environment';
@@ -26,7 +26,7 @@ export const handler: APIGatewayProxyHandlerV2 = Sentry.wrapHandler(
       },
       config: {
         playground: IS_LOCAL,
-        plugins: [createSentryApolloLogPlugin(), screenshotRegistrationPlugin],
+        plugins: [createGraphQLDiagnostics(), screenshotRegistrationPlugin],
       },
     }),
     {

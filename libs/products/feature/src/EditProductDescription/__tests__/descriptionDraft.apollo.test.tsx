@@ -3,8 +3,12 @@ import { ApolloProvider } from '@apollo/client/react';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createHash, webcrypto } from 'node:crypto';
 import { useGenerateProductDescriptionButton } from '../../GenerateProductDescriptionButton/useGenerateProductDescriptionButton';
 import { useEditProductDescription } from '../useEditProductDescription';
+
+vi.stubGlobal('crypto', webcrypto);
+const hash = (description: string) => createHash('sha256').update(description).digest('hex');
 
 vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn(), hide: vi.fn() },
@@ -15,9 +19,10 @@ afterEach(() => {
   clients.splice(0).forEach(client => client.stop());
 });
 
-function setup() {
-  let savedDescription = '<p>Original saved introduction</p>';
+function setup(initialDescription = '<p>Original saved introduction</p>') {
+  let savedDescription = initialDescription;
   let failNextRead = false;
+  let waitForRead: Promise<void> | undefined;
   const operations: string[] = [];
   const job = {
     __typename: 'ProductDescriptionJob',
@@ -42,6 +47,15 @@ function setup() {
         new Observable(observer => {
           const name = operation.operationName ?? 'unknown';
           operations.push(name);
+          if (name === 'TempProductBySlugOnEditProductDescription' && waitForRead) {
+            const snapshot = product();
+            void waitForRead.then(() => {
+              observer.next({ data: { tempProductBySlug: snapshot } });
+              observer.complete();
+            });
+            waitForRead = undefined;
+            return;
+          }
           queueMicrotask(() => {
             let data: Record<string, unknown>;
             switch (name) {
@@ -63,7 +77,7 @@ function setup() {
                 };
                 break;
               case 'EditProductOnEditProductDescription':
-                if (operation.variables.input.expectedDescription !== savedDescription) {
+                if (operation.variables.input.expectedDescriptionHash !== hash(savedDescription)) {
                   observer.next({
                     errors: [
                       {
@@ -117,6 +131,11 @@ function setup() {
     },
     failNextRead: () => {
       failNextRead = true;
+    },
+    holdNextEditorRead: () => {
+      const { promise, resolve } = Promise.withResolvers<void>();
+      waitForRead = promise;
+      return resolve;
     },
   };
 }
@@ -189,4 +208,28 @@ it('다른 편집자의 저장을 감지해 초안을 보존하고 최신 본문
   await act(async () => fixture.result.current.editor.overwriteWithDraft());
   expect(fixture.savedDescription()).toBe(draft);
   expect(fixture.result.current.editor.hasServerChange).toBe(false);
+});
+
+it('빈 초안을 저장하다 충돌하면 진행 중이던 조회가 끝나도 새로 읽은 본문과 초안을 보존한다', async () => {
+  const fixture = setup('');
+  const latest = '<p>다른 편집자가 저장한 최신 본문</p>';
+  const reads = () => fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length;
+  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
+  const previousReads = reads();
+  const releaseRead = fixture.holdNextEditorRead();
+  act(() => fixture.result.current.editor.retryDescription());
+  await waitFor(() => expect(reads()).toBe(previousReads + 1));
+  try {
+    fixture.writeElsewhere(latest);
+    await act(async () => fixture.result.current.editor.submit({ description: '' }));
+    expect(reads()).toBe(previousReads + 2);
+    expect(fixture.result.current.editor.hasServerChange).toBe(true);
+    expect(fixture.result.current.editor.form.getValues().description).toBe('');
+  } finally {
+    await act(async () => releaseRead());
+  }
+  expect(fixture.result.current.editor.latestDescription).toBe(latest);
+  act(() => fixture.result.current.editor.acceptLatestDescription());
+  expect(fixture.result.current.editor.hasServerChange).toBe(false);
+  expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
 });
