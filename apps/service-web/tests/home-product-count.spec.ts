@@ -58,11 +58,11 @@ for (const [locale, width, headline, keyword, category] of [
     }
 
     await page.waitForLoadState('load');
+    await page.waitForFunction(() => (window as Window & { __NEXT_HYDRATED?: boolean }).__NEXT_HYDRATED === true);
     await assertDiscovery();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     expect(errors).toEqual([]);
     await page.screenshot({ path: info.outputPath('home-without-count.png') });
-    await page.waitForFunction(() => (window as Window & { __NEXT_HYDRATED?: boolean }).__NEXT_HYDRATED === true);
     await search.press('Enter');
     await expect(page).toHaveURL(links[0][1]);
   });
