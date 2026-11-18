@@ -21,6 +21,7 @@ const otherLink = {
   ...initialLink,
   id: 'link-b',
   title: 'Other link',
+  iconUrl: '/images/second-link.svg',
   isPrimary: false,
 };
 const clients: ApolloClient[] = [];
@@ -144,14 +145,8 @@ describe('상품 링크 재편집', () => {
     save();
     await fixture.resolveRead();
     expect(fixture.writes.map(write => write.variables.input)).toEqual([
-      expect.objectContaining({
-        title: 'Updated title',
-        displayLink: 'example.com',
-      }),
-      expect.objectContaining({
-        title: 'Updated title',
-        displayLink: 'New display',
-      }),
+      { title: 'Updated title' },
+      { displayLink: 'New display' },
     ]);
   });
 
@@ -201,7 +196,7 @@ describe('상품 링크 재편집', () => {
     fireEvent.change(screen.getByPlaceholderText('ex) toss.im'), { target: { value: 'New display' } });
     save();
     await fixture.resolveSave();
-    expect(fixture.writes[1]?.variables.input).toMatchObject({ title: 'Updated title', displayLink: 'New display' });
+    expect(fixture.writes[1]?.variables.input).toEqual({ displayLink: 'New display' });
     await fixture.resolveRead();
   });
 
@@ -249,13 +244,13 @@ describe('상품 링크 재편집', () => {
     edit('Other link');
     const modal = within(dialog()!);
     fireEvent.change(modal.getByLabelText('링크 역할'), {
-      target: { value: 'documentation' },
+      target: { value: 'official' },
     });
     fireEvent.change(titleInput(), { target: { value: '' } });
     fireEvent.click(modal.getByLabelText('이 링크를 대표로 지정'));
     const preview = within(modal.getByRole('region', { name: '공개 링크 미리보기' }));
     expect(preview.getAllByRole('listitem').map(item => item.textContent)).toEqual([
-      '문서 (대표 링크)',
+      '공식 사이트 (대표 링크)',
       'Original title',
     ]);
     expect(fixture.writes).toHaveLength(0);
@@ -264,9 +259,11 @@ describe('상품 링크 재편집', () => {
     await fixture.resolveRead();
     expect(fixture.writes[0].variables).toMatchObject({
       id: 'link-b',
-      input: { title: '', role: 'documentation', makePrimary: true },
+      input: { title: '', role: 'official', makePrimary: true },
     });
-    expect(within(screen.getByText('문서').closest('tr')!).getByText('대표 링크')).toBeTruthy();
+    const primary = screen.getByText('공식 사이트').closest('tr')!;
+    expect(within(primary).getByText('대표 링크')).toBeTruthy();
+    expect(primary.querySelector('img')?.getAttribute('src')).toBe('/images/second-link.svg');
   });
 
   it('저장 성공과 재조회 실패를 구분하고 목록 재시도 후 저장값으로 편집한다', async () => {

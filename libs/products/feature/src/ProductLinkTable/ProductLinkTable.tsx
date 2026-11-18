@@ -7,7 +7,7 @@ import { AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-a
 import { bind } from '@darun/utils-structure-react';
 import { useState } from 'react';
 import { EditProductLinkItem } from '../EditProductLinkItem';
-import { getProductLinkLabel, productLinkRoleLabels } from '../productLinkPresentation';
+import { getProductLinkIconSource, getProductLinkLabel, productLinkRoleLabels } from '../productLinkPresentation';
 import { useProductLinkTable } from './useProductLinkTable';
 
 gql`
@@ -32,21 +32,23 @@ function LinkIcon({ iconUrl, role, isPrimary }: Pick<EditProductLinkItemFragment
     setHasError(false);
   }
 
-  if (role === 'official') {
+  const src = getProductLinkIconSource(iconUrl);
+  if (!src || hasError) {
+    const FallbackIcon = role === 'official' ? Globe : Link2;
     return (
-      <Globe
-        className={cn('h-5 w-5 stroke-[2] shrink-0', isPrimary ? 'text-white' : 'text-dark-800')}
-        aria-hidden="true"
-      />
+      <FallbackIcon className={cn('h-5 w-5 shrink-0', isPrimary ? 'text-white' : 'text-dark-500')} aria-hidden="true" />
     );
   }
 
-  if (!iconUrl || hasError) {
-    return <Link2 className={cn('h-5 w-5 shrink-0', isPrimary ? 'text-white' : 'text-dark-500')} aria-hidden="true" />;
-  }
-
   return (
-    <img src={iconUrl} alt="" loading="lazy" onError={() => setHasError(true)} className="h-6 w-6 object-contain" />
+    <img
+      src={src}
+      alt=""
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      onError={() => setHasError(true)}
+      className="h-6 w-6 object-contain"
+    />
   );
 }
 

@@ -18,7 +18,7 @@ export { ProductTagsForm } from './ProductTagsForm';
 export { PublishProductButton } from './PublishProductButton';
 export { SearchProductField } from './SearchProductField';
 export { ProductLinkTable } from './ProductLinkTable';
-export { getProductLinkLabel, orderPublicProductLinks } from './productLinkPresentation';
+export { getProductLinkIconSource, getProductLinkLabel, orderPublicProductLinks } from './productLinkPresentation';
 export { ProductLinkRoleField } from './ProductLinkRoleField';
 export { ProductListTable, AllProductsOnProductListTableDocument } from './ProductListTable';
 export { ProductCompanyInfo } from './ProductCompanyInfo';

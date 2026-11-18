@@ -32,12 +32,16 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const [locale, width, groupName, labels] of [
-  ['ko', 1280, '상품 링크', ['문서', '공식 홈페이지', 'Get the app']],
-  ['en', 390, 'Product links', ['Documentation', 'Official Website', 'Get the app']],
+  ['ko', 1280, '상품 링크', ['문서', '공식 홈페이지', 'Visit the site']],
+  ['en', 390, 'Product links', ['Documentation', 'Official Website', 'Visit the site']],
 ] as const) {
   test(`${locale} product links use the designated link and role label`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     const errors: string[] = [];
+    const unapprovedIconRequests: string[] = [];
+    page.on('request', request => {
+      if (new URL(request.url()).hostname === 'third-party.example') unapprovedIconRequests.push(request.url());
+    });
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => {
       if (message.type() === 'error') errors.push(message.text());
@@ -49,7 +53,8 @@ for (const [locale, width, groupName, labels] of [
     await expect(links).toHaveText([...labels]);
     await expect(links.first()).toHaveAttribute('href', 'https://example.com/docs');
     await expect(links.first().locator('span').first()).toHaveClass(/bg-dark-900/);
-    await expect(links.nth(1).locator('img')).toBeVisible();
+    await expect(links.nth(1).locator('img')).toHaveCount(0);
+    await expect(links.nth(2).locator('img')).toHaveAttribute('src', '/images/default-product-icon.svg');
     await expect(links.nth(1).locator('span').first()).toHaveClass(/bg-white/);
     await expect(links.first()).toHaveAttribute('rel', 'noopener noreferrer');
     await links.first().focus();
@@ -57,6 +62,7 @@ for (const [locale, width, groupName, labels] of [
     await expect(links.nth(1)).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     expect(errors).toEqual([]);
+    expect(unapprovedIconRequests).toEqual([]);
     await group.screenshot({ path: info.outputPath('product-link-order.png') });
   });
 }

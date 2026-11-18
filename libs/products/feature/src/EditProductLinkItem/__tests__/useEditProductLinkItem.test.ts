@@ -186,10 +186,25 @@ describe('useEditProductLinkItem', () => {
         id: updatedLink.id,
         input: {
           title: 'New draft',
-          link: updatedLink.link,
-          displayLink: updatedLink.displayLink,
-          iconUrl: updatedLink.iconUrl,
         },
+      },
+    });
+  });
+
+  it('omits untouched metadata when assigning a role and primary from an earlier read', async () => {
+    const { result, rerender } = renderHook(props => useEditProductLinkItem(props), { initialProps: defaultProps });
+    rerender({
+      ...defaultProps,
+      link: { ...defaultProps.link, link: 'https://updated.example', title: 'New destination' },
+    });
+    act(() => result.current.form.setValues({ role: 'official', makePrimary: true }));
+    await act(async () => result.current.submit(result.current.form.getValues()));
+
+    expect(mutateFn).toHaveBeenCalledWith({
+      variables: {
+        slug: defaultProps.slug,
+        id: defaultProps.link.id,
+        input: { role: 'official', makePrimary: true },
       },
     });
   });

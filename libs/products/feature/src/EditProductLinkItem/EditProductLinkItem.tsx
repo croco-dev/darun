@@ -25,20 +25,19 @@ export function EditProductLinkItem(
     onCancel: () => void;
   }
 ) {
-  const { form, submit, cancel, loading } = useEditProductLinkItem(props);
+  const { form, submit, cancel, loading, changes } = useEditProductLinkItem(props);
   const { link, links = [link] } = props;
-  const values = form.values;
   const preview = orderPublicProductLinks(
     links.map(item => {
-      const isPrimary = values.makePrimary ? item.id === link.id : item.isPrimary;
+      const isPrimary = changes.makePrimary ? item.id === link.id : item.isPrimary;
       if (item.id !== link.id) return { ...item, isPrimary };
       return {
         ...item,
         isPrimary,
-        title: values.title?.trim() ?? item.title,
-        displayLink: values.displayLink?.trim() || item.displayLink,
-        link: values.link?.trim() || item.link,
-        role: values.role || null,
+        title: changes.title ?? item.title,
+        displayLink: changes.displayLink ?? item.displayLink,
+        link: changes.link ?? item.link,
+        role: changes.role === undefined ? item.role : changes.role,
       };
     })
   );
@@ -124,7 +123,7 @@ export function EditProductLinkItem(
               variant="contained"
               color="primary"
               className="active:scale-[0.98] motion-reduce:transform-none"
-              disabled={loading}
+              disabled={loading || Object.keys(changes).length === 0}
             >
               {loading ? '저장 중...' : '저장'}
             </Button>

@@ -1,7 +1,7 @@
 'use client';
 
-import { getProductLinkLabel, orderPublicProductLinks } from '@darun/products-feature';
-import { Button, ExternalLink, Globe } from '@darun/ui';
+import { getProductLinkIconSource, getProductLinkLabel, orderPublicProductLinks } from '@darun/products-feature';
+import { Button, ExternalLink, Globe, Link2 } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
@@ -29,6 +29,8 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
         const { isPrimary } = link;
         const localizedTitle = getLocalizedLinkTitle(getProductLinkLabel(link, locale), locale);
         const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
+        const iconSrc = getProductLinkIconSource(link.iconUrl);
+        const FallbackIcon = link.role === 'official' ? Globe : Link2;
 
         return (
           <Link
@@ -52,7 +54,7 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                {link.role === 'official' || !link.iconUrl ? (
+                {!iconSrc ? (
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
                       isPrimary
@@ -60,7 +62,7 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
                         : 'border border-dark-150/70 bg-surface-100 text-dark-800 shadow-2xs'
                     }`}
                   >
-                    <Globe size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
+                    <FallbackIcon size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
                   </div>
                 ) : (
                   <div
@@ -69,9 +71,10 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
                     }`}
                   >
                     <Image
-                      src={link.iconUrl}
+                      src={iconSrc}
                       alt=""
                       aria-hidden="true"
+                      referrerPolicy="no-referrer"
                       width={16}
                       height={16}
                       className="h-full w-full object-contain rounded-sm"

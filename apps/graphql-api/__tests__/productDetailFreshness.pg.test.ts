@@ -1430,7 +1430,17 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         expect((await run(update, { ...vars, input: { role: 'unrecognized' } })).errors).toHaveLength(1);
         expect(await writer`select id from product_links where role is not null or is_designated_primary`).toEqual([]);
 
-        expect((await run(update, vars)).errors).toBeUndefined();
+        const loadIntents = () => writer`
+          select l.kind, l.source_revision, p.content_revision
+          from product_content_sync_intents l join products p on l.product_id = p.id
+          where p.id = 'link-parent-a' order by l.source_revision`;
+        expect((await run(update, { ...vars, input: { role: 'documentation' } })).errors).toBeUndefined();
+        expect(await loadIntents()).toEqual([{ kind: 'search', source_revision: '1', content_revision: '1' }]);
+        expect((await run(update, { ...vars, input: { makePrimary: true } })).errors).toBeUndefined();
+        expect(await loadIntents()).toEqual([
+          { kind: 'search', source_revision: '1', content_revision: '2' },
+          { kind: 'search', source_revision: '2', content_revision: '2' },
+        ]);
         expect((await run(update, vars)).errors).toBeUndefined();
         expect(
           (
@@ -1470,7 +1480,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         expect(result.data).toEqual({ admin: expected, public: expected });
         expect(
           await writer`select kind from product_content_sync_intents where product_id = 'link-parent-a' order by source_revision`
-        ).toEqual([{ kind: 'search' }, { kind: 'search' }, { kind: 'search' }]);
+        ).toEqual([{ kind: 'search' }, { kind: 'search' }, { kind: 'search' }, { kind: 'search' }]);
 
         expect(
           (
