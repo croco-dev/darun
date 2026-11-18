@@ -18,7 +18,7 @@ import { AuthRole, createAuthChecker, createServer } from '@darun/utils-apollo-s
 import { drizzle } from 'drizzle-orm/pg-proxy';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('product relation reads through GraphQL', () => {
+describe('GraphQL 상품 관계 조회', () => {
   const product = new Product({ id: 'p1', slug: 'fixture', name: 'Fixture', summary: '', logoUrl: '' });
   const findOneBySlug = vi.fn().mockResolvedValue(product);
   const productRepository = {
@@ -80,7 +80,7 @@ describe('product relation reads through GraphQL', () => {
     ['links', 'product_links'],
     ['screenshots', 'product_screenshots'],
     ['features', 'product_features'],
-  ])('surfaces failed admin %s reads and preserves successful empty and public reads', async (field, table) => {
+  ])('관리자 %s 조회가 실패하면 오류를 반환하고 공개 응답과 정상 빈 응답을 유지한다', async (field, table) => {
     const adminSelection = `relation: tempProductBySlug(slug: "fixture") { ${field} { id } }`;
     const publicSelection = `published: productBySlug(slug: "fixture") { name ${field} { id } }`;
     const query = `{ ${adminSelection} ${publicSelection} }`;
@@ -103,7 +103,7 @@ describe('product relation reads through GraphQL', () => {
     expect(retried.data).toEqual({ relation: { [field]: [] } });
   });
 
-  it('rejects an unauthorized admin read before product or relationship lookup', async () => {
+  it('관리자 권한이 없으면 상품과 관계 조회를 실행하기 전에 요청을 거절한다', async () => {
     const result = await request('{ tempProductBySlug(slug: "fixture") { links { id } } }', []);
     expect(result.data).toEqual({ tempProductBySlug: null });
     expect(result.errors).toHaveLength(1);
