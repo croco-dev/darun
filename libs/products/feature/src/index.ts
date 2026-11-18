@@ -26,6 +26,7 @@ export {
   productLinkIconOptions,
 } from './productLinkPresentation';
 export { ProductLinkRoleField } from './ProductLinkRoleField';
+export { productLinkSchemaCompatibility } from './productLinkSchemaCompatibility';
 export { ProductListTable, AllProductsOnProductListTableDocument } from './ProductListTable';
 export { ProductCompanyInfo } from './ProductCompanyInfo';
 export { ProductDescription } from './ProductDescription';

@@ -3,6 +3,7 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { ErrorLink } from '@apollo/client/link/error';
 import { HttpLink } from '@apollo/client/link/http';
 import { RetryLink } from '@apollo/client/link/retry';
+import { productLinkSchemaCompatibility } from '@darun/products-feature';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 
@@ -70,6 +71,7 @@ const apolloClient = new ApolloClient({
     }),
     httpErrorLink,
     createTimeoutLink(),
+    productLinkSchemaCompatibility,
     screenshotRegistrationLink,
     httpLink,
   ]),

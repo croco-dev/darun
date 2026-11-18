@@ -11,6 +11,7 @@ import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
+import { useState } from 'react';
 import { getLocalizedLinkTitle } from '../../utils/localization';
 import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductLinks } from './useProductLinks';
@@ -34,8 +35,6 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
         const { isPrimary } = link;
         const localizedTitle = getLocalizedLinkTitle(getProductLinkLabel(link, locale), locale);
         const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
-        const iconSrc = getProductLinkIconSource(link.iconUrl);
-        const FallbackIcon = link.role === 'official' ? Globe : Link2;
 
         return (
           <Link
@@ -59,38 +58,7 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                {!iconSrc ? (
-                  <div
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
-                      isPrimary
-                        ? 'border border-white/20 bg-white/10 text-white'
-                        : 'border border-dark-150/70 bg-surface-100 text-dark-800 shadow-2xs'
-                    }`}
-                  >
-                    <FallbackIcon size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
-                  </div>
-                ) : (
-                  <div
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md p-0.5 shadow-2xs ${
-                      productLinkIconNeedsDarkBackground(iconSrc)
-                        ? 'border border-dark-800 bg-dark-900'
-                        : isPrimary
-                          ? 'border border-white/20 bg-white'
-                          : 'border border-dark-150/70 bg-surface-100'
-                    }`}
-                  >
-                    <Image
-                      src={iconSrc}
-                      alt=""
-                      aria-hidden="true"
-                      referrerPolicy="no-referrer"
-                      width={16}
-                      height={16}
-                      className="h-full w-full object-contain rounded-sm"
-                      unoptimized
-                    />
-                  </div>
-                )}
+                <ProductLinkIcon key={link.iconUrl} link={link} />
                 <span className="truncate max-w-[200px] sm:max-w-xs text-xs sm:text-sm font-semibold text-current">
                   {localizedTitle}
                 </span>
@@ -107,5 +75,52 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
         );
       })}
     </>
+  );
+}
+
+type ProductLink = ReturnType<typeof useProductLinks>['links'][number];
+
+function ProductLinkIcon({ link }: { link: ProductLink }) {
+  const [failed, setFailed] = useState(false);
+  const iconSrc = failed ? null : getProductLinkIconSource(link.iconUrl);
+  const { isPrimary } = link;
+
+  if (!iconSrc) {
+    const FallbackIcon = link.role === 'official' ? Globe : Link2;
+    return (
+      <div
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
+          isPrimary
+            ? 'border border-white/20 bg-white/10 text-white'
+            : 'border border-dark-150/70 bg-surface-100 text-dark-800 shadow-2xs'
+        }`}
+      >
+        <FallbackIcon size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md p-0.5 shadow-2xs ${
+        productLinkIconNeedsDarkBackground(iconSrc)
+          ? 'border border-dark-800 bg-dark-900'
+          : isPrimary
+            ? 'border border-white/20 bg-white'
+            : 'border border-dark-150/70 bg-surface-100'
+      }`}
+    >
+      <Image
+        src={iconSrc}
+        alt=""
+        aria-hidden="true"
+        referrerPolicy="no-referrer"
+        width={16}
+        height={16}
+        className="h-full w-full object-contain rounded-sm"
+        unoptimized
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 }

@@ -75,6 +75,18 @@ for (const [locale, width, groupName, labels] of [
     expect(errors).toEqual([]);
     expect(unapprovedIconRequests).toEqual([]);
     await group.screenshot({ path: info.outputPath('product-link-order.png') });
+
+    if (locale === 'en') {
+      await page.route(
+        'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
+        route => route.fulfill({ contentType: 'image/svg+xml', body: 'invalid image bytes' })
+      );
+      await page.reload();
+      await expect(links.first()).toHaveText('Documentation');
+      await expect(links.first().locator('img')).toHaveCount(0);
+      await expect(links.first().locator('svg').first()).toBeVisible();
+      expect(errors).toEqual([]);
+    }
   });
 }
 

@@ -53,8 +53,8 @@ function LinkIcon({ iconUrl, role, isPrimary }: Pick<EditProductLinkItemFragment
       loading="lazy"
       onError={() => setHasError(true)}
       className={cn(
-        'h-6 w-6 object-contain',
-        productLinkIconNeedsDarkBackground(src) && 'rounded-md bg-dark-900 p-0.5'
+        'h-6 w-6 rounded-md p-0.5 object-contain',
+        productLinkIconNeedsDarkBackground(src) ? 'bg-dark-900' : 'bg-white'
       )}
     />
   );
