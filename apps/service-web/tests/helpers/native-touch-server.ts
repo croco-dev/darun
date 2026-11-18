@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import type { ServerResponse } from 'node:http';
 
 const screenshots = Array.from({ length: 3 }, (_, index) => ({
   __typename: 'Screenshot',
@@ -43,8 +44,9 @@ const nativeTouchProduct = {
 
 const companyRead = Promise.withResolvers<void>();
 const homeScenarios = ['count-delayed-error', 'count-zero', 'count-positive', 'category-error'] as const;
-let homeScenario: (typeof homeScenarios)[number] = 'count-positive';
-let releaseProductCount = Promise.withResolvers<void>();
+let homeScenario: (typeof homeScenarios)[number] | 'count-error' = 'count-positive';
+const heldProductCounts = new Set<ServerResponse>();
+const countErrorResponse = JSON.stringify({ data: null, errors: [{ message: 'Fixture count unavailable' }] });
 
 const homeCategory = {
   __typename: 'Category',
@@ -104,15 +106,18 @@ createServer((request, response) => {
     const scenario = request.url.slice('/home-scenario/'.length);
     const selected = homeScenarios.find(value => value === scenario);
     if (scenario === 'release-count') {
-      releaseProductCount.resolve();
-    } else if (selected) {
-      releaseProductCount.resolve();
-      releaseProductCount = Promise.withResolvers<void>();
-      homeScenario = selected;
-    } else {
+      homeScenario = 'count-error';
+      const hadPendingCount = heldProductCounts.size > 0;
+      for (const countResponse of heldProductCounts) countResponse.end(countErrorResponse);
+      heldProductCounts.clear();
+      response.writeHead(hadPendingCount ? 204 : 409).end();
+      return;
+    }
+    if (!selected) {
       response.writeHead(404).end();
       return;
     }
+    homeScenario = selected;
     response.writeHead(204).end();
     return;
   }
@@ -139,8 +144,10 @@ createServer((request, response) => {
     response.setHeader('Content-Type', 'application/json');
     if (operationName === 'ProductsCountOnHomePage') {
       if (homeScenario === 'count-delayed-error') {
-        await releaseProductCount.promise;
-        response.end(JSON.stringify({ data: null, errors: [{ message: 'Fixture count unavailable' }] }));
+        heldProductCounts.add(response);
+        response.once('close', () => heldProductCounts.delete(response));
+      } else if (homeScenario === 'count-error') {
+        response.end(countErrorResponse);
       } else {
         response.end(JSON.stringify({ data: { productsCount: homeScenario === 'count-zero' ? 0 : 42 } }));
       }

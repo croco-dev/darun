@@ -48,14 +48,16 @@ for (const [locale, width, headline, keyword, category] of [
       await expect(search).toBeFocused();
     };
 
+    let releaseStatus: number;
     try {
       await page.goto(`/${locale}`, { waitUntil: 'commit' });
       await expect(heading).toBeVisible();
       await search.focus();
       await assertDiscovery();
     } finally {
-      expect((await request.post(`${scenarioURL}/release-count`)).status()).toBe(204);
+      releaseStatus = (await request.post(`${scenarioURL}/release-count`)).status();
     }
+    expect(releaseStatus, 'the count request was still pending when the fixture returned its error').toBe(204);
 
     await page.waitForLoadState('load');
     await page.waitForFunction(() => (window as Window & { __NEXT_HYDRATED?: boolean }).__NEXT_HYDRATED === true);
