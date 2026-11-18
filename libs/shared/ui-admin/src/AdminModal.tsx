@@ -1,6 +1,6 @@
 'use client';
 
-import { X, cn } from '@darun/ui';
+import { X, cn, lockBodyScroll } from '@darun/ui';
 import { ReactNode, useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 
 export type AdminModalProps = {
@@ -21,12 +21,15 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
   const titleId = useId();
 
   const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
+    if (e.key !== 'Escape' && e.key !== 'Tab') return;
+    if (document.querySelector('dialog:modal')) return;
+
     if (e.key === 'Escape') {
       onClose();
       return;
     }
 
-    if (e.key === 'Tab' && modalContentRef.current) {
+    if (modalContentRef.current) {
       const focusableElements = modalContentRef.current.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       );
@@ -58,8 +61,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
 
     previousActiveElementRef.current = document.activeElement as HTMLElement | null;
     document.addEventListener('keydown', handleKeyDown);
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlockScroll = lockBodyScroll(document.body);
 
     // Focus the first focusable element inside the modal on next tick
     const timer = setTimeout(() => {
@@ -74,7 +76,7 @@ export function AdminModal({ opened, onClose, title, children, className, maxWid
     return () => {
       clearTimeout(timer);
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = originalOverflow;
+      unlockScroll();
       previousActiveElementRef.current?.focus();
     };
   }, [opened]);

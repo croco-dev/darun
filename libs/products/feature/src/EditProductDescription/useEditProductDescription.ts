@@ -34,6 +34,14 @@ type FormValues = {
   description?: string;
 };
 
+export function normalizeProductDescriptionDraft(draft: string) {
+  if (!draft.trim()) return '';
+  if (typeof DOMParser === 'undefined') return draft;
+  const doc = new DOMParser().parseFromString(draft, 'text/html');
+  const hasContent = doc.body.textContent?.trim() || doc.body.querySelector('img, video, iframe, table, hr');
+  return hasContent ? draft : '';
+}
+
 export type UseEditProductDescriptionProps = {
   slug: string;
   onSaved?: (productId: string) => void;
@@ -124,18 +132,12 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
       setSaveError(tableError);
       return;
     }
-    const hasContent = (() => {
-      if (!draft.trim()) return false;
-      if (typeof DOMParser === 'undefined') return true;
-      const doc = new DOMParser().parseFromString(draft, 'text/html');
-      return Boolean(doc.body.textContent?.trim() || doc.body.querySelector('img, video, iframe, table, hr'));
-    })();
-
+    const descriptionToSave = normalizeProductDescriptionDraft(draft);
     setSaveError(null);
     const productSession = productSessionRef.current;
     try {
       const result = await editDescription({
-        variables: { slug, input: { description: hasContent ? draft : '' } },
+        variables: { slug, input: { description: descriptionToSave } },
       });
       if (productSessionRef.current !== productSession) return;
       const product = result.data?.editProduct?.product;

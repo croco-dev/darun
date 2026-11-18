@@ -1,11 +1,13 @@
 'use client';
 
 import { EditProductDescription, GenerateProductDescriptionButton, ProductDescription } from '@darun/products-feature';
+import { ProductDescriptionContent } from '@darun/products-shell';
 import { Button, Pencil } from '@darun/ui';
 import { AdminModal, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
 import { useRouter, usePathname, useSearchParams } from '@darun/utils-router';
 import { useDisclosure } from '@mantine/hooks';
 import { useCallback } from 'react';
+import { DraftPreview } from '../../content/DraftPreview';
 import { useRefreshTranslationFreshness } from '../../llm-jobs/useRefreshTranslationFreshness';
 
 type ProductDetailDescriptionSectionProps = {
@@ -69,6 +71,11 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
           onSaved={refreshProductTranslation}
           onSubmit={closeEditModal}
           onCancel={closeEditModal}
+          renderPreview={(readDraft, disabled) => (
+            <DraftPreview disabled={disabled}>
+              {() => <ProductDescriptionContent description={readDraft()} emptyLabel="작성한 소개가 없습니다." />}
+            </DraftPreview>
+          )}
         />
       </AdminModal>
     </>

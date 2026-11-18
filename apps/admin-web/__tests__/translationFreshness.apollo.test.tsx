@@ -9,6 +9,7 @@ import { TranslationRecovery } from '../features/llm-jobs/TranslationRecovery';
 import { ProductDetailDescriptionSection } from '../features/products/ProductDetailDescriptionSection/ProductDetailDescriptionSection';
 import { ProductDetailFeatureSection } from '../features/products/ProductDetailFeatureSection/ProductDetailFeatureSection';
 import { ProductDetailInfoSection } from '../features/products/ProductDetailInfoSection/ProductDetailInfoSection';
+import { installPreviewDialog, openDraftPreview } from './fixtures/draftPreview';
 
 vi.mock('@darun/products-feature', async () => ({
   ...(await import('../../../libs/products/feature/src/EditProductInfo/EditProductInfo')),
@@ -240,6 +241,42 @@ it('refreshes only the edited product after saving its name and summary, and ret
   expect(fixture.reads).toEqual(['product-a', 'product-a', 'product-a']);
   expect(fixture.writes).toEqual(['EditProductOnEditProductInfo']);
   expect(otherName().value).toBe('다른 상품의 미저장 입력');
+});
+
+it('상품 소개 초안을 공개 형식으로 보고 편집 창으로 돌아와도 저장하거나 번역을 요청하지 않는다', async () => {
+  const restoreDialog = installPreviewDialog();
+  const originalOverflow = document.body.style.overflow;
+  try {
+    const fixture = await start();
+    fireEvent.click(productSection().getByRole('button', { name: '수정' }));
+    const editor = await screen.findByLabelText<HTMLTextAreaElement>('설명');
+    await waitFor(() => expect(editor.value).toContain('Original introduction'));
+    const draft = '<h2>추천한다면</h2><ul><li><strong>미저장 소개</strong><ol><li>하위 항목</li></ol></li></ul>';
+    fireEvent.change(editor, { target: { value: draft } });
+
+    const { body } = openDraftPreview();
+    const highlight = body.getByRole('heading', { name: '추천한다면' }).closest('[class*="border-leaf"]');
+    expect(highlight?.querySelector('strong')?.textContent).toBe('미저장 소개');
+    expect(highlight?.querySelector('ul > li > ol > li')?.textContent).toBe('하위 항목');
+    fireEvent.keyDown(body.getByRole('heading', { name: '추천한다면' }), { key: 'Escape' });
+
+    expect(screen.queryByTitle('공개 화면')).toBeNull();
+    expect(screen.getByRole('dialog', { name: '설명 수정' })).toBeDefined();
+    openDraftPreview();
+    fireEvent(screen.getByRole('dialog', { name: '공개 미리보기' }), new Event('cancel', { cancelable: true }));
+    expect(screen.queryByTitle('공개 화면')).toBeNull();
+    expect(screen.getByRole('dialog', { name: '설명 수정' })).toBeDefined();
+    expect(editor.value).toBe(draft);
+    fireEvent.change(editor, { target: { value: '<p></p>' } });
+    expect(openDraftPreview().body.getByText('작성한 소개가 없습니다.')).toBeDefined();
+    expect(editor.value).toBe('<p></p>');
+    expect(fixture.writes).toEqual([]);
+    expect(document.body.style.overflow).toBe('hidden');
+    cleanup();
+    expect(document.body.style.overflow).toBe(originalOverflow);
+  } finally {
+    restoreDialog();
+  }
 });
 
 it('refreshes the product after description save and again when a requested translation completes', async () => {

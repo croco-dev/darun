@@ -295,12 +295,18 @@ importers:
       '@darun/magazines-feature':
         specifier: workspace:*
         version: link:../../libs/magazines/feature
+      '@darun/magazines-shell':
+        specifier: workspace:*
+        version: link:../../libs/magazines/shell
       '@darun/products-domain':
         specifier: workspace:*
         version: link:../../libs/products/domain
       '@darun/products-feature':
         specifier: workspace:*
         version: link:../../libs/products/feature
+      '@darun/products-shell':
+        specifier: workspace:*
+        version: link:../../libs/products/shell
       '@darun/provider-auth/client':
         specifier: workspace:*
         version: link:../../libs/shared/provider-auth/client

@@ -3,10 +3,22 @@
 import { Button } from '@darun/ui';
 import { Editor, AdminActions, AdminEmptyState, AdminErrorState, AdminLoadingState } from '@darun/ui-admin';
 import { bind } from '@darun/utils-structure-react';
-import { useEditProductDescription, type UseEditProductDescriptionProps } from './useEditProductDescription';
+import type { ReactNode } from 'react';
+import {
+  normalizeProductDescriptionDraft,
+  useEditProductDescription,
+  type UseEditProductDescriptionProps,
+} from './useEditProductDescription';
+
+type EditProductDescriptionProps = UseEditProductDescriptionProps & {
+  renderPreview?: (readDraft: () => string, disabled: boolean) => ReactNode;
+};
 
 const EditProductDescriptionForm = bind(
-  useEditProductDescription,
+  ({ renderPreview, ...props }: EditProductDescriptionProps) => ({
+    ...useEditProductDescription(props),
+    renderPreview,
+  }),
   ({
     form,
     submit,
@@ -22,6 +34,7 @@ const EditProductDescriptionForm = bind(
     hasServerChange,
     acceptLatestDescription,
     overwriteWithDraft,
+    renderPreview,
   }) => (
     <form onSubmit={form.onSubmit(submit)} className="max-h-[75vh] overflow-y-auto">
       <div className="flex flex-col gap-2">
@@ -86,6 +99,11 @@ const EditProductDescriptionForm = bind(
       )}
 
       <AdminActions>
+        {descriptionReady &&
+          renderPreview?.(
+            () => normalizeProductDescriptionDraft(form.getValues().description ?? ''),
+            loading || imageUploading
+          )}
         {onCancel && (
           <Button
             type="button"
@@ -112,6 +130,6 @@ const EditProductDescriptionForm = bind(
   )
 );
 
-export function EditProductDescription(props: UseEditProductDescriptionProps) {
+export function EditProductDescription(props: EditProductDescriptionProps) {
   return <EditProductDescriptionForm key={props.slug} {...props} />;
 }

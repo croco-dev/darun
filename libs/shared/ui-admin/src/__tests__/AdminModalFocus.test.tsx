@@ -82,6 +82,38 @@ describe('AdminModal focus lifecycle', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('위에 열린 native 모달이 Tab과 Escape를 처리하도록 둔다', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    render(
+      <>
+        <AdminModal opened onClose={onClose} title="편집">
+          <button type="button">저장</button>
+        </AdminModal>
+        <dialog open aria-label="미리보기">
+          <button type="button">미리보기 닫기</button>
+        </dialog>
+      </>
+    );
+    act(() => vi.advanceTimersByTime(0));
+    const preview = screen.getByRole<HTMLDialogElement>('dialog', { name: '미리보기' });
+    const closePreview = screen.getByRole('button', { name: '미리보기 닫기' });
+    const querySelector = document.querySelector.bind(document);
+    // jsdom displays an open dialog but does not implement the native top layer.
+    vi.spyOn(document, 'querySelector').mockImplementation(selector =>
+      selector === 'dialog:modal' ? (preview.open ? preview : null) : querySelector(selector)
+    );
+    closePreview.focus();
+    expect(fireEvent.keyDown(closePreview, { key: 'Tab' })).toBe(true);
+    expect(fireEvent.keyDown(closePreview, { key: 'Tab', shiftKey: true })).toBe(true);
+    fireEvent.keyDown(closePreview, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+
+    preview.open = false;
+    fireEvent.keyDown(screen.getByRole('button', { name: '저장' }), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('다시 열 때 새 opener를 기록하고 unmount 시 초점과 스크롤을 복구한다', () => {
     vi.useFakeTimers();
     render(
