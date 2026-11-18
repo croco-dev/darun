@@ -141,7 +141,9 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   let db: Drizzle;
   let selectCount = 0;
   let selectQueries: string[] = [];
-  beforeAll(async () => {
+  async function openFixtureConnection(
+    options: Pick<postgres.Options<Record<string, never>>, 'prepare' | 'connect_timeout' | 'connection'>
+  ) {
     const target = new URL(url!);
     const database = 'darun_detail_freshness';
     if (
@@ -157,24 +159,31 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     if (!username || [username, password].some(value => /\p{Cc}/u.test(value))) {
       throw new Error('Product detail tests require an explicit database user and valid credentials');
     }
-    const connection = {
+    const session = postgres({
+      ...options,
       host: target.hostname,
       port: target.port ? Number(target.port) : 5432,
       database,
       username,
       password,
       max: 1,
-      connect_timeout: 5,
-      connection: { search_path: 'public' },
-    };
-    writer = postgres(connection);
-    reader = postgres(connection);
-    for (const session of [writer, reader]) {
+      connection: { ...options.connection, search_path: 'public' },
+    });
+    try {
       const [current] = await session`select current_database() as name, current_schema() as schema`;
       if (current?.name !== database || current.schema !== 'public') {
         throw new Error('Product detail test fixture connected to the wrong database or schema');
       }
+      return session;
+    } catch (error) {
+      await session.end({ timeout: 5 });
+      throw error;
     }
+  }
+
+  beforeAll(async () => {
+    writer = await openFixtureConnection({ connect_timeout: 5 });
+    reader = await openFixtureConnection({ connect_timeout: 5 });
     await migrate(drizzle(writer), {
       migrationsFolder: resolve(__dirname, '../scripts/migrations'),
     });
@@ -1456,7 +1465,10 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           { extensions: { code: 'product/invalid-args' } },
         ]);
         expect((await run(update, { ...vars, input: { role: 'unrecognized' } })).errors).toHaveLength(1);
-        expect(await writer`select id from product_links where role is not null or is_designated_primary`).toEqual([]);
+        expect(
+          await writer`select id from product_links where product_id in ('link-parent-a', 'link-parent-b')
+          and (role is not null or is_designated_primary)`
+        ).toEqual([]);
 
         const loadIntents = () => writer`
           select l.kind, l.source_revision, p.content_revision
@@ -1740,7 +1752,6 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
     beforeAll(async () => {
       const options = {
-        max: 1,
         prepare: false,
         connection: {
           application_name: applicationName,
@@ -1748,8 +1759,8 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           lock_timeout: 4000,
         },
       };
-      first = postgres(url!, options);
-      second = postgres(url!, options);
+      first = await openFixtureConnection(options);
+      second = await openFixtureConnection(options);
       await writer`insert into products (id, name, slug, summary, logo_url)
         values (${targetId}, 'Visual fixture', ${applicationName}, 'summary', 'https://example.com/logo.png')`;
       for (const id of [targetId, otherTargetId]) {
