@@ -57,8 +57,8 @@ import {
   AllProductsOnProductListTableDocument,
   type AllProductsOnProductListTableQuery,
   type AllProductsOnProductListTableQueryVariables,
-  GetAdminProductCategorySelectionDocument,
-  UpdateAdminProductCategoriesDocument,
+  AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
+  UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
 } from '../../../libs/__generated__/graphql';
 import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
@@ -202,8 +202,8 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
       return result.body.singleResult;
     };
-    const adminQuery = print(GetAdminProductCategorySelectionDocument);
-    const mutation = print(UpdateAdminProductCategoriesDocument);
+    const adminQuery = print(AdminProductCategorySelectionOnProductDetailCategorySectionDocument);
+    const mutation = print(UpdateProductCategoriesOnProductDetailCategorySectionDocument);
     const categoryQuery = 'query($slug: String!) { productsByCategory(slug: $slug) { edges { node { id } } } }';
     const expectMembership = async (categoryId: string, isMember: boolean) => {
       const result = await run(categoryQuery, { slug: categorySlug(categoryId) }, []);

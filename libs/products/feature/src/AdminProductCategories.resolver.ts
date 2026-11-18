@@ -20,9 +20,9 @@ class AdminProductCategorySelection {
 @Service()
 export class AdminProductCategoriesResolver {
   constructor(
-    private readonly getProduct: GetProduct,
-    private readonly getCategories: GetCategories,
-    private readonly updateCategories: UpdateProductCategories
+    private readonly getProductUseCase: GetProduct,
+    private readonly getCategoriesUseCase: GetCategories,
+    private readonly updateProductCategoriesUseCase: UpdateProductCategories
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -30,13 +30,13 @@ export class AdminProductCategoriesResolver {
   async adminProductCategorySelection(
     @Arg('slug', () => String) slug: string
   ): Promise<AdminProductCategorySelection | null> {
-    const product = await this.getProduct.execute({ slug });
+    const product = await this.getProductUseCase.execute({ slug });
     if (!product) return null;
 
     return {
       productId: product.id,
       categoryIds: product.categoryIds,
-      categories: await this.getCategories.execute(),
+      categories: await this.getCategoriesUseCase.execute(),
     };
   }
 
@@ -46,6 +46,6 @@ export class AdminProductCategoriesResolver {
     @Arg('productId', () => ID) productId: string,
     @Arg('categoryIds', () => [ID]) categoryIds: string[]
   ): Promise<string[]> {
-    return this.updateCategories.execute(productId, categoryIds);
+    return this.updateProductCategoriesUseCase.execute(productId, categoryIds);
   }
 }

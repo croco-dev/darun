@@ -4,8 +4,8 @@ import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
-  GetAdminProductCategorySelectionDocument,
-  UpdateAdminProductCategoriesDocument,
+  AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
+  UpdateProductCategoriesOnProductDetailCategorySectionDocument,
 } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import {
@@ -19,7 +19,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 
 gql`
-  query GetAdminProductCategorySelection($slug: String!) {
+  query AdminProductCategorySelectionOnProductDetailCategorySection($slug: String!) {
     adminProductCategorySelection(slug: $slug) {
       productId
       categoryIds
@@ -31,19 +31,19 @@ gql`
     }
   }
 
-  mutation UpdateAdminProductCategories($productId: ID!, $categoryIds: [ID!]!) {
+  mutation UpdateProductCategoriesOnProductDetailCategorySection($productId: ID!, $categoryIds: [ID!]!) {
     updateProductCategories(productId: $productId, categoryIds: $categoryIds)
   }
 `;
 
-export function ProductDetailCategorySection({ slug }: { slug: string }) {
+export function ProductDetailCategorySection({ slug }: { readonly slug: string }) {
   const variables = { slug };
-  const query = GetAdminProductCategorySelectionDocument;
+  const query = AdminProductCategorySelectionOnProductDetailCategorySectionDocument;
   const { data, loading, error, refetch } = useQuery(query, {
     variables,
     fetchPolicy: 'network-only',
   });
-  const [updateCategories] = useMutation(UpdateAdminProductCategoriesDocument);
+  const [updateCategories] = useMutation(UpdateProductCategoriesOnProductDetailCategorySectionDocument);
   const [draft, setDraft] = useState<Set<string> | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -226,11 +226,7 @@ export function ProductDetailCategorySection({ slug }: { slug: string }) {
                 <p className="font-medium">저장 후 카테고리</p>
                 <p className="break-words">{draft.size ? [...draft].map(label).join(', ') : '연결된 카테고리 없음'}</p>
               </div>
-              {invalid && (
-                <p className="text-sm" role="status">
-                  선택할 수 없는 카테고리를 해제해 주세요.
-                </p>
-              )}
+              {invalid && <output className="block text-sm">선택할 수 없는 카테고리를 해제해 주세요.</output>}
               {saveError && (
                 <p className="text-sm" role="alert">
                   {saveError}
@@ -259,11 +255,7 @@ export function ProductDetailCategorySection({ slug }: { slug: string }) {
               </div>
             </form>
           )}
-          {saved && (
-            <p role="status" className="text-sm">
-              카테고리를 저장했습니다.
-            </p>
-          )}
+          {saved && <output className="block text-sm">카테고리를 저장했습니다.</output>}
         </div>
       </AdminSectionBody>
     </AdminPanel>
