@@ -29,8 +29,12 @@ function setup(content: string, position: number | { from: number; to: number },
 }
 
 function openLink() {
-  fireEvent.click(screen.getByRole('button', { name: '본문 링크 편집' }));
-  return within(screen.getByRole('dialog', { name: '본문 링크 편집' }));
+  fireEvent.click(screen.getByText('본문 링크 편집', { selector: 'button' }));
+  const legend = screen.getByText('본문 링크 편집', { selector: 'dialog[open] legend' });
+  const dialog = legend.closest('dialog')!;
+  expect(legend.id).toBeTruthy();
+  expect(dialog.getAttribute('aria-labelledby')).toBe(legend.id);
+  return within(dialog);
 }
 
 function updateUrl(dialog: ReturnType<typeof within>, value: string) {
@@ -48,7 +52,7 @@ it('links the original selected text and reopens the saved href and label', () =
   const dialog = openLink();
   expect(dialog.getByDisplayValue('설치 가이드')).toBeTruthy();
   updateUrl(dialog, firstUrl);
-  fireEvent.click(dialog.getByRole('button', { name: '링크 적용' }));
+  fireEvent.click(dialog.getByText('링크 적용', { selector: 'button' }));
   expect(onUpdate).toHaveBeenCalledTimes(1);
   const saved = editor.getHTML();
   const anchor = new DOMParser().parseFromString(saved, 'text/html').querySelector('a');
