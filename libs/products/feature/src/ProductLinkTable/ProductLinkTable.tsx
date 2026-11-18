@@ -25,19 +25,18 @@ gql`
 
 type ProductLinkRowProps = {
   link: EditProductLinkItemFragment;
+  productLogoUrl: string | null | undefined;
   onEdit: (link: EditProductLinkItemFragment) => void;
 };
 
-function LinkIcon({ iconUrl, role, isPrimary }: Pick<EditProductLinkItemFragment, 'iconUrl' | 'role' | 'isPrimary'>) {
+function LinkIcon({
+  src,
+  role,
+  isPrimary,
+}: Pick<EditProductLinkItemFragment, 'role' | 'isPrimary'> & {
+  src: string | null;
+}) {
   const [hasError, setHasError] = useState(false);
-  const [prevIconUrl, setPrevIconUrl] = useState(iconUrl);
-
-  if (iconUrl !== prevIconUrl) {
-    setPrevIconUrl(iconUrl);
-    setHasError(false);
-  }
-
-  const src = getProductLinkIconSource(iconUrl);
   if (!src || hasError) {
     const FallbackIcon = role === 'official' ? Globe : Link2;
     return (
@@ -60,9 +59,10 @@ function LinkIcon({ iconUrl, role, isPrimary }: Pick<EditProductLinkItemFragment
   );
 }
 
-function ProductLinkRow({ link, onEdit }: ProductLinkRowProps) {
+function ProductLinkRow({ link, productLogoUrl, onEdit }: ProductLinkRowProps) {
   const label = getProductLinkLabel(link);
   const roleLabel = link.role ? productLinkRoleLabels[link.role].ko : '미분류';
+  const iconSrc = getProductLinkIconSource(link.iconUrl, productLogoUrl);
   return (
     <tr className="border-b border-dark-200 hover:bg-surface-100 transition last:border-b-0">
       <td className="border-r border-dark-200 px-4 py-3">
@@ -73,7 +73,7 @@ function ProductLinkRow({ link, onEdit }: ProductLinkRowProps) {
               link.isPrimary ? 'bg-black border-black text-white' : 'bg-white border-dark-200 text-dark-800'
             )}
           >
-            <LinkIcon iconUrl={link.iconUrl} role={link.role} isPrimary={link.isPrimary} />
+            <LinkIcon key={iconSrc} src={iconSrc} role={link.role} isPrimary={link.isPrimary} />
           </div>
         </div>
       </td>
@@ -135,11 +135,15 @@ function ProductLinkRow({ link, onEdit }: ProductLinkRowProps) {
 
 function ProductLinkRows({
   links,
+  productLogoUrl,
   loading,
   error,
   refreshLinks,
   editLink,
-}: Pick<ReturnType<typeof useProductLinkTable>, 'links' | 'loading' | 'error' | 'refreshLinks' | 'editLink'>) {
+}: Pick<
+  ReturnType<typeof useProductLinkTable>,
+  'links' | 'productLogoUrl' | 'loading' | 'error' | 'refreshLinks' | 'editLink'
+>) {
   if (loading) {
     return <AdminLoadingState />;
   }
@@ -189,7 +193,7 @@ function ProductLinkRows({
         </thead>
         <tbody className="bg-white">
           {links.map(link => (
-            <ProductLinkRow key={link.id} link={link} onEdit={editLink} />
+            <ProductLinkRow key={link.id} link={link} productLogoUrl={productLogoUrl} onEdit={editLink} />
           ))}
         </tbody>
       </table>
@@ -199,9 +203,16 @@ function ProductLinkRows({
 
 export const ProductLinkTable = bind(
   useProductLinkTable,
-  ({ links, loading, error, refreshLinks, editLink, closeEditModal, finishEdit, link, slug }) => (
+  ({ links, productLogoUrl, loading, error, refreshLinks, editLink, closeEditModal, finishEdit, link, slug }) => (
     <>
-      <ProductLinkRows links={links} loading={loading} error={error} refreshLinks={refreshLinks} editLink={editLink} />
+      <ProductLinkRows
+        links={links}
+        productLogoUrl={productLogoUrl}
+        loading={loading}
+        error={error}
+        refreshLinks={refreshLinks}
+        editLink={editLink}
+      />
       {link && (
         <EditProductLinkItem slug={slug} link={link} links={links} onSubmit={finishEdit} onCancel={closeEditModal} />
       )}

@@ -32,11 +32,18 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const [locale, width, groupName, labels] of [
-  ['ko', 1280, '상품 링크', ['문서', '공식 홈페이지', 'Visit the site']],
-  ['en', 390, 'Product links', ['Documentation', 'Official Website', 'Visit the site']],
+  ['ko', 1280, '상품 링크', ['문서', '공식 홈페이지', 'Linear 공식 사이트']],
+  ['en', 390, 'Product links', ['Documentation', 'Official Website', 'Linear 공식 사이트']],
 ] as const) {
   test(`${locale} product links use the designated link and role label`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
+    const researchLogo = 'https://research-logo.example/linear.png';
+    await page.route(researchLogo, route =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"><rect width="22" height="22" fill="violet"/></svg>',
+      })
+    );
     await page.route(
       'https://res.cloudinary.com/dqddtkvmb/image/upload/v1709304777/images/icons/links/pvjgv9btsktstjkoarrl.svg',
       route =>
@@ -66,9 +73,11 @@ for (const [locale, width, groupName, labels] of [
     await expect(globe.locator('..')).toHaveCSS('background-color', 'rgb(17, 17, 17)');
     await expect(links.nth(1).locator('img')).toHaveCount(0);
     const officialIcon = links.nth(2).locator('img');
+    await expect(officialIcon).toHaveAttribute('src', researchLogo);
+    await expect(officialIcon).toHaveAttribute('referrerpolicy', 'no-referrer');
     await expect
-      .poll(() => officialIcon.evaluate(image => (image as HTMLImageElement).src))
-      .toBe(new URL('/images/default-product-icon.svg', page.url()).href);
+      .poll(() => officialIcon.evaluate(image => (image as HTMLImageElement).naturalWidth))
+      .toBeGreaterThan(0);
     await expect(links.nth(1).locator('span').first()).toHaveClass(/bg-white/);
     await expect(links.first()).toHaveAttribute('rel', 'noopener noreferrer');
     await links.first().focus();

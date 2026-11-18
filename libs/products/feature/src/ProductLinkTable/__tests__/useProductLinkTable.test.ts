@@ -22,6 +22,7 @@ describe('useProductLinkTable', () => {
       data: {
         tempProductBySlug: {
           id: 'prod-1',
+          logoUrl: 'https://example.com/logo.png',
           links: [{ id: 'link-1', isPrimary: true }],
         },
       },
@@ -32,6 +33,7 @@ describe('useProductLinkTable', () => {
 
     expect(result.current.loading).toBe(false);
     expect(result.current.links).toHaveLength(1);
+    expect(result.current.productLogoUrl).toBe('https://example.com/logo.png');
     expect(result.current.error).toBeUndefined();
   });
 

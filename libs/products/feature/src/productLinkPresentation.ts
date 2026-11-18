@@ -32,6 +32,20 @@ export const productLinkRoleLabels = {
   other: { ko: '기타', en: 'Other link' },
 } satisfies Record<ProductLinkRole, { ko: string; en: string }>;
 
+const englishLinkTitles = new Map([
+  ['공식 홈페이지', 'Official Website'],
+  ['홈페이지', 'Website'],
+  ['웹사이트', 'Website'],
+  ['고객센터', 'Customer Support'],
+  ['문의하기', 'Contact Us'],
+  ['블로그', 'Blog'],
+  ['다운로드', 'Download'],
+  ['앱스토어', 'App Store'],
+  ['구글플레이', 'Google Play'],
+  ['문서', 'Documentation'],
+  ['가격 안내', 'Pricing'],
+]);
+
 export function getProductLinkLabel(
   link: {
     title: string;
@@ -41,7 +55,7 @@ export function getProductLinkLabel(
   },
   locale = 'ko'
 ) {
-  if (link.title.trim()) return link.title;
+  if (link.title.trim()) return locale === 'en' ? (englishLinkTitles.get(link.title) ?? link.title) : link.title;
   if (link.role) return productLinkRoleLabels[link.role][locale === 'en' ? 'en' : 'ko'];
   return link.displayLink || link.link;
 }
@@ -50,7 +64,10 @@ export function orderPublicProductLinks<T extends { isPrimary: boolean }>(links:
   return [...links].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
 }
 
-export function getProductLinkIconSource(iconUrl: string | null | undefined) {
+export function getProductLinkIconSource(
+  iconUrl: string | null | undefined,
+  productLogoUrl: string | null | undefined
+) {
   if (!iconUrl) return null;
   const localOrigin = 'https://darun.invalid';
   try {
@@ -58,8 +75,17 @@ export function getProductLinkIconSource(iconUrl: string | null | undefined) {
     if (iconUrl.startsWith('/') && url.origin === localOrigin && url.pathname.startsWith('/images/')) {
       return url.pathname + url.search;
     }
-    // These images load directly in the browser. Use the apps' configured image origins.
     if (isDarunImageRemoteUrl(url)) return url.href;
+    // Research registration also saves the displayed product logo as the visit link's icon.
+    if (
+      iconUrl === productLogoUrl &&
+      url.origin !== localOrigin &&
+      (url.protocol === 'https:' || url.protocol === 'http:') &&
+      !url.username &&
+      !url.password
+    ) {
+      return url.href;
+    }
   } catch {
     // Fall back for malformed persisted icon URLs.
   }

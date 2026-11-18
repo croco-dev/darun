@@ -7,6 +7,7 @@ import { ProductLinkTable } from '../ProductLinkTable';
 
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }));
 
+const researchLogo = 'https://linear.example/logo.png';
 const initialLink = {
   __typename: 'Link',
   id: 'link-a',
@@ -15,7 +16,7 @@ const initialLink = {
   title: 'Original title',
   link: 'https://example.com',
   displayLink: 'example.com',
-  iconUrl: null,
+  iconUrl: researchLogo,
 };
 const otherLink = {
   ...initialLink,
@@ -32,14 +33,15 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function setup({ failSave = false, delaySave = false } = {}) {
-  let links = [initialLink, otherLink];
+function setup({ failSave = false, delaySave = false, firstTitle = initialLink.title } = {}) {
+  let links = [{ ...initialLink, title: firstTitle }, otherLink];
   const reads: Array<(error?: Error) => void> = [];
   const writes: Operation[] = [];
   const pendingSaves: Array<() => void> = [];
   const product = () => ({
     __typename: 'Product',
     id: 'product-a',
+    logoUrl: researchLogo,
     links,
   });
   const client = new ApolloClient({
@@ -238,9 +240,20 @@ describe('상품 링크 재편집', () => {
     expect(fixture.writes).toHaveLength(1);
   });
 
-  it('역할의 기본 이름과 변경된 대표 순서를 저장 전에 미리 본다', async () => {
-    const fixture = setup();
+  it('한국어와 영어의 공개 문구 및 변경된 대표 순서를 저장 전에 미리 본다', async () => {
+    const fixture = setup({ firstTitle: '공식 홈페이지' });
     await fixture.resolveRead();
+    const researchIcon = screen.getByText('공식 홈페이지').closest('tr')?.querySelector('img');
+    expect(researchIcon?.getAttribute('src')).toBe(researchLogo);
+    expect(researchIcon?.getAttribute('referrerpolicy')).toBe('no-referrer');
+    edit('공식 홈페이지');
+    expect(
+      within(dialog()!).getByRole('option', {
+        name: '현재 아이콘',
+        selected: true,
+      })
+    ).toHaveProperty('value', researchLogo);
+    fireEvent.click(screen.getByText('취소', { selector: 'button' }));
     edit('Other link');
     const modal = within(dialog()!);
     fireEvent.change(modal.getByLabelText('링크 역할'), {
@@ -249,10 +262,12 @@ describe('상품 링크 재편집', () => {
     fireEvent.change(titleInput(), { target: { value: '' } });
     fireEvent.click(modal.getByLabelText('이 링크를 대표로 지정'));
     const preview = within(modal.getByRole('region', { name: '공개 링크 미리보기' }));
-    expect(preview.getAllByRole('listitem').map(item => item.textContent)).toEqual([
-      '공식 사이트 (대표 링크)',
-      'Original title',
-    ]);
+    const labels = (language: string) =>
+      within(preview.getByRole('list', { name: language }))
+        .getAllByRole('listitem')
+        .map(item => item.textContent);
+    expect(labels('한국어')).toEqual(['공식 사이트 (대표 링크)', '공식 홈페이지']);
+    expect(labels('영어')).toEqual(['Official website (Primary link)', 'Official Website']);
     expect(fixture.writes).toHaveLength(0);
 
     save();

@@ -12,17 +12,18 @@ import { bind } from '@darun/utils-structure-react';
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
-import { getLocalizedLinkTitle } from '../../utils/localization';
 import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductLinks } from './useProductLinks';
 
-export const ProductLinks = bind(useProductLinks, ({ links, error, refetch }) => (
+type ProductLinkQuery = ReturnType<typeof useProductLinks>;
+
+export const ProductLinks = bind(useProductLinks, ({ links, productLogoUrl, error, refetch }) => (
   <ProductSectionContent error={error} refetch={refetch}>
-    <ProductLinkButtons links={links} />
+    <ProductLinkButtons links={links} productLogoUrl={productLogoUrl} />
   </ProductSectionContent>
 ));
 
-function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 'links'>) {
+function ProductLinkButtons({ links, productLogoUrl }: Pick<ProductLinkQuery, 'links' | 'productLogoUrl'>) {
   const locale = useLocale();
 
   if (!links || links.length === 0) {
@@ -33,8 +34,9 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
     <>
       {orderPublicProductLinks(links).map(link => {
         const { isPrimary } = link;
-        const localizedTitle = getLocalizedLinkTitle(getProductLinkLabel(link, locale), locale);
+        const localizedTitle = getProductLinkLabel(link, locale);
         const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
+        const iconSrc = getProductLinkIconSource(link.iconUrl, productLogoUrl);
 
         return (
           <Link
@@ -58,7 +60,7 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                <ProductLinkIcon key={link.iconUrl} link={link} />
+                <ProductLinkIcon key={iconSrc} link={link} iconSrc={iconSrc} />
                 <span className="truncate max-w-[200px] sm:max-w-xs text-xs sm:text-sm font-semibold text-current">
                   {localizedTitle}
                 </span>
@@ -78,14 +80,13 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
   );
 }
 
-type ProductLink = ReturnType<typeof useProductLinks>['links'][number];
+type ProductLink = ProductLinkQuery['links'][number];
 
-function ProductLinkIcon({ link }: { link: ProductLink }) {
+function ProductLinkIcon({ link, iconSrc }: { link: ProductLink; iconSrc: string | null }) {
   const [failed, setFailed] = useState(false);
-  const iconSrc = failed ? null : getProductLinkIconSource(link.iconUrl);
   const { isPrimary } = link;
 
-  if (!iconSrc) {
+  if (!iconSrc || failed) {
     const FallbackIcon = link.role === 'official' ? Globe : Link2;
     return (
       <div

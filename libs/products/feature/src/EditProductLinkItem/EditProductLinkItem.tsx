@@ -19,6 +19,11 @@ gql`
   }
 `;
 
+const previewLanguages = [
+  { locale: 'ko', label: '한국어', primary: '대표 링크' },
+  { locale: 'en', label: '영어', primary: 'Primary link' },
+] as const;
+
 export function EditProductLinkItem(
   props: EditProductLinkItemProps & {
     links?: readonly EditProductLinkItemProps['link'][];
@@ -27,6 +32,7 @@ export function EditProductLinkItem(
 ) {
   const { form, submit, cancel, loading, changes } = useEditProductLinkItem(props);
   const { link, links = [link] } = props;
+  const storedCustomIcon = link.iconUrl && !productLinkIconOptions.some(({ value }) => value === link.iconUrl);
   const preview = orderPublicProductLinks(
     links.map(item => {
       const isPrimary = changes.makePrimary ? item.id === link.id : item.isPrimary;
@@ -79,7 +85,8 @@ export function EditProductLinkItem(
           <ProductLinkRoleField disabled={loading} {...form.getInputProps('role')} />
           <AdminField label="아이콘" error={form.errors.iconUrl}>
             <AdminSelect disabled={loading} key={form.key('iconUrl')} {...form.getInputProps('iconUrl')}>
-              <option value="">아이콘을 선택해 주세요</option>
+              <option value="">아이콘 없음</option>
+              {storedCustomIcon && <option value={link.iconUrl ?? ''}>현재 아이콘</option>}
               {productLinkIconOptions.map(icon => (
                 <option key={icon.value} value={icon.value}>
                   {icon.label}
@@ -91,21 +98,28 @@ export function EditProductLinkItem(
             <input type="checkbox" disabled={loading} {...form.getInputProps('makePrimary', { type: 'checkbox' })} />이
             링크를 대표로 지정
           </label>
-          <section className="rounded-lg bg-surface-100 p-3" aria-label="공개 링크 미리보기">
-            <p className="mb-2 text-sm font-medium text-dark-900">공개 링크 미리보기</p>
-            <ol className="flex flex-wrap gap-2">
-              {preview.map(item => (
-                <li
-                  key={item.id}
-                  className={`max-w-full break-words rounded-lg border px-3 py-2 text-sm ${
-                    item.isPrimary ? 'border-dark-800 bg-dark-900 text-white' : 'border-dark-200 bg-white text-dark-900'
-                  }`}
-                >
-                  {getProductLinkLabel(item)}
-                  {item.isPrimary && <span className="sr-only"> (대표 링크)</span>}
-                </li>
-              ))}
-            </ol>
+          <section className="space-y-2 rounded-lg bg-surface-100 p-3" aria-label="공개 링크 미리보기">
+            <p className="text-sm font-medium text-dark-900">공개 링크 미리보기</p>
+            {previewLanguages.map(({ locale, label, primary }) => (
+              <div key={locale} className="flex items-start gap-2">
+                <p className="w-12 shrink-0 py-2 text-sm text-dark-600">{label}</p>
+                <ol className="flex min-w-0 flex-wrap gap-2" aria-label={label} lang={locale}>
+                  {preview.map(item => (
+                    <li
+                      key={item.id}
+                      className={`max-w-full break-words rounded-lg border px-3 py-2 text-sm ${
+                        item.isPrimary
+                          ? 'border-dark-800 bg-dark-900 text-white'
+                          : 'border-dark-200 bg-white text-dark-900'
+                      }`}
+                    >
+                      {getProductLinkLabel(item, locale)}
+                      {item.isPrimary && <span className="sr-only"> ({primary})</span>}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ))}
           </section>
           <AdminActions>
             <Button

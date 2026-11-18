@@ -13,6 +13,7 @@ gql`
   query TempProductBySlugOnProductLinkTable($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
+      logoUrl
       ...ProductLinkTable
     }
   }
@@ -73,6 +74,7 @@ export function useProductLinkTable({ slug }: ProductLinkTableProps) {
 
   return {
     links,
+    productLogoUrl: data?.tempProductBySlug?.logoUrl,
     loading: loading || savedRefresh?.slug === slug,
     error,
     refreshLinks,

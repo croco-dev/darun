@@ -22,7 +22,7 @@ const link = {
   iconUrl: '',
   isPrimary: true,
 };
-const product = { __typename: 'Product', id: 'product', links: [link] };
+const product = { __typename: 'Product', id: 'product', logoUrl: '/images/default-product-icon.svg', links: [link] };
 const clients: ApolloClient[] = [];
 
 afterEach(() => clients.splice(0).forEach(client => client.stop()));

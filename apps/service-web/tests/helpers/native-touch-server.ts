@@ -52,6 +52,7 @@ const delayedCompany = {
 const productWithDesignatedLink = {
   ...nativeTouchProduct,
   slug: 'product-link-roles',
+  logoUrl: 'https://research-logo.example/linear.png',
   links: [
     {
       __typename: 'Link',
@@ -77,10 +78,10 @@ const productWithDesignatedLink = {
     {
       __typename: 'Link',
       id: 'official-link',
-      title: 'Visit the site',
+      title: 'Linear 공식 사이트',
       link: 'https://example.com/visit',
       displayLink: '',
-      iconUrl: '/images/default-product-icon.svg',
+      iconUrl: 'https://research-logo.example/linear.png',
       isPrimary: false,
       role: 'official',
     },
