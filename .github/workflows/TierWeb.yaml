@@ -55,6 +55,8 @@ jobs:
         run: pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
       - name: Verify Tier CI prerequisites
         run: pnpm --filter graphql-api exec vitest run __tests__/requiredPostgresReporter.test.ts __tests__/tierDedupeCi.test.ts
+      - name: Verify Tier search, memos, and profiles through PostgREST
+        run: bash scripts/test-tier-postgrest-ci.sh "${{ job.services.tier-postgres.id }}"
       - name: Check build environment
         run: |
           test -n "$NEXT_PUBLIC_SUPABASE_URL" || { echo "Missing NEXT_PUBLIC_SUPABASE_URL repository variable"; exit 1; }

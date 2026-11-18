@@ -12,6 +12,12 @@ const urls = {
   MAGAZINE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_magazine_pagination',
   LLM_SETTING_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_llm_settings',
   DEDUPE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_tier_dedupe',
+  APP_SEARCH_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_app_search',
+  APP_SEARCH_TEST_POSTGREST_URL: 'http://127.0.0.1:3001',
+  MEMO_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_memo_integrity',
+  MEMO_TEST_POSTGREST_URL: 'http://127.0.0.1:3002',
+  PROFILE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_profile_integrity',
+  PROFILE_TEST_POSTGREST_URL: 'http://127.0.0.1:3003',
   JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_job_config_attempts',
   TRANSLATION_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_translation_integrity',
   ALTERNATIVE_TEST_DATABASE_URL: 'postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity',
@@ -46,6 +52,11 @@ const groups = {
   ],
   baseline: ['__tests__/migrationBaseline.pg.test.ts'],
   tier: ['src/remove-duplicates.pg.test.ts'],
+  'tier-postgrest': [
+    'src/app/apps/app-search.pg.test.ts',
+    'src/app/admin/app-memo.pg.test.ts',
+    'src/utils/ensure-user-profile.pg.test.ts',
+  ],
   recovery: ['__tests__/jobRecoveryTick.pg.test.ts'],
 };
 type Group = keyof typeof groups;
@@ -112,6 +123,12 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
     ['products', 'VISUAL_SAVE_TEST_DATABASE_URL'],
     ['baseline', 'MIGRATION_BASELINE_TEST_DATABASE_URL'],
     ['tier', 'DEDUPE_TEST_DATABASE_URL'],
+    ['tier-postgrest', 'APP_SEARCH_TEST_DATABASE_URL'],
+    ['tier-postgrest', 'APP_SEARCH_TEST_POSTGREST_URL'],
+    ['tier-postgrest', 'MEMO_TEST_DATABASE_URL'],
+    ['tier-postgrest', 'MEMO_TEST_POSTGREST_URL'],
+    ['tier-postgrest', 'PROFILE_TEST_DATABASE_URL'],
+    ['tier-postgrest', 'PROFILE_TEST_POSTGREST_URL'],
     ['recovery', 'RECOVERY_TEST_DATABASE_URL'],
   ] as const)('fails before running when %s lacks %s', (group, name) => {
     expectFailure(runFixture(group, {}, [], name), `Required PostgreSQL test URL is missing: ${name}`);
@@ -137,6 +154,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
 
   it.each([
     ['tier', 'src/remove-duplicates.pg.test.ts'],
+    ['tier-postgrest', 'src/app/admin/app-memo.pg.test.ts'],
     ['magazines', '__tests__/magazinePagination.pg.test.ts'],
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
     ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],
@@ -154,6 +172,7 @@ describe('required PostgreSQL CI reporter at the Vitest process boundary', () =>
 
   describe.each([
     ['tier', 'src/remove-duplicates.pg.test.ts'],
+    ['tier-postgrest', 'src/utils/ensure-user-profile.pg.test.ts'],
     ['magazines', '__tests__/magazinePagination.pg.test.ts'],
     ['graphql', '__tests__/alternativeReplacement.pg.test.ts'],
     ['graphql', '__tests__/productDetailFreshness.pg.test.ts'],

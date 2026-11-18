@@ -152,6 +152,8 @@ jobs:
           REQUIRED_POSTGRES_GROUP: tier
           DEDUPE_TEST_DATABASE_URL: postgresql://sync:sync@127.0.0.1:55437/darun_tier_dedupe
         run: pnpm --filter tier-web exec vitest run src/remove-duplicates.pg.test.ts --reporter=default --reporter="$GITHUB_WORKSPACE/apps/graphql-api/scripts/required-postgres-reporter.ts"
+      - name: Verify Tier search, memos, and profiles through PostgREST
+        run: bash scripts/test-tier-postgrest-ci.sh "${{ job.services.content-sync-postgres.id }}"
       - run: pnpm run test:coverage
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
