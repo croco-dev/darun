@@ -10,6 +10,8 @@ export class GetProductLinks {
   ) {}
 
   async execute({ productId }: { productId: string }) {
-    return this.productLinkRepository.findManyByProductId(productId);
+    const links = await this.productLinkRepository.findManyByProductId(productId);
+    const primary = links.find(link => link.isDesignatedPrimary) ?? links[0];
+    return links.map(link => ({ ...link, isPrimary: link === primary }));
   }
 }

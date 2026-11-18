@@ -28,7 +28,7 @@ function useForms() {
     }),
     edit: useEditProductLinkItem({
       slug: 'test',
-      link: { ...values, id: 'link-1' },
+      link: { ...values, id: 'link-1', isPrimary: true, role: null },
     }),
   };
 }
@@ -40,8 +40,11 @@ describe('실제 Mantine 상품 링크 폼 검증', () => {
     '신규·수정 폼은 %s를 필드 오류로 표시하고 mutation을 보내지 않는다',
     async link => {
       const { result } = renderHook(useForms);
+      act(() => {
+        result.current.create.form.setValues({ ...values, link });
+        result.current.edit.form.setValues({ ...values, link });
+      });
       for (const kind of ['create', 'edit'] as const) {
-        act(() => result.current[kind].form.setValues({ ...values, link }));
         await act(async () => result.current[kind].form.onSubmit(result.current[kind].submit)());
         expect(result.current[kind].form.errors.link).toBeTruthy();
         expect(result.current[kind].form.getValues().link).toBe(link);
@@ -55,8 +58,11 @@ describe('실제 Mantine 상품 링크 폼 검증', () => {
   it('정상 주소의 인코딩·중복 query·fragment를 바꾸지 않고 전송한다', async () => {
     const link = 'http://example.com/a%2Fb?query=%ED%95%9C%EA%B8%80&x=1&x=2#끝';
     const { result } = renderHook(useForms);
+    act(() => {
+      result.current.create.form.setValues({ ...values, link });
+      result.current.edit.form.setValues({ ...values, link });
+    });
     for (const kind of ['create', 'edit'] as const) {
-      act(() => result.current[kind].form.setValues({ ...values, link }));
       await act(async () => result.current[kind].form.onSubmit(result.current[kind].submit)());
     }
     expect(mutate).toHaveBeenCalledTimes(2);

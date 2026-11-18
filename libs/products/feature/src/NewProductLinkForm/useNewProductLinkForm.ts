@@ -5,6 +5,7 @@ import { useApolloClient, useMutation } from '@apollo/client/react';
 import { isProductLinkUrl } from '@darun/products-domain/link';
 import {
   AddProductLinkOnNewProductLinkFormDocument,
+  type ProductLinkRole,
   TempProductBySlugOnProductLinkTableDocument,
 } from '@darun/provider-graphql';
 import { notifySavedWithRefresh } from '@darun/ui-admin';
@@ -25,6 +26,7 @@ gql`
           link
           displayLink
           iconUrl
+          role
         }
       }
     }
@@ -36,6 +38,7 @@ type FormValues = {
   iconUrl?: string;
   link?: string;
   title?: string;
+  role?: ProductLinkRole | '';
 };
 type NewProductFormProps = {
   productSlug: string;
@@ -53,6 +56,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
       iconUrl: '',
       link: '',
       title: '',
+      role: '',
     },
     validate: {
       displayLink: value => (!value?.trim() ? '표시 링크를 입력해주세요.' : null),
@@ -60,7 +64,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
         if (!value?.trim()) return '링크를 입력해주세요.';
         return isProductLinkUrl(value.trim()) ? null : '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.';
       },
-      title: value => (!value?.trim() ? '이름을 입력해주세요.' : null),
+      title: (value, values) => (!value?.trim() && !values.role ? '이름을 입력하거나 링크 역할을 선택해주세요.' : null),
       iconUrl: value => (!value ? '아이콘을 선택해주세요.' : null),
     },
   });
@@ -82,9 +86,9 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
   const submit = async (values: FormValues) => {
     const displayLink = values.displayLink?.trim();
     const link = values.link?.trim();
-    const title = values.title?.trim();
+    const title = values.title?.trim() ?? '';
     const iconUrl = values.iconUrl?.trim();
-    if (loading || isSubmittingRef.current || !displayLink || !link || !title || !iconUrl) return;
+    if (loading || isSubmittingRef.current || !displayLink || !link || (!title && !values.role) || !iconUrl) return;
     if (!isProductLinkUrl(link)) {
       notifications.show({
         message: '올바른 URL 형식(http:// 또는 https://)으로 입력해주세요.',
@@ -103,6 +107,7 @@ export function useNewProductLinkForm({ productSlug, children }: NewProductFormP
             iconUrl,
             link,
             title,
+            ...(values.role ? { role: values.role } : {}),
           },
         },
       });

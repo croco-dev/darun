@@ -48,11 +48,13 @@ function canonical(source: ProductContentSource): string {
         : null
     ),
     tags: [...source.tags].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
-    links: sorted(source.links).map(({ id, title, link, displayLink }) => ({
+    links: sorted(source.links).map(({ id, title, link, displayLink, role, isDesignatedPrimary }) => ({
       id,
       title,
       link,
       displayLink,
+      role,
+      isDesignatedPrimary,
     })),
     screenshots: sorted(source.screenshots).map(({ id, title, imageAlt, imageUrl, platform, screenType }) => ({
       id,

@@ -1,5 +1,4 @@
 import { useQuery } from '@apollo/client/react';
-import { useFragment } from '@darun/provider-graphql';
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -8,14 +7,6 @@ vi.mock('@apollo/client/react', async importOriginal => {
   return {
     ...(actual as Record<string, unknown>),
     useQuery: vi.fn(),
-  };
-});
-
-vi.mock('@darun/provider-graphql', async importOriginal => {
-  const actual = await importOriginal();
-  return {
-    ...(actual as Record<string, unknown>),
-    useFragment: vi.fn(),
   };
 });
 
@@ -37,10 +28,6 @@ describe('useProductLinkTable', () => {
       loading: false,
     } as ReturnType<typeof useQuery>);
 
-    vi.mocked(useFragment).mockReturnValue({
-      links: [{ id: 'link-1', isPrimary: true }],
-    } as never);
-
     const { result } = renderHook(() => useProductLinkTable({ slug: 'test-slug' }));
 
     expect(result.current.loading).toBe(false);
@@ -55,8 +42,6 @@ describe('useProductLinkTable', () => {
       loading: false,
       error,
     } as unknown as ReturnType<typeof useQuery>);
-
-    vi.mocked(useFragment).mockReturnValue(null as never);
 
     const { result } = renderHook(() => useProductLinkTable({ slug: 'test-slug' }));
 

@@ -14,7 +14,7 @@ export const ProductSummaryLink = ({ slug }: ProductSummaryLinkProps) => {
     <div
       role="group"
       tabIndex={-1}
-      aria-label={locale === 'ko' ? '공식 링크' : 'Official links'}
+      aria-label={locale === 'ko' ? '상품 링크' : 'Product links'}
       className="flex flex-wrap items-center gap-2.5 empty:hidden"
     >
       <Suspense fallback={<ProductSectionLoading />}>

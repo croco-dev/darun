@@ -183,6 +183,13 @@
       "when": 1795010772714,
       "tag": "0025_product_screenshot_registration",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795016187903,
+      "tag": "0026_premium_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

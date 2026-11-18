@@ -3,7 +3,11 @@
 import { gql } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { isProductLinkUrl } from '@darun/products-domain/link';
-import { EditProductLinkItemFragment, UpdateProductLinkOnEditProductLinkItemDocument } from '@darun/provider-graphql';
+import {
+  EditProductLinkItemFragment,
+  type ProductLinkRole,
+  UpdateProductLinkOnEditProductLinkItemDocument,
+} from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useRef } from 'react';
@@ -31,6 +35,8 @@ type FormValues = {
   link?: string;
   displayLink?: string;
   iconUrl?: string;
+  role?: ProductLinkRole | '';
+  makePrimary?: boolean;
 };
 
 export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditProductLinkItemProps) {
@@ -49,12 +55,14 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
   });
 
   const form = useForm<FormValues>({
-    mode: 'uncontrolled',
+    mode: 'controlled',
     initialValues: {
       title: link.title,
       link: link.link,
       displayLink: link.displayLink,
       iconUrl: link.iconUrl,
+      role: link.role ?? '',
+      makePrimary: false,
     },
     validate: {
       link: value => {
@@ -72,15 +80,17 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
   useEffect(() => {
     if (initializedLink.current.slug === slug && initializedLink.current.id === link.id) return;
     initializedLink.current = { slug, id: link.id };
-    const values = {
+    const values: FormValues = {
       title: link.title,
       link: link.link,
       displayLink: link.displayLink,
       iconUrl: link.iconUrl,
+      role: link.role ?? '',
+      makePrimary: false,
     };
     setInitialValues(values);
     setValues(values);
-  }, [slug, link.id, link.title, link.link, link.displayLink, link.iconUrl, setInitialValues, setValues]);
+  }, [slug, link.id, link.title, link.link, link.displayLink, link.iconUrl, link.role, setInitialValues, setValues]);
 
   const submit = async (values: FormValues) => {
     if (saving.current) return;
@@ -88,8 +98,9 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
     const linkUrl = values.link?.trim();
     const displayLink = values.displayLink?.trim();
     const iconUrl = values.iconUrl?.trim();
+    const role = values.role === undefined || values.role === (link.role ?? '') ? undefined : values.role || null;
 
-    if (!title && !linkUrl && !displayLink && !iconUrl) {
+    if (!title && !linkUrl && !displayLink && !iconUrl && role === undefined && !values.makePrimary) {
       notifications.show({
         message: '모든 값이 비어있을 수는 없습니다.',
         color: 'red',
@@ -112,10 +123,12 @@ export function useEditProductLinkItem({ slug, link, onSubmit, onCancel }: EditP
           slug,
           id: link.id,
           input: {
-            title: title || undefined,
+            title,
             link: linkUrl || undefined,
             displayLink: displayLink || undefined,
             iconUrl: iconUrl || undefined,
+            ...(role !== undefined ? { role } : {}),
+            ...(values.makePrimary ? { makePrimary: true } : {}),
           },
         },
       });

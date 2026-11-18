@@ -1,5 +1,6 @@
 'use client';
 
+import { getProductLinkLabel, orderPublicProductLinks } from '@darun/products-feature';
 import { Button, ExternalLink, Globe } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
@@ -24,24 +25,10 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
 
   return (
     <>
-      {links.map((link, index) => {
-        const isPrimary = index === 0;
-        const localizedTitle = getLocalizedLinkTitle(link.title, locale);
+      {orderPublicProductLinks(links).map(link => {
+        const { isPrimary } = link;
+        const localizedTitle = getLocalizedLinkTitle(getProductLinkLabel(link, locale), locale);
         const tooltipTitle = link.displayLink ? `${localizedTitle} (${link.displayLink})` : localizedTitle;
-        const normalizedTitle = link.title.trim().toLowerCase();
-        const isOfficialWebsite =
-          normalizedTitle === '공식 홈페이지' ||
-          normalizedTitle === '공식홈페이지' ||
-          normalizedTitle === '공식 웹사이트' ||
-          normalizedTitle === '공식웹사이트' ||
-          normalizedTitle === '홈페이지' ||
-          normalizedTitle === '웹사이트' ||
-          normalizedTitle === 'official website' ||
-          normalizedTitle === 'website' ||
-          normalizedTitle === 'home' ||
-          normalizedTitle === 'homepage' ||
-          getLocalizedLinkTitle(link.title, 'ko').trim() === '공식 홈페이지' ||
-          Boolean(link.iconUrl?.includes('pvjgv9btsktstjkoarrl'));
 
         return (
           <Link
@@ -65,7 +52,7 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
               }`}
             >
               <div className="flex items-center justify-center gap-2">
-                {isOfficialWebsite ? (
+                {link.role === 'official' || !link.iconUrl ? (
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
                       isPrimary
@@ -75,7 +62,7 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
                   >
                     <Globe size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
                   </div>
-                ) : link.iconUrl ? (
+                ) : (
                   <div
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md p-0.5 shadow-2xs ${
                       isPrimary ? 'border border-white/20 bg-white' : 'border border-dark-150/70 bg-surface-100'
@@ -90,16 +77,6 @@ function ProductLinkButtons({ links }: Pick<ReturnType<typeof useProductLinks>, 
                       className="h-full w-full object-contain rounded-sm"
                       unoptimized
                     />
-                  </div>
-                ) : (
-                  <div
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
-                      isPrimary
-                        ? 'border border-white/20 bg-white/10 text-white'
-                        : 'border border-dark-150/70 bg-surface-100 text-dark-800 shadow-2xs'
-                    }`}
-                  >
-                    <Globe size={13} aria-hidden="true" className="shrink-0 stroke-[2.2] text-current" />
                   </div>
                 )}
                 <span className="truncate max-w-[200px] sm:max-w-xs text-xs sm:text-sm font-semibold text-current">

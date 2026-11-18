@@ -311,7 +311,7 @@ export class ProductQueryResolver {
 
   @FieldResolver(() => [Link])
   public async links(@Root() product: ProductWithLocale) {
-    const links = await this.getProductLinksUseCase
+    return this.getProductLinksUseCase
       .execute({
         productId: product.id,
       })
@@ -319,8 +319,6 @@ export class ProductQueryResolver {
         console.error('Product links lookup failed', product.id, error);
         return [];
       });
-
-    return links.map((link, index) => ({ ...link, isPrimary: index === 0 }));
   }
 
   @FieldResolver(() => [Tag])

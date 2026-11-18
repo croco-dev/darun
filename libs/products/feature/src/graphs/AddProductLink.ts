@@ -1,5 +1,6 @@
 import { Field, InputType, ObjectType } from 'type-graphql';
 import { Product } from './Product';
+import { ProductLinkRole } from './ProductLinkRole';
 
 @ObjectType('AddProductLinkPayload')
 export class AddProductLinkPayload {
@@ -20,4 +21,7 @@ export class AddProductLinkInput {
 
   @Field()
   iconUrl: string;
+
+  @Field(() => ProductLinkRole, { nullable: true })
+  role?: ProductLinkRole | null;
 }
