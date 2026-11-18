@@ -34,8 +34,7 @@ export class UpdateProductLink {
   }): Promise<ProductLink> {
     if (link !== undefined && !isProductLinkUrl(link)) throw productInvalidArgs('완전한 HTTP(S) URL을 입력해주세요.');
     return this.productLinkRepository.updateById(linkId, productId, productLink => {
-      productLink.update({ title, link, displayLink, iconUrl, role });
-      if (makePrimary) productLink.isDesignatedPrimary = true;
+      productLink.update({ title, link, displayLink, iconUrl, role, makePrimary });
       return productLink;
     });
   }

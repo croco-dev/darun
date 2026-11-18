@@ -50,12 +50,14 @@ export class ProductLink {
     displayLink,
     iconUrl,
     role,
+    makePrimary,
   }: {
     title?: string;
     link?: string;
     displayLink?: string;
     iconUrl?: string;
     role?: ProductLinkRole | null;
+    makePrimary?: boolean | null;
   }) {
     if (link !== undefined && !isProductLinkUrl(link)) throw productInvalidArgs('완전한 HTTP(S) URL을 입력해주세요.');
     if (title !== undefined) {
@@ -72,6 +74,9 @@ export class ProductLink {
     }
     if (role !== undefined) {
       this.role = role;
+    }
+    if (makePrimary) {
+      this.isDesignatedPrimary = true;
     }
   }
 }
