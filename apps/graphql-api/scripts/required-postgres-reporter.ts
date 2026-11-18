@@ -10,6 +10,11 @@ const groups = {
   tier: {
     'src/remove-duplicates.pg.test.ts': 'DEDUPE_TEST_DATABASE_URL',
   },
+  'tier-postgrest': {
+    'src/app/apps/app-search.pg.test.ts': ['APP_SEARCH_TEST_DATABASE_URL', 'APP_SEARCH_TEST_POSTGREST_URL'],
+    'src/app/admin/app-memo.pg.test.ts': ['MEMO_TEST_DATABASE_URL', 'MEMO_TEST_POSTGREST_URL'],
+    'src/utils/ensure-user-profile.pg.test.ts': ['PROFILE_TEST_DATABASE_URL', 'PROFILE_TEST_POSTGREST_URL'],
+  },
   graphql: {
     '__tests__/jobConfigAttempts.pg.test.ts': 'JOB_CONFIG_ATTEMPTS_TEST_DATABASE_URL',
     '__tests__/translationIntegrity.pg.test.ts': 'TRANSLATION_TEST_DATABASE_URL',
@@ -44,7 +49,7 @@ export default class RequiredPostgresReporter implements Reporter {
     }
     const suites = groups[group as keyof typeof groups];
     this.expected = Object.keys(suites);
-    for (const name of Object.values(suites)) {
+    for (const name of Object.values(suites).flat()) {
       if (!process.env[name]?.trim()) throw new Error(`Required PostgreSQL test URL is missing: ${name}`);
     }
     if (group === 'products' && process.env['W4_PG'] !== '1') {

@@ -31,7 +31,7 @@ function workflow(name: string): Workflow {
   return parse(readFileSync(join(root, '.github/workflows', name), 'utf8'));
 }
 
-describe('Tier duplicate cleanup CI prerequisites', () => {
+describe('Tier database CI prerequisites', () => {
   it.each(['PullRequest.yaml', 'TierWeb.yaml'])('%s runs a mandatory isolated database gate', name => {
     const config = workflow(name);
     const build = config.jobs.build;
@@ -52,6 +52,24 @@ describe('Tier duplicate cleanup CI prerequisites', () => {
     expect(build.steps.indexOf(databaseCreation!)).toBeLessThan(build.steps.indexOf(gate!));
     expect(databaseCreation?.run).toContain('ON_ERROR_STOP=1');
     expect(databaseCreation?.run).not.toContain('DATABASE_URL');
+  });
+
+  it.each([
+    ['PullRequest.yaml', 'content-sync-postgres'],
+    ['TierWeb.yaml', 'tier-postgres'],
+  ])('%s requires the shared PostgREST gate against its disposable PostgreSQL service', (name, service) => {
+    const build = workflow(name).jobs.build;
+    const serviceId = `\${{ job.services.${service}.id }}`;
+    const gate = build.steps.find(step => step.run === `bash scripts/test-tier-postgrest-ci.sh "${serviceId}"`);
+    expect(gate).toBeDefined();
+    expect(gate?.if).toBeUndefined();
+    expect(gate?.['continue-on-error']).not.toBe(true);
+    expect(build.services?.[service]?.image).toBe('postgres:17');
+    const buildStep = build.steps.find(step =>
+      /pnpm (run build|--filter tier-web run cloudflare:build)/.test(step.run ?? '')
+    );
+    expect(buildStep).toBeDefined();
+    expect(build.steps.indexOf(gate!)).toBeLessThan(build.steps.indexOf(buildStep!));
   });
 
   it('keeps the gate on PRs and requires a successful build before deployment', () => {
@@ -78,23 +96,27 @@ describe('Tier duplicate cleanup CI prerequisites', () => {
   });
 
   it.each([
-    [0, true, 0],
-    [17, true, 17],
-    [0, false, 1],
+    [0, 0, true, 0],
+    [17, 0, true, 17],
+    [0, 18, true, 18],
+    [0, 0, false, 1],
   ] as const)(
-    'Tier gate exit %i and resolved build environment %s preserve the prerequisite',
-    (exitCode, configured, expected) => {
+    'Tier dedupe exit %i, PostgREST exit %i, and configured environment %s preserve the build prerequisite',
+    (dedupeExit, postgrestExit, configured, expected) => {
       const directory = mkdtempSync(join(tmpdir(), 'darun-tier-ci-'));
       try {
         const log = join(directory, 'calls');
         writeFileSync(log, '');
-        for (const command of ['pnpm', 'docker']) {
+        for (const command of ['pnpm', 'docker', 'bash']) {
           const executable = join(directory, command);
           writeFileSync(
             executable,
             `#!/bin/sh
 printf '%s\\n' "$*" >> "$TIER_CI_LOG"
-case "$*" in *src/remove-duplicates.pg.test.ts*) exit "$TIER_CI_GATE_EXIT";; esac
+case "$*" in
+  *src/remove-duplicates.pg.test.ts*) exit "$TIER_CI_GATE_EXIT";;
+  scripts/test-tier-postgrest-ci.sh" "*) exit "$TIER_CI_POSTGREST_EXIT";;
+esac
 `
           );
           chmodSync(executable, 0o755);
@@ -112,7 +134,8 @@ case "$*" in *src/remove-duplicates.pg.test.ts*) exit "$TIER_CI_GATE_EXIT";; esa
               NEXT_PUBLIC_SUPABASE_URL: configured ? 'https://supabase.invalid' : '',
               NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'ci-fixture',
               TIER_CI_LOG: log,
-              TIER_CI_GATE_EXIT: String(exitCode),
+              TIER_CI_GATE_EXIT: String(dedupeExit),
+              TIER_CI_POSTGREST_EXIT: String(postgrestExit),
             },
           }
         );
@@ -120,7 +143,10 @@ case "$*" in *src/remove-duplicates.pg.test.ts*) exit "$TIER_CI_GATE_EXIT";; esa
         expect(result.status, result.stderr).toBe(expected);
         const calls = readFileSync(log, 'utf8').split('\n');
         expect(calls.some(call => call.includes('src/remove-duplicates.pg.test.ts'))).toBe(true);
-        expect(calls.includes('--filter tier-web run cloudflare:build')).toBe(exitCode === 0 && configured);
+        expect(calls.includes('scripts/test-tier-postgrest-ci.sh fixture-service')).toBe(dedupeExit === 0);
+        expect(calls.includes('--filter tier-web run cloudflare:build')).toBe(
+          dedupeExit === 0 && postgrestExit === 0 && configured
+        );
       } finally {
         rmSync(directory, { recursive: true, force: true });
       }
