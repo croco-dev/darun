@@ -6,7 +6,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "build:lambda": "node scripts/build-lambda.cjs",
-    "check:migrations": "node scripts/check-migrations.cjs",
+    "check:migrations": "node scripts/check-migrations.mjs",
     "deploy": "node scripts/deploy-prod.mjs",
     "dev": "node scripts/dev.cjs",
     "lint": "eslint \"**/*.{ts,tsx}\"",

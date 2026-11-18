@@ -1,13 +1,32 @@
-const { spawnSync } = require('node:child_process');
-const { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } = require('node:fs');
-const { tmpdir } = require('node:os');
-const { dirname, join, relative, resolve } = require('node:path');
+import { spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const appDirectory = resolve(__dirname, '..');
-const migrationDirectory = join(__dirname, 'migrations');
+const appDirectory = resolve(import.meta.dirname, '..');
+const migrationDirectory = join(import.meta.dirname, 'migrations');
 
 const { entries } = JSON.parse(readFileSync(join(migrationDirectory, 'meta', '_journal.json'), 'utf8'));
 if (!Array.isArray(entries) || entries.length === 0) throw new Error('Migration journal has no entries.');
+
+const journalFiles = new Set(entries.map(entry => `${entry.tag}.sql`));
+const migrationFiles = new Set(
+  readdirSync(migrationDirectory, { withFileTypes: true })
+    .filter(file => (file.isFile() || file.isSymbolicLink()) && file.name.endsWith('.sql'))
+    .map(file => file.name)
+);
+const missingFiles = [...journalFiles].filter(file => !migrationFiles.has(file));
+const unregisteredFiles = [...migrationFiles].filter(file => !journalFiles.has(file)).sort();
+const fileErrors = [];
+if (missingFiles.length > 0) {
+  fileErrors.push(`Migration journal references missing SQL: ${missingFiles.join(', ')}.`);
+}
+if (unregisteredFiles.length > 0) {
+  fileErrors.push(`Migration SQL is not registered in the journal: ${unregisteredFiles.join(', ')}.`);
+}
+if (fileErrors.length > 0) throw new Error(fileErrors.join('\n'));
+
 for (const [index, entry] of entries.entries()) {
   if (!Number.isFinite(entry.when) || (index > 0 && entry.when <= entries[index - 1].when)) {
     throw new Error(`Migration timestamps must be strictly increasing: ${entry.tag}.`);
@@ -35,7 +54,7 @@ try {
     `module.exports = { ...require(${JSON.stringify(join(appDirectory, 'drizzle.config.cjs'))}), out: ${JSON.stringify(relative(appDirectory, temporaryMigrations))} };\n`
   );
 
-  const drizzleCli = join(dirname(require.resolve('drizzle-kit')), 'bin.cjs');
+  const drizzleCli = join(dirname(fileURLToPath(import.meta.resolve('drizzle-kit'))), 'bin.cjs');
   const result = spawnSync(process.execPath, [drizzleCli, 'generate', '--config', temporaryConfig], {
     cwd: appDirectory,
     encoding: 'utf8',
