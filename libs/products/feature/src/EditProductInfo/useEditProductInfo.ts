@@ -8,7 +8,7 @@ import {
 } from '@darun/provider-graphql';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
-import { useEffect } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 gql`
   query TempProductBySlugOnEditProductInfo($slug: String!) {
@@ -43,9 +43,21 @@ export type UseEditProductInfoProps = {
 };
 
 export function useEditProductInfo({ slug, onSaved, onSubmit, onCancel }: UseEditProductInfoProps) {
-  const { data } = useQuery(TempProductBySlugOnEditProductInfoDocument, {
+  const {
+    data,
+    loading: reading,
+    error: readError,
+    refetch,
+  } = useQuery(TempProductBySlugOnEditProductInfoDocument, {
     variables: { slug },
+    // The edit form must load its own baseline, even if the details panel updates the cache.
+    fetchPolicy: 'no-cache',
   });
+  const product = data?.tempProductBySlug;
+  const productId = product?.id;
+  const originalName = product?.name ?? '';
+  const originalSummary = product?.summary ?? '';
+  const formSource = useRef<{ slug: string; productId: string }>(null);
 
   const form = useForm<FormValues>({
     mode: 'uncontrolled',
@@ -59,16 +71,20 @@ export function useEditProductInfo({ slug, onSaved, onSubmit, onCancel }: UseEdi
     },
   });
 
-  useEffect(() => {
-    if (!data?.tempProductBySlug) return;
-    const values = {
-      name: data.tempProductBySlug.name ?? '',
-      summary: data.tempProductBySlug.summary ?? '',
-    };
+  useLayoutEffect(() => {
+    if (!productId) return;
+    const values = { name: originalName, summary: originalSummary };
     form.setInitialValues(values);
     form.setValues(values);
+    formSource.current = { slug, productId };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.tempProductBySlug?.name, data?.tempProductBySlug?.summary]);
+  }, [slug, productId, originalName, originalSummary]);
+
+  const readState = (() => {
+    if (reading) return 'loading';
+    if (readError) return 'error';
+    return productId ? 'ready' : 'missing';
+  })();
 
   const [editInformation, { loading }] = useMutation(EditProductOnEditProductInfoDocument, {
     awaitRefetchQueries: true,
@@ -93,8 +109,10 @@ export function useEditProductInfo({ slug, onSaved, onSubmit, onCancel }: UseEdi
     },
   });
 
+  const canEdit = readState === 'ready' && !loading;
+
   const submit = async (values: FormValues) => {
-    if (loading) {
+    if (!canEdit || formSource.current?.slug !== slug || formSource.current.productId !== productId) {
       return;
     }
     const name = values.name?.trim();
@@ -124,5 +142,9 @@ export function useEditProductInfo({ slug, onSaved, onSubmit, onCancel }: UseEdi
     }
   };
 
-  return { form, submit, onCancel, loading };
+  const retryRead = async () => {
+    await refetch().catch(() => undefined);
+  };
+
+  return { form, submit, onCancel, loading, readState, canEdit, retryRead };
 }

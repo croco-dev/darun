@@ -44,7 +44,7 @@ describe('useEditProductInfo', () => {
     mutationOptions = {};
 
     vi.mocked(useQuery).mockReturnValue({
-      data: undefined,
+      data: { tempProductBySlug: { id: 'product-1', name: 'Existing Name', summary: 'Existing Summary' } },
       loading: false,
     } as ReturnType<typeof useQuery>);
 
