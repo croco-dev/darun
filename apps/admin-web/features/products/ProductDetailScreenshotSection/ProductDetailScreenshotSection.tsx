@@ -394,7 +394,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const { client, data, loading, error, observable, refetch } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
+  const { client, data, loading, error, observable } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
     variables: { slug },
   });
 
@@ -413,7 +413,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
       return;
     }
     // The list reports its own error. A committed edit refreshes its cache even after navigation.
-    const request = refetch();
+    const request = observable.refetch();
     await (afterSave ? request.retain() : request).catch(() => undefined);
   };
 
