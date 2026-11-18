@@ -1,5 +1,6 @@
 import { Field, InputType, ObjectType } from 'type-graphql';
 import { Product } from './Product';
+import { Screenshot } from './Screenshot';
 import { VisualPlatformGraph } from './VisualPlatform';
 import { VisualScreenTypeGraph } from './VisualScreenType';
 
@@ -7,6 +8,9 @@ import { VisualScreenTypeGraph } from './VisualScreenType';
 export class AddProductScreenshotPayload {
   @Field(() => Product, { nullable: true })
   product: Product | null;
+
+  @Field(() => Screenshot)
+  screenshot: Screenshot;
 }
 
 @InputType('AddProductScreenshotInput')

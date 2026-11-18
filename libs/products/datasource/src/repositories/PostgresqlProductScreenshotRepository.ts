@@ -6,6 +6,7 @@ import {
   VisualScreenshotWithProduct,
   VisualUiElement,
   normalizeVisualUiElements,
+  productIdempotencyKeyConflict,
   productScreenshotNotFound,
 } from '@darun/products-domain';
 import { ProductScreenshotRepositoryToken, productScreenshotInsertFailed } from '@darun/products-domain';
@@ -14,8 +15,10 @@ import DataLoader from 'dataloader';
 import { and, asc, count, desc, eq, inArray, isNotNull, lt, or, sql, type SQLWrapper } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
+import { createHash } from 'node:crypto';
 import { productFlowSteps } from '../entities/ProductFlowsSchema';
 import { products } from '../entities/ProductSchema';
+import { productScreenshotRegistrations } from '../entities/ProductScreenshotRegistrationSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElementsSchema';
 import { screenshotCleanupIntents } from '../entities/ScreenshotCleanupIntentSchema';
@@ -149,29 +152,50 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     );
   }
 
-  insert(productScreenshot: ProductScreenshot): Promise<ProductScreenshot> {
+  insert(productScreenshot: ProductScreenshot, requestId?: string): Promise<ProductScreenshot> {
+    const { productId, imageUrl, imageAlt, title, platform, screenType } = productScreenshot;
+    const input = { productId, imageUrl, imageAlt, title, platform, screenType };
+    const registration = requestId
+      ? { productId, requestId, inputFingerprint: createHash('sha256').update(JSON.stringify(input)).digest('hex') }
+      : null;
     return this.db
       .transaction(async tx => {
-        const finishContentWrite = await beginProductContentWrite(tx, productScreenshot.productId);
-        const inserted = await tx
-          .insert(productScreenshots)
-          .values({
-            id: productScreenshot.id,
-            productId: productScreenshot.productId,
-            imageUrl: productScreenshot.imageUrl,
-            imageAlt: productScreenshot.imageAlt,
-            title: productScreenshot.title,
-            platform: productScreenshot.platform,
-            screenType: productScreenshot.screenType,
-            priority: 0,
-          })
-          .returning();
+        const finishContentWrite = await beginProductContentWrite(tx, productId);
+        if (registration) {
+          const [previous] = await tx
+            .select()
+            .from(productScreenshotRegistrations)
+            .where(
+              and(
+                eq(productScreenshotRegistrations.productId, productId),
+                eq(productScreenshotRegistrations.requestId, registration.requestId)
+              )
+            );
+          if (previous) {
+            if (previous.inputFingerprint !== registration.inputFingerprint) {
+              throw productIdempotencyKeyConflict('같은 등록 요청 ID에 다른 스크린샷 정보가 전달되었습니다.');
+            }
+            const [screenshot] = await tx
+              .select()
+              .from(productScreenshots)
+              .where(
+                and(eq(productScreenshots.id, previous.screenshotId), eq(productScreenshots.productId, productId))
+              );
+            if (!screenshot) throw productScreenshotNotFound();
+            return toDomain(screenshot);
+          }
+        }
 
-        if (!inserted[0]) {
-          throw productScreenshotInsertFailed();
+        const [inserted] = await tx
+          .insert(productScreenshots)
+          .values({ ...input, id: productScreenshot.id, priority: 0 })
+          .returning();
+        if (!inserted) throw productScreenshotInsertFailed();
+        if (registration) {
+          await tx.insert(productScreenshotRegistrations).values({ ...registration, screenshotId: inserted.id });
         }
         await finishContentWrite();
-        return toDomain(inserted[0]);
+        return toDomain(inserted);
       })
       .then(result => {
         this.productIdLoader.clearAll();

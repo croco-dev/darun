@@ -73,6 +73,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
   const mounted = useRef(true);
   const activeUpload = useRef<AbortController | null>(null);
   const completedUpload = useRef<CompletedCreationUpload | null>(null);
+  const registrationRequests = useRef(new Map<string, string>());
   const selectedFile = useRef<File | undefined>(undefined);
   useEffect(() => {
     mounted.current = true;
@@ -89,6 +90,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       if (values.file !== selectedFile.current) {
         selectedFile.current = values.file;
         completedUpload.current = null;
+        registrationRequests.current.clear();
         cancelUpload();
       }
     },
@@ -122,6 +124,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
             })
           );
           completedUpload.current = null;
+          registrationRequests.current.clear();
           form.reset();
           navigate(`/products/${encodeURIComponent(productSlug)}`);
         }
@@ -144,6 +147,7 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
   }, []);
   useEffect(() => {
     completedUpload.current = null;
+    registrationRequests.current.clear();
     cancelUpload();
   }, [productSlug, cancelUpload]);
 
@@ -197,17 +201,23 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
 
     completedUpload.current = { file: values.file, folder, url };
 
+    const input = {
+      imageUrl: url,
+      imageAlt: values.imageAlt.trim(),
+      title: values.title?.trim() || null,
+      platform: values.platform || null,
+      screenType: values.screenType || null,
+    };
+    const submission = JSON.stringify(input);
+    const requestId = registrationRequests.current.get(submission) ?? crypto.randomUUID();
+    registrationRequests.current.set(submission, requestId);
+
     try {
       await addProductScreenshot({
+        context: { screenshotRegistrationId: requestId },
         variables: {
           slug: productSlug,
-          input: {
-            imageUrl: url,
-            imageAlt: values.imageAlt.trim(),
-            title: values.title?.trim() ? values.title.trim() : null,
-            platform: values.platform ? values.platform : null,
-            screenType: values.screenType ? values.screenType : null,
-          },
+          input,
         },
       });
     } catch {

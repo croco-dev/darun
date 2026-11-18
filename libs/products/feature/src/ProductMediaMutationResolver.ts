@@ -13,7 +13,7 @@ import {
 } from '@darun/products-domain';
 import { ProductDescriptionJobService } from '@darun/products-service';
 import { AuthRole } from '@darun/utils-apollo-server';
-import { Arg, Authorized, Mutation, Resolver } from 'type-graphql';
+import { Arg, Authorized, Ctx, Mutation, Resolver } from 'type-graphql';
 import { AddProductLinkInput } from './graphs/AddProductLink';
 import { AddProductLinkPayload } from './graphs/AddProductLink';
 import { AddProductScreenshotInput } from './graphs/AddProductScreenshot';
@@ -65,7 +65,8 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
   @Mutation(() => AddProductScreenshotPayload)
   async addProductScreenshot(
     @Arg('slug') slug: string,
-    @Arg('input') input: AddProductScreenshotInput
+    @Arg('input') input: AddProductScreenshotInput,
+    @Ctx('screenshotRegistrationId') requestId?: unknown
   ): Promise<AddProductScreenshotPayload> {
     const product = await this.getProductUseCase.execute({ slug });
 
@@ -73,8 +74,9 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
       throw productNotFound();
     }
 
-    await this.addProductScreenshotUseCase.execute({
+    const screenshot = await this.addProductScreenshotUseCase.execute({
       productId: product.id,
+      requestId,
       imageUrl: input.imageUrl,
       imageAlt: input.imageAlt,
       title: input.title ?? null,
@@ -84,6 +86,7 @@ export class ProductMediaMutationResolver extends ProductCoreMutationResolver {
 
     return {
       product: await this.getProductUseCase.execute({ slug }),
+      screenshot,
     };
   }
 

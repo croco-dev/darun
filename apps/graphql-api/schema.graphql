@@ -24,6 +24,7 @@ input AddProductScreenshotInput {
 
 type AddProductScreenshotPayload {
   product: Product
+  screenshot: Screenshot!
 }
 
 type AdminProductCategorySelection {

@@ -44,6 +44,15 @@ const httpLink = new HttpLink({
   credentials: 'include',
 });
 
+const screenshotRegistrationLink = new ApolloLink((operation, forward) => {
+  const { screenshotRegistrationId, http } = operation.getContext();
+  if (screenshotRegistrationId !== undefined) {
+    operation.extensions.screenshotRegistrationId = screenshotRegistrationId;
+    operation.setContext({ http: { ...http, includeExtensions: true } });
+  }
+  return forward(operation);
+});
+
 export { shouldRetryOperation };
 
 const apolloClient = new ApolloClient({
@@ -61,6 +70,7 @@ const apolloClient = new ApolloClient({
     }),
     httpErrorLink,
     createTimeoutLink(),
+    screenshotRegistrationLink,
     httpLink,
   ]),
 });

@@ -13,7 +13,7 @@ import { parse as urlParse } from 'url';
 import { resolvers } from './app/resolvers';
 import { createPostgresConnection } from './config/database';
 import { IS_LOCAL } from './config/environment';
-import { createGraphQLContext } from './functions/context';
+import { createGraphQLContext, screenshotRegistrationPlugin } from './functions/context';
 
 const LOCAL_ORIGIN_REGEX = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
@@ -63,7 +63,11 @@ async function bootstrap() {
     },
     config: {
       playground: IS_LOCAL,
-      plugins: [createSentryApolloLogPlugin(), ApolloServerPluginDrainHttpServer({ httpServer })],
+      plugins: [
+        createSentryApolloLogPlugin(),
+        screenshotRegistrationPlugin,
+        ApolloServerPluginDrainHttpServer({ httpServer }),
+      ],
     },
   });
 

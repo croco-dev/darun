@@ -3,6 +3,7 @@ import { Drizzle, DrizzleToken } from '@darun/provider-database';
 import { and, asc, eq, gt, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { randomUUID } from 'node:crypto';
+import { productScreenshots } from '../../../../libs/products/datasource/src/entities/ProductScreenshotsSchema';
 import { screenshotCleanupIntents as intents } from '../../../../libs/products/datasource/src/entities/ScreenshotCleanupIntentSchema';
 import { ScreenshotCleanupQueueService } from '../../../../libs/products/service/src/ScreenshotCleanupQueueService';
 
@@ -72,9 +73,16 @@ export class PostgresqlScreenshotCleanup {
 
     let error: string | null = null;
     try {
-      // No transaction or Product/screenshot lock is held during provider I/O.
-      // CloudinaryImageDeleter treats 'not found' as success after an ambiguous previous attempt.
-      await this.images.delete(claimed.imageUrl);
+      const [remaining] = await this.db
+        .select({ id: productScreenshots.id })
+        .from(productScreenshots)
+        .where(eq(productScreenshots.imageUrl, claimed.imageUrl))
+        .limit(1);
+      if (!remaining) {
+        // No transaction or Product/screenshot lock is held during provider I/O.
+        // CloudinaryImageDeleter treats 'not found' as success after an ambiguous previous attempt.
+        await this.images.delete(claimed.imageUrl);
+      }
     } catch {
       error = 'SCREENSHOT_IMAGE_DELETE_FAILED';
     }

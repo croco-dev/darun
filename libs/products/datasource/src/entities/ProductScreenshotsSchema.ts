@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, varchar, text, timestamp, integer, check } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, timestamp, integer, check, index } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 
 export const productScreenshots = pgTable(
@@ -19,6 +19,7 @@ export const productScreenshots = pgTable(
       .default(sql`CURRENT_TIMESTAMP`),
   },
   table => [
+    index('product_screenshots_image_url_idx').using('hash', table.imageUrl),
     check(
       'product_screenshots_platform_check',
       sql`${table.platform} IS NULL OR ${table.platform} IN ('WEB', 'IOS', 'ANDROID')`

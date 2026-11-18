@@ -11,6 +11,7 @@ import {
   PostgresqlProductDescriptionEvidenceAssembler,
 } from '@darun/products-datasource';
 import {
+  AddProductScreenshot,
   Product,
   PublishProduct,
   ApplyProductDescriptionCandidate,
@@ -203,7 +204,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       {} as never,
       new GetProduct(repository),
       {} as never,
-      {} as never,
+      new AddProductScreenshot(new PostgresqlProductScreenshotRepository(db as never)),
       {} as never,
       {} as never,
       {} as never,
@@ -479,7 +480,8 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     getRemainingTimeInMillis: () => 300000,
     callbackWaitsForEmptyEventLoop: false,
   } as never;
-  async function mutate(source: string, variables: Record<string, unknown>) {
+  type GraphQLRequestBody = { query: string; variables: Record<string, unknown>; extensions?: Record<string, unknown> };
+  async function requestGraphQL(body: GraphQLRequestBody | GraphQLRequestBody[]) {
     const response = await api(
       {
         version: '2.0',
@@ -494,7 +496,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
           requestId: 'sync-test',
           http: { method: 'POST', path: '/graphql', sourceIp: '127.0.0.1' },
         },
-        body: JSON.stringify({ query: source, variables }),
+        body: JSON.stringify(body),
         isBase64Encoded: false,
       } as never,
       context,
@@ -504,6 +506,80 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
       throw new Error('API response is missing');
     return JSON.parse(response.body);
   }
+
+  function mutate(query: string, variables: Record<string, unknown>, extensions?: Record<string, unknown>) {
+    return requestGraphQL({ query, variables, extensions });
+  }
+
+  it('등록 commit 뒤 상품 응답을 잃어도 같은 ID를 반환하고 다른 payload는 충돌로 거절한다', async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: '재전송 검증 상품',
+        slug: randomUUID(),
+        summary: '설명',
+        logoUrl: 'https://fixture.invalid/logo.png',
+        publishedAt: new Date(),
+      })
+      .returning();
+    const query = `mutation($slug: String!, $input: AddProductScreenshotInput!) {
+      addProductScreenshot(slug: $slug, input: $input) {
+        screenshot { id imageUrl imageAlt }
+        product { id }
+      }
+    }`;
+    const extensions = { screenshotRegistrationId: randomUUID() };
+    const input = { imageUrl: 'https://fixture.invalid/registration.png', imageAlt: '  검색 결과  ' };
+    const findProduct = vi.spyOn(repository, 'findOneBySlug');
+    findProduct.mockImplementationOnce(PostgresqlProductRepository.prototype.findOneBySlug);
+    findProduct.mockRejectedValueOnce(new Error('synthetic post-commit read failure'));
+    try {
+      const lost = await mutate(query, { slug: product.slug, input }, extensions);
+      expect(lost.errors).toHaveLength(1);
+      const committed = await db.select().from(productScreenshots).where(eq(productScreenshots.productId, product.id));
+      expect(committed).toHaveLength(1);
+      const replay = await mutate(
+        query,
+        { slug: product.slug, input: { ...input, imageAlt: '검색 결과', title: null } },
+        extensions
+      );
+      expect(replay.errors).toBeUndefined();
+      expect(replay.data.addProductScreenshot).toEqual({
+        product: { id: product.id },
+        screenshot: { id: committed[0].id, imageUrl: input.imageUrl, imageAlt: '검색 결과' },
+      });
+      const conflict = await mutate(
+        query,
+        { slug: product.slug, input: { ...input, imageAlt: '다른 검색 결과' } },
+        extensions
+      );
+      expect(conflict.errors?.[0]?.extensions?.code).toBe('IDEMPOTENCY_KEY_CONFLICT');
+      const invalid = await mutate(query, { slug: product.slug, input }, { screenshotRegistrationId: ['invalid'] });
+      expect(invalid.errors?.[0]?.extensions?.code).toBe('product/invalid-args');
+      expect(await db.select().from(productScreenshots).where(eq(productScreenshots.productId, product.id))).toEqual(
+        committed
+      );
+      expect((await intents(product.id)).map(intent => [intent.kind, intent.sourceRevision])).toEqual([
+        ['search', product.contentRevision + BigInt(1)],
+      ]);
+      const [batchedConflict, legacy] = await requestGraphQL([
+        { query, variables: { slug: product.slug, input: { ...input, imageAlt: '다른 검색 결과' } }, extensions },
+        {
+          query,
+          variables: {
+            slug: product.slug,
+            input: { imageUrl: 'https://fixture.invalid/legacy-client.png', imageAlt: '기존 클라이언트' },
+          },
+        },
+      ]);
+      expect(batchedConflict.errors?.[0]?.extensions?.code).toBe('IDEMPOTENCY_KEY_CONFLICT');
+      expect(legacy.errors).toBeUndefined();
+      expect(legacy.data.addProductScreenshot.screenshot.id).not.toBe(committed[0].id);
+    } finally {
+      findProduct.mockRestore();
+    }
+  });
+
   it('비어 있지 않은 상품 목록의 커서로 다음 페이지를 조회한다', async () => {
     const categoryId = `cursor-${randomUUID().slice(0, 16)}`;
     const firstId = `${categoryId}-a`;
@@ -3375,6 +3451,79 @@ screenshotSuite('screenshot deletion checkpoint in isolated PostgreSQL', () => {
       })),
     };
   }
+
+  it('같은 등록 요청을 동시에 보내도 스크린샷과 검색 intent를 한 건씩만 만든다', async () => {
+    const { product } = await seed();
+    const input = {
+      productId: product.id,
+      requestId: randomUUID(),
+      imageUrl: 'https://example.invalid/registration.png',
+      imageAlt: '이메일 입력 화면',
+      platform: 'WEB',
+    };
+    const second = new AddProductScreenshot(new PostgresqlProductScreenshotRepository(writerDb as never));
+    const { registered, replay } = await db.transaction(async tx => {
+      const first = new AddProductScreenshot(new PostgresqlProductScreenshotRepository(tx as never));
+      const registered = await first.execute(input);
+      // Keep the first registration uncommitted until the other connection reaches the lock.
+      const replay = second.execute(input);
+      void replay.catch(() => {});
+      await waitForWriterLock();
+      return { registered, replay };
+    });
+    expect((await replay).id).toBe(registered.id);
+    const after = await state(product.id);
+    expect(after.screenshots.filter(row => row.imageUrl === input.imageUrl)).toHaveLength(1);
+    expect(after.product?.contentRevision).toBe(BigInt(8));
+    expect(after.intents.map(intent => intent.sourceRevision)).toEqual([BigInt(7), BigInt(8)]);
+  });
+
+  it('같은 ID라도 다른 상품은 독립 등록하고 삭제한 스크린샷을 요청 재전송으로 되살리지 않는다', async () => {
+    const { product } = await seed(false);
+    const other = await seed(false);
+    const screenshots = new PostgresqlProductScreenshotRepository(db as never);
+    const add = new AddProductScreenshot(screenshots);
+    const input = {
+      productId: product.id,
+      requestId: randomUUID(),
+      imageUrl: 'https://example.invalid/replayed-registration.png',
+      imageAlt: '로그인',
+    };
+    const registered = await add.execute(input);
+    const differentProduct = await add.execute({ ...input, productId: other.product.id });
+    expect(differentProduct.id).not.toBe(registered.id);
+    await new UpdateProductScreenshot(screenshots).execute({ id: registered.id, imageAlt: '이메일로 로그인' });
+    expect(await add.execute(input)).toMatchObject({ id: registered.id, imageAlt: '이메일로 로그인' });
+    await deletion({ delete: vi.fn() }).usecase.execute(registered.id);
+    await expect(add.execute(input)).rejects.toMatchObject({ code: 'product-screenshot/not-found' });
+    expect((await state(product.id)).screenshots).toHaveLength(2);
+  });
+
+  it('다른 상품의 화면에 같은 URL이 남아 있으면 이미지를 보존하고 마지막 참조 삭제 뒤 정리한다', async () => {
+    const { screenshot } = await seed();
+    const other = await seed();
+    await db
+      .update(productScreenshots)
+      .set({ imageUrl: screenshot.imageUrl })
+      .where(eq(productScreenshots.id, other.screenshot.id));
+    const images = new Set([screenshot.imageUrl]);
+    const remote = { delete: vi.fn(async (url: string) => void images.delete(url)) };
+    const { usecase, cleanup } = deletion(remote);
+
+    await usecase.execute(screenshot.id);
+    await cleanup.execute((await intent(screenshot.id))!.id);
+    expect(remote.delete).not.toHaveBeenCalled();
+    expect(images.has(screenshot.imageUrl)).toBe(true);
+    expect(await intent(screenshot.id)).toMatchObject({ status: 'completed' });
+    expect((await state(other.product.id)).screenshots.find(row => row.id === other.screenshot.id)?.imageUrl).toBe(
+      screenshot.imageUrl
+    );
+
+    await usecase.execute(other.screenshot.id);
+    await cleanup.execute((await intent(other.screenshot.id))!.id);
+    expect(remote.delete).toHaveBeenCalledExactlyOnceWith(screenshot.imageUrl);
+    expect(images.has(screenshot.imageUrl)).toBe(false);
+  });
 
   it('UI 요소 저장 실패는 메타데이터·요소·revision·intent와 캐시를 모두 보존한다', async () => {
     const { product, screenshot } = await seed();
