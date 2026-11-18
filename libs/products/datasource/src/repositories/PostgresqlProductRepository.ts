@@ -118,13 +118,21 @@ export class PostgresqlProductRepository implements ProductRepository {
             exists (select 1 from alternative_products a join products p on p.id = a.alternative_product_id
               where a.product_id = ${products}.id and p.id <> a.product_id and p.published_at is not null)
             or (${products}.published_at is not null and (
-              exists (select 1 from products p
-                where p.published_at is not null and p.id <> ${products}.id
-                  and p.category_ids::jsonb ?| array(select jsonb_array_elements_text(${products}.category_ids::jsonb)))
+              exists (select 1 from jsonb_array_elements_text(${products}.category_ids::jsonb) as category(id)
+                cross join lateral (
+                  select p.id from products p
+                  where p.published_at is not null and p.category_ids::jsonb @> jsonb_build_array(category.id)
+                  order by p.published_at desc limit 30
+                ) p
+                where p.id <> ${products}.id
+                  and not exists (select 1 from alternative_product_exclusions e
+                    where e.product_id = ${products}.id and e.alternative_product_id = p.id))
               or exists (select 1 from (select id from products where published_at is not null order by published_at desc limit 50) p
                 join product_tags candidate on candidate.product_id = p.id
                 join product_tags source on source.tag_id = candidate.tag_id
-                where source.product_id = ${products}.id and p.id <> ${products}.id)
+                where source.product_id = ${products}.id and p.id <> ${products}.id
+                  and not exists (select 1 from alternative_product_exclusions e
+                    where e.product_id = ${products}.id and e.alternative_product_id = p.id))
             ))
           )`,
         })

@@ -31,6 +31,7 @@ import { Inject, Service } from 'typedi';
 import { Feature } from './graphs/Feature';
 import { Link } from './graphs/Link';
 import { Product } from './graphs/Product';
+import { ProductAlternativeManagement } from './graphs/ProductAlternativeManagement';
 import { ProductConnection } from './graphs/ProductPagination';
 import { Screenshot } from './graphs/Screenshot';
 import { Tag } from './graphs/Tag';
@@ -395,6 +396,27 @@ export class ProductQueryResolver {
       alternatives.map(alternative => this.getProductUseCase.execute({ id: alternative.alternativeProductId }))
     );
     return products.filter((product): product is DomainProduct => product !== null);
+  }
+
+  @Authorized([AuthRole.Admin])
+  @FieldResolver(() => ProductAlternativeManagement)
+  public async alternativeManagement(@Root() product: Product): Promise<ProductAlternativeManagement> {
+    const { automatic, exclusions } = await this.getAlternativeProductsUseCase.executeForManagement(product.id);
+    const [recommended, namedExclusions] = await Promise.all([
+      this.getPublishedProductUseCase.execute({ ids: automatic.map(item => item.alternativeProductId) }),
+      Promise.all(
+        exclusions.map(async ({ alternativeProductId, note }) => ({
+          alternativeProductId,
+          alternativeProductName: (await this.getProductUseCase.execute({ id: alternativeProductId }))?.name ?? null,
+          note,
+        }))
+      ),
+    ]);
+
+    return {
+      automatic: recommended.filter((item): item is PublishedProduct => item !== null),
+      exclusions: namedExclusions,
+    };
   }
 
   @FieldResolver(() => [Product])

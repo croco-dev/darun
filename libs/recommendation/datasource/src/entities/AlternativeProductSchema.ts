@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, unique, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { check, pgTable, primaryKey, unique, varchar, timestamp } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 
 export const alternativeProducts = pgTable(
@@ -17,5 +17,18 @@ export const alternativeProducts = pgTable(
       alternativeProducts.productId,
       alternativeProducts.alternativeProductId
     ),
+  ]
+);
+
+export const alternativeProductExclusions = pgTable(
+  'alternative_product_exclusions',
+  {
+    productId: varchar('product_id', { length: 26 }).notNull(),
+    alternativeProductId: varchar('alternative_product_id', { length: 26 }).notNull(),
+    note: varchar('note', { length: 500 }),
+  },
+  table => [
+    primaryKey({ columns: [table.productId, table.alternativeProductId] }),
+    check('alternative_product_exclusions_distinct_products', sql`${table.productId} <> ${table.alternativeProductId}`),
   ]
 );

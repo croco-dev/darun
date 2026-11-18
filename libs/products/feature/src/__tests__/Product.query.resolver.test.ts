@@ -198,6 +198,9 @@ const createAlternativeProductRepository = (
 ): AlternativeProductRepository => ({
   replaceByProductId: vi.fn<AlternativeProductRepository['replaceByProductId']>(),
   findManyByProductId: vi.fn<AlternativeProductRepository['findManyByProductId']>().mockResolvedValue([]),
+  findExclusionsByProductId: vi.fn().mockResolvedValue([]),
+  exclude: vi.fn(),
+  restore: vi.fn(),
   create: vi.fn<AlternativeProductRepository['create']>(),
   deleteMany: vi.fn<AlternativeProductRepository['deleteMany']>().mockResolvedValue(true),
   createMany: vi.fn<AlternativeProductRepository['createMany']>().mockResolvedValue([]),

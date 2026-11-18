@@ -169,6 +169,13 @@
       "when": 1794806829312,
       "tag": "0023_admin_product_flow_keyset",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794974743141,
+      "tag": "0024_alternative_product_exclusions",
+      "breakpoints": true
     }
   ]
 }

@@ -6,7 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductDetailAlternativeSection } from '../features/products/ProductDetailAlternativeSection/ProductDetailAlternativeSection';
 
 vi.mock('@apollo/client/react', () => ({
+  useApolloClient: () => ({ refetchQueries: vi.fn() }),
   useQuery: vi.fn(),
+}));
+
+vi.mock('../features/products/ProductDetailAlternativeSection/ProductAlternativeManagement', () => ({
+  ProductAlternativeManagement: () => null,
 }));
 
 vi.mock('@darun/products-feature', () => ({

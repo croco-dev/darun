@@ -1,8 +1,11 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
+import { useApolloClient, useQuery } from '@apollo/client/react';
 import { EditAlternativeProducts } from '@darun/products-feature';
-import { TempProductBySlugOnEditAlternativeProductsDocument } from '@darun/provider-graphql';
+import {
+  ProductAlternativeManagementDocument,
+  TempProductBySlugOnEditAlternativeProductsDocument,
+} from '@darun/provider-graphql';
 import { Button, Layers } from '@darun/ui';
 import {
   AdminEmptyState,
@@ -14,12 +17,14 @@ import {
   AdminSectionHeader,
 } from '@darun/ui-admin';
 import { useDisclosure } from '@mantine/hooks';
+import { ProductAlternativeManagement } from './ProductAlternativeManagement';
 
 type ProductDetailAlternativeSectionProps = {
   slug: string;
 };
 
 export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternativeSectionProps) => {
+  const client = useApolloClient();
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
   const { data, loading, error, refetch } = useQuery(TempProductBySlugOnEditAlternativeProductsDocument, {
     variables: { slug },
@@ -96,6 +101,11 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
             </div>
           )}
         </AdminSectionBody>
+        {data?.tempProductBySlug?.id && !error && (
+          <AdminSectionBody>
+            <ProductAlternativeManagement key={slug} slug={slug} />
+          </AdminSectionBody>
+        )}
       </AdminPanel>
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="다른 서비스(대안) 관리">
         <EditAlternativeProducts
@@ -103,7 +113,8 @@ export const ProductDetailAlternativeSection = ({ slug }: ProductDetailAlternati
           slug={slug}
           onSubmit={() => {
             closeEditModal();
-            void refetch();
+            void refetch().catch(() => {});
+            void client.refetchQueries({ include: [ProductAlternativeManagementDocument] }).catch(() => {});
           }}
           onCancel={closeEditModal}
         />

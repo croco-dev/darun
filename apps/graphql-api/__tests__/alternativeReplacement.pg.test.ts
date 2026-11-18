@@ -1,17 +1,21 @@
 import 'reflect-metadata';
+import { ApolloServer } from '@apollo/server';
 import { PostgresqlProductRepository, PostgresqlProductTagRepository } from '@darun/products-datasource';
-import { GetPublishedProduct, Product } from '@darun/products-domain';
-import { ProductQueryResolver } from '@darun/products-feature/server';
+import { GetProduct, GetPublishedProduct, Product } from '@darun/products-domain';
+import { ProductMutationResolver, ProductQueryResolver } from '@darun/products-feature/server';
 import { PostgresqlAlternativeProductRepository } from '@darun/recommendation-datasource';
 import { AlternativeProduct, GetAlternativeProducts, UpdateAlternativeProduct } from '@darun/recommendation-domain';
 import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
 import { TranslationService, computeSourceHash } from '@darun/translation-domain';
+import { AuthRole, createAuthChecker } from '@darun/utils-apollo-server';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres, { type Sql } from 'postgres';
+import { buildSchemaSync } from 'type-graphql';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { resolve } from 'node:path';
 import { AutoRecommender } from '../../../libs/recommendation/domain/src/services/AutoRecommender';
+import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
 
 const url = process.env.ALTERNATIVE_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
@@ -45,10 +49,11 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
         return null;
       end $$`;
     await client`create trigger reject_alternative_write after insert or update or delete on alternative_products for each row execute function reject_alternative_write()`;
+    await client`create trigger reject_alternative_write after insert or delete on alternative_product_exclusions for each row execute function reject_alternative_write()`;
   }, 30000);
 
   beforeEach(async () => {
-    await client`truncate alternative_products`;
+    await client`truncate alternative_products, alternative_product_exclusions`;
     await client`insert into alternative_products (id, product_id, alternative_product_id) values ('kept-id', 'source', 'keep'), ('old-id', 'source', 'old')`;
     repository = new PostgresqlAlternativeProductRepository(drizzle(client));
   });
@@ -56,6 +61,7 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
   afterAll(async () => {
     if (client) {
       await client`drop trigger if exists reject_alternative_write on alternative_products`;
+      await client`drop trigger if exists reject_alternative_write on alternative_product_exclusions`;
       await client`drop function if exists reject_alternative_write()`;
       await client.end({ timeout: 5 });
     }
@@ -109,6 +115,7 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       // Only the dependencies used by this field are supplied; Lambda verification covers full DI initialization.
       resolver = Object.assign(Object.create(ProductQueryResolver.prototype) as ProductQueryResolver, {
         getAlternativeProductsUseCase,
+        getProductUseCase: new GetProduct(productRepository),
         getPublishedProductUseCase: new GetPublishedProduct(productRepository),
       });
     });
@@ -177,6 +184,147 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
     it('공개 후보가 없으면 빈 목록이며 자기 관계만으로 존재한다고 표시하지 않는다', async () => {
       await client`update products set published_at = null where id <> 'source'`;
       await client`insert into alternative_products (id, product_id, alternative_product_id) values ('row-self', 'source', 'source')`;
+      expect(await publicIds()).toEqual([]);
+      expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
+    });
+
+    it('관리자만 제외를 기록하며 공개 대안과 수동 저장이 같은 편집 판단을 반영한다', async () => {
+      const mutationResolver = Object.assign(Object.create(ProductMutationResolver.prototype), {
+        getProductUseCase: new GetProduct(productRepository),
+        updateAlternativeProductUseCase: new UpdateAlternativeProduct(repository),
+      });
+      const server = new ApolloServer({
+        schema: buildSchemaSync({
+          resolvers: [ProductQueryResolver, ProductMutationResolver],
+          authChecker: createAuthChecker(),
+          container: { get: target => (target === ProductQueryResolver ? resolver : mutationResolver) },
+        }),
+        formatError: (formatted, error) => formatServerError(formatted, error, false),
+      });
+      const run = async (
+        query: string,
+        variables: Record<string, unknown> = {},
+        roles: string[] = [AuthRole.Admin]
+      ) => {
+        const response = await server.executeOperation(
+          { query, variables },
+          { contextValue: { getRoles: () => roles } }
+        );
+        if (response.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+        return response.body.singleResult;
+      };
+      const management = `{ tempProductBySlug(slug: "source") {
+        alternativeManagement { automatic { id } exclusions { alternativeProductId alternativeProductName note } }
+      } }`;
+      const publicQuery = `query($slug: String!) { productBySlug(slug: $slug) { alternatives { id } } }`;
+      const write = `mutation($input: SetProductAlternativeExclusionInput!) { setProductAlternativeExclusion(input: $input) }`;
+      const selectManually = `mutation {
+        updateAlternativeProduct(slug: "source", input: { alternativeProductIds: ["auto-1"] }) {
+          product { manualAlternatives { id } }
+        }
+      }`;
+      const input = { slug: 'source', alternativeProductId: 'auto-1', excluded: true, note: ' 첫 메모 ' };
+      const expected = (ids: string[]) => ({ productBySlug: { alternatives: ids.map(id => ({ id })) } });
+
+      try {
+        expect((await run(publicQuery, { slug: 'source' }, [])).data).toEqual(expected(autoIds.slice(0, 5)));
+        expect((await run(publicQuery, { slug: 'auto-1' }, [])).data).toEqual(
+          expected(['source', ...autoIds.slice(1, 5)])
+        );
+        for (const roles of [[], ['user']]) {
+          const forbiddenRead = await run(
+            '{ productBySlug(slug: "source") { alternativeManagement { exclusions { note } } } }',
+            {},
+            roles
+          );
+          expect(forbiddenRead.errors?.[0].path).toEqual(['productBySlug', 'alternativeManagement']);
+          expect((await run(write, { input }, roles)).errors?.[0].path).toEqual(['setProductAlternativeExclusion']);
+        }
+        expect(await repository.findExclusionsByProductId('source')).toEqual([]);
+        expect((await run(write, { input: { ...input, alternativeProductId: 'missing' } })).errors).toHaveLength(1);
+        expect((await run(write, { input: { ...input, alternativeProductId: 'source' } })).errors).toHaveLength(1);
+        expect((await run(write, { input: { ...input, note: 'x'.repeat(501) } })).errors).toHaveLength(1);
+
+        expect((await run(write, { input })).data).toEqual({ setProductAlternativeExclusion: true });
+        expect((await run(write, { input: { ...input, note: '재전송한 메모' } })).data).toEqual({
+          setProductAlternativeExclusion: true,
+        });
+        expect((await run(management)).data).toEqual({
+          tempProductBySlug: {
+            alternativeManagement: {
+              automatic: autoIds.slice(1).map(id => ({ id })),
+              exclusions: [{ alternativeProductId: 'auto-1', alternativeProductName: 'auto-1', note: '첫 메모' }],
+            },
+          },
+        });
+        expect((await run(publicQuery, { slug: 'source' }, [])).data).toEqual(expected(autoIds.slice(1)));
+        expect((await run(publicQuery, { slug: 'auto-1' }, [])).data).toEqual(
+          expected(['source', ...autoIds.slice(1, 5)])
+        );
+
+        const conflict = await run(selectManually);
+        expect(conflict.errors?.[0]).toMatchObject({
+          message: '제외된 서비스의 제외를 해제한 뒤 수동 대안으로 연결해 주세요.',
+          extensions: { code: 'alternative-product/conflict' },
+        });
+        const manual = await repository.findManyByProductId('source');
+        expect(manual.map(row => row.alternativeProductId).sort()).toEqual([...manualIds].sort());
+
+        // The excluded candidate would still win by both category and tag after edits.
+        await client`insert into tags (id, name, type) values ('exclude-tag', 'exclude-tag', 'Featured')
+          on conflict (name) do nothing`;
+        await client`insert into product_tags (id, product_id, tag_id) values
+          ('exclude-source', 'source', 'exclude-tag'), ('exclude-auto', 'auto-1', 'exclude-tag')`;
+        await client`update products set published_at = null where id not in ('source', 'auto-1')`;
+        expect((await run(publicQuery, { slug: 'source' }, [])).data).toEqual(expected([]));
+        expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
+        expect(await productRepository.hasPublishedAlternatives('auto-1')).toBe(true);
+        await client`insert into products (id, slug, name, summary, logo_url, published_at, category_ids)
+          values ('new-candidate', 'new-candidate', '새 후보', '', '', '2026-02-01', '["shared"]'::json)`;
+        expect((await run(publicQuery, { slug: 'source' }, [])).data).toEqual(expected(['new-candidate']));
+        expect((await run(write, { input: { ...input, excluded: false } })).data).toEqual({
+          setProductAlternativeExclusion: true,
+        });
+        expect((await run(publicQuery, { slug: 'source' }, [])).data).toEqual(expected(['auto-1', 'new-candidate']));
+        expect((await run(selectManually)).data).toEqual({
+          updateAlternativeProduct: { product: { manualAlternatives: [{ id: 'auto-1' }] } },
+        });
+        expect((await run(write, { input })).errors?.[0].extensions?.code).toBe('alternative-product/conflict');
+        expect(await repository.findExclusionsByProductId('source')).toEqual([]);
+      } finally {
+        await server.stop();
+      }
+    });
+
+    it('동시 수동 저장과 제외 중 하나만 성공하고 실패한 제외는 남지 않는다', async () => {
+      const otherWriter = new PostgresqlAlternativeProductRepository(drizzle(client));
+      const exclusion = { productId: 'source', alternativeProductId: 'auto-1', note: null };
+      const results = await Promise.allSettled([
+        repository.exclude(exclusion),
+        otherWriter.replaceByProductId('source', ['auto-1']),
+      ]);
+      expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+      expect(results.find(result => result.status === 'rejected')).toMatchObject({
+        reason: { code: 'alternative-product/conflict' },
+      });
+      const excluded = await repository.findExclusionsByProductId('source');
+      const manual = await repository.findManyByProductId('source');
+      expect(
+        Number(excluded.some(row => row.alternativeProductId === 'auto-1')) +
+          Number(manual.some(row => row.alternativeProductId === 'auto-1'))
+      ).toBe(1);
+      await expect(repository.exclude({ ...exclusion, alternativeProductId: 'reject' })).rejects.toThrow();
+      expect(await repository.findExclusionsByProductId('source')).toEqual(excluded);
+    });
+
+    it('카테고리 후보 범위 안에 추천할 상품이 없으면 사이트맵에도 대안이 없다고 표시한다', async () => {
+      await client`update products set published_at = null where id <> 'source'`;
+      await client`insert into products (id, slug, name, summary, logo_url, published_at, category_ids)
+        select 'category-' || n, 'category-' || n, '후보 ' || n, '', '',
+          '2026-02-01'::timestamp + n * interval '1 day', '["shared"]'::json from generate_series(1, 31) n`;
+      await client`insert into alternative_product_exclusions (product_id, alternative_product_id)
+        select 'source', 'category-' || n from generate_series(2, 31) n`;
+
       expect(await publicIds()).toEqual([]);
       expect(await productRepository.hasPublishedAlternatives('source')).toBe(false);
     });

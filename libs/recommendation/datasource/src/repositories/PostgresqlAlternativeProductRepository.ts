@@ -1,16 +1,38 @@
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
-import { AlternativeProduct, AlternativeProductRepository } from '@darun/recommendation-domain';
+import {
+  AlternativeProduct,
+  type AlternativeProductRepository,
+  type AlternativeProductExclusion,
+  alternativeProductConflict,
+} from '@darun/recommendation-domain';
 import { AlternativeProductRepositoryToken } from '@darun/recommendation-domain';
 import DataLoader from 'dataloader';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { groupBy } from 'es-toolkit';
 import { Inject, Service } from 'typedi';
-import { alternativeProducts } from '../entities/AlternativeProductSchema';
+import { alternativeProducts, alternativeProductExclusions } from '../entities/AlternativeProductSchema';
+
+type Transaction = Parameters<Parameters<Drizzle['transaction']>[0]>[0];
+
+const lockProduct = (tx: Transaction, productId: string) =>
+  tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`alternative-products:${productId}`}, 0))`);
 
 @Service(AlternativeProductRepositoryToken)
 export class PostgresqlAlternativeProductRepository implements AlternativeProductRepository {
   private productIdLoader: DataLoader<string, AlternativeProduct[]>;
+  private readonly exclusionLoader = new DataLoader<string, AlternativeProductExclusion[]>(
+    async productIds => {
+      const rows = await this.db
+        .select()
+        .from(alternativeProductExclusions)
+        .where(inArray(alternativeProductExclusions.productId, [...productIds]))
+        .orderBy(alternativeProductExclusions.alternativeProductId);
+      const rowsByProduct = groupBy(rows, row => row.productId);
+      return productIds.map(productId => rowsByProduct[productId] ?? []);
+    },
+    { cache: false }
+  );
   constructor(@Inject(DrizzleToken) private readonly db: Drizzle) {
     this.productIdLoader = new DataLoader(
       async (productIds: readonly string[]) => {
@@ -41,10 +63,10 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
 
   async replaceByProductId(productId: string, alternativeProductIds: string[]): Promise<void> {
     const nextIds = [...new Set(alternativeProductIds.filter(Boolean))];
-    const lockKey = `alternative-products:${productId}`;
     await this.db.transaction(async tx => {
-      // Lock even an empty list. Read the current set only after acquiring this product's lock.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+      // Manual selection and exclusion must see each other's committed state.
+      await lockProduct(tx, productId);
+      await this.assertNotExcluded(tx, productId, nextIds);
       const previous = await tx.select().from(alternativeProducts).where(eq(alternativeProducts.productId, productId));
       const nextIdSet = new Set(nextIds);
       const previousIdSet = new Set(previous.map(row => row.alternativeProductId));
@@ -68,6 +90,63 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
     this.productIdLoader.clear(productId);
   }
 
+  findExclusionsByProductId(productId: string): Promise<AlternativeProductExclusion[]> {
+    return this.exclusionLoader.load(productId);
+  }
+
+  async exclude(exclusion: AlternativeProductExclusion): Promise<void> {
+    const { productId, alternativeProductId } = exclusion;
+    await this.db.transaction(async tx => {
+      await lockProduct(tx, productId);
+      const [manual] = await tx
+        .select({ id: alternativeProducts.id })
+        .from(alternativeProducts)
+        .where(
+          and(
+            eq(alternativeProducts.productId, productId),
+            eq(alternativeProducts.alternativeProductId, alternativeProductId)
+          )
+        )
+        .limit(1);
+      if (manual) {
+        throw alternativeProductConflict('수동 대안에서 연결을 해제한 뒤 자동 대안에서 제외해 주세요.');
+      }
+      await tx.insert(alternativeProductExclusions).values(exclusion).onConflictDoNothing();
+    });
+  }
+
+  async restore(productId: string, alternativeProductId: string): Promise<void> {
+    await this.db.transaction(async tx => {
+      await lockProduct(tx, productId);
+      await tx
+        .delete(alternativeProductExclusions)
+        .where(
+          and(
+            eq(alternativeProductExclusions.productId, productId),
+            eq(alternativeProductExclusions.alternativeProductId, alternativeProductId)
+          )
+        );
+    });
+  }
+
+  private async assertNotExcluded(tx: Transaction, productId: string, alternativeProductIds: string[]): Promise<void> {
+    if (!alternativeProductIds.length) return;
+
+    const [excluded] = await tx
+      .select({ alternativeProductId: alternativeProductExclusions.alternativeProductId })
+      .from(alternativeProductExclusions)
+      .where(
+        and(
+          eq(alternativeProductExclusions.productId, productId),
+          inArray(alternativeProductExclusions.alternativeProductId, alternativeProductIds)
+        )
+      )
+      .limit(1);
+    if (excluded) {
+      throw alternativeProductConflict('제외된 서비스의 제외를 해제한 뒤 수동 대안으로 연결해 주세요.');
+    }
+  }
+
   deleteMany(removedAlternatives: AlternativeProduct[]): Promise<boolean> {
     return this.db
       .transaction(async tx => {
@@ -87,6 +166,15 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
   createMany(newAlternatives: AlternativeProduct[]): Promise<AlternativeProduct[]> {
     return this.db
       .transaction(async tx => {
+        const byProduct = groupBy(newAlternatives, alternative => alternative.productId);
+        for (const productId of Object.keys(byProduct).sort()) {
+          await lockProduct(tx, productId);
+          await this.assertNotExcluded(
+            tx,
+            productId,
+            byProduct[productId].map(alternative => alternative.alternativeProductId)
+          );
+        }
         return tx.insert(alternativeProducts).values(newAlternatives).returning();
       })
       .then(result => {
@@ -97,6 +185,8 @@ export class PostgresqlAlternativeProductRepository implements AlternativeProduc
   create(data: AlternativeProduct): Promise<AlternativeProduct> {
     return this.db
       .transaction(async tx => {
+        await lockProduct(tx, data.productId);
+        await this.assertNotExcluded(tx, data.productId, [data.alternativeProductId]);
         const inserted = await tx
           .insert(alternativeProducts)
           .values({ ...data })
