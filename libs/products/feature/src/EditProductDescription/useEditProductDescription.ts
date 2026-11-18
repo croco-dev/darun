@@ -64,14 +64,15 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const [previousSlug, setPreviousSlug] = useState(slug);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<DescriptionConflict | null>(null);
+  const [acceptedConflict, setAcceptedConflict] = useState(false);
   const [loading, setLoading] = useState(false);
   if (previousSlug !== slug) {
     setPreviousSlug(slug);
     setConflict(null);
+    setAcceptedConflict(false);
     setLoading(false);
   }
   const savePending = useRef(false);
-  const acceptedConflict = useRef(false);
   const imageUploadPending = useRef(false);
   const [imageUploading, setImageUploading] = useState(false);
   const onImageUploadingChange = useCallback((uploading: boolean) => {
@@ -88,7 +89,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     variables: { slug },
   });
   const product = data?.tempProductBySlug;
-  const descriptionReady = Boolean(product && !descriptionError);
+  const descriptionReady = Boolean(product && !descriptionError) || conflict !== null || acceptedConflict;
   const description = product?.description ?? null;
   const formDescription = description ?? '';
   const sourceRef = useRef({ slug, description });
@@ -101,7 +102,6 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   useEffect(
     () => () => {
       savePending.current = false;
-      acceptedConflict.current = false;
       productSessionRef.current = { slug };
     },
     [slug]
@@ -127,7 +127,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   );
 
   useEffect(() => {
-    if (!descriptionReady || loading || conflict || acceptedConflict.current) return;
+    if (!descriptionReady || loading || conflict || acceptedConflict) return;
     const lastObserved = lastObservedSourceRef.current;
     if (lastObserved.slug === slug && lastObserved.description === description) return;
     lastObservedSourceRef.current = { slug, description };
@@ -139,7 +139,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     } else {
       setHasObservedChange(description !== sourceRef.current.description);
     }
-  }, [slug, description, descriptionReady, loading, conflict, getValues, resetDraft]);
+  }, [slug, description, descriptionReady, loading, conflict, acceptedConflict, getValues, resetDraft]);
 
   const [editDescription] = useMutation(EditProductOnEditProductDescriptionDocument, {
     refetchQueries: ({ data }) => {
@@ -249,7 +249,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     refreshAfterConflict,
     acceptLatestDescription: () => {
       // Requests begun before conflict recovery can still update the shared cache.
-      if (conflict?.status === 'ready') acceptedConflict.current = true;
+      if (conflict?.status === 'ready') setAcceptedConflict(true);
       lastObservedSourceRef.current = { slug, description };
       resetDraft(latestDescription);
       setConflict(null);

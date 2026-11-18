@@ -22,7 +22,7 @@ afterEach(() => {
 function setup(initialDescription = '<p>Original saved introduction</p>') {
   let savedDescription = initialDescription;
   let failNextRead = false;
-  let waitForRead: Promise<void> | undefined;
+  let waitForRead: Promise<boolean> | undefined;
   const operations: string[] = [];
   const job = {
     __typename: 'ProductDescriptionJob',
@@ -49,7 +49,11 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
           operations.push(name);
           if (name === 'TempProductBySlugOnEditProductDescription' && waitForRead) {
             const snapshot = product();
-            void waitForRead.then(() => {
+            void waitForRead.then(fail => {
+              if (fail) {
+                observer.error(new Error('Earlier description read failed'));
+                return;
+              }
               observer.next({ data: { tempProductBySlug: snapshot } });
               observer.complete();
             });
@@ -133,8 +137,8 @@ function setup(initialDescription = '<p>Original saved introduction</p>') {
       failNextRead = true;
     },
     holdNextEditorRead: () => {
-      let release!: () => void;
-      waitForRead = new Promise<void>(resolve => {
+      let release!: (fail: boolean) => void;
+      waitForRead = new Promise<boolean>(resolve => {
         release = resolve;
       });
       return release;
@@ -212,31 +216,35 @@ it('다른 편집자의 저장을 감지해 초안을 보존하고 최신 본문
   expect(fixture.result.current.editor.hasServerChange).toBe(false);
 });
 
-it('빈 초안을 저장하다 충돌하면 진행 중이던 조회가 끝나도 새로 읽은 본문과 초안을 보존한다', async () => {
-  const fixture = setup('');
-  const latest = '<p>다른 편집자가 저장한 최신 본문</p>';
-  const reads = () => fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length;
-  await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
-  const previousReads = reads();
-  fixture.writeElsewhere('<p>이전 조회가 받은 중간 본문</p>');
-  const releaseRead = fixture.holdNextEditorRead();
-  act(() => fixture.result.current.editor.retryDescription());
-  await waitFor(() => expect(reads()).toBe(previousReads + 1));
-  try {
-    fixture.writeElsewhere(latest);
-    await act(async () => fixture.result.current.editor.submit({ description: '' }));
-    expect(reads()).toBe(previousReads + 2);
-    expect(fixture.result.current.editor.hasServerChange).toBe(true);
-    expect(fixture.result.current.editor.form.getValues().description).toBe('');
-    expect(fixture.result.current.editor.latestDescription).toBe(latest);
-    act(() => fixture.result.current.editor.acceptLatestDescription());
+it.each([false, true])(
+  '빈 초안 충돌 뒤 이전 조회가 끝나도 확인한 본문으로 편집을 이어간다 (%s)',
+  async failEarlierRead => {
+    const fixture = setup('');
+    const latest = '<p>다른 편집자가 저장한 최신 본문</p>';
+    const reads = () => fixture.operations.filter(name => name === 'TempProductBySlugOnEditProductDescription').length;
+    await waitFor(() => expect(fixture.result.current.editor.descriptionReady).toBe(true));
+    const previousReads = reads();
+    fixture.writeElsewhere('<p>이전 조회가 받은 중간 본문</p>');
+    const releaseRead = fixture.holdNextEditorRead();
+    act(() => fixture.result.current.editor.retryDescription());
+    await waitFor(() => expect(reads()).toBe(previousReads + 1));
+    try {
+      fixture.writeElsewhere(latest);
+      await act(async () => fixture.result.current.editor.submit({ description: '' }));
+      expect(reads()).toBe(previousReads + 2);
+      expect(fixture.result.current.editor.hasServerChange).toBe(true);
+      expect(fixture.result.current.editor.form.getValues().description).toBe('');
+      expect(fixture.result.current.editor.latestDescription).toBe(latest);
+      act(() => fixture.result.current.editor.acceptLatestDescription());
+      expect(fixture.result.current.editor.hasServerChange).toBe(false);
+      expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
+    } finally {
+      await act(async () => releaseRead(failEarlierRead));
+    }
     expect(fixture.result.current.editor.hasServerChange).toBe(false);
+    expect(fixture.result.current.editor.descriptionReady).toBe(true);
     expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
-  } finally {
-    await act(async () => releaseRead());
+    await act(async () => fixture.result.current.editor.submit({ description: '<p>최신 본문을 이어서 수정</p>' }));
+    expect(fixture.savedDescription()).toBe('<p>최신 본문을 이어서 수정</p>');
   }
-  expect(fixture.result.current.editor.hasServerChange).toBe(false);
-  expect(fixture.result.current.editor.form.getValues().description).toBe(latest);
-  await act(async () => fixture.result.current.editor.submit({ description: '<p>최신 본문을 이어서 수정</p>' }));
-  expect(fixture.savedDescription()).toBe('<p>최신 본문을 이어서 수정</p>');
-});
+);
