@@ -3,6 +3,7 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import { type MouseEvent, useEffect, useState } from 'react';
 import { createAdminEditorExtensions } from './extensions';
+import { imageInsertionKey } from './imageInsertion';
 import { MenuBar } from './MenuBar';
 import { getEditorTableError, getEditorTablePasteError } from './tableLimits';
 
@@ -103,7 +104,7 @@ export function Editor({
       return;
     }
 
-    editor.commands.setContent(nextValue, false);
+    editor.chain().setMeta(imageInsertionKey, null).setContent(nextValue, false).run();
   }, [value, defaultValue, editor, contentError]);
 
   if (!editor) {
