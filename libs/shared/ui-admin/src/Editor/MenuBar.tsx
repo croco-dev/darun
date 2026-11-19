@@ -152,6 +152,10 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     });
   }
 
+  function getEditableImageInsertion() {
+    return editor.isEditable ? imageInsertionKey.getState(editor.state) : null;
+  }
+
   function updateImage(selection: NodeSelection, attributes: { alt: string } | ImageCaption) {
     if (disabled || !editor.isEditable || activeUpload.current) return;
     if (editor.state.doc !== selection.$from.doc) {
@@ -171,7 +175,7 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     if (imageDraft.kind === 'alt') return updateImage(imageDraft.selection, { alt });
     if (imageDraft.kind !== 'upload') return;
 
-    if (!imageInsertionKey.getState(editor.state)) {
+    if (!getEditableImageInsertion()) {
       requestNewImagePosition();
       return;
     }
@@ -189,8 +193,8 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
 
       if (activeUpload.current !== pending || editor.isDestroyed) return;
 
-      const insertion = imageInsertionKey.getState(editor.state);
-      if (!insertion || !editor.isEditable) {
+      const insertion = getEditableImageInsertion();
+      if (!insertion) {
         requestNewImagePosition();
         return;
       }
@@ -214,6 +218,10 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
       });
     } catch (error) {
       if (activeUpload.current !== pending || editor.isDestroyed) return;
+      if (!getEditableImageInsertion()) {
+        requestNewImagePosition();
+        return;
+      }
       console.error('image upload failed:', error);
       notifications.show({
         message: '이미지 업로드에 실패했습니다.',

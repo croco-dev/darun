@@ -38,20 +38,31 @@ describe('본문 이미지 삽입 위치', () => {
   }
 
   function startUpload() {
-    let complete!: (url: string) => void;
-    upload.mockReturnValueOnce(new Promise<string>(resolve => (complete = resolve)));
+    let complete!: (error?: Error) => void;
+    upload.mockReturnValueOnce(
+      new Promise<string>((resolve, reject) => {
+        complete = error => (error ? reject(error) : resolve(imageUrl));
+      })
+    );
     fireEvent.click(screen.getByRole('button', { name: '이미지 삽입' }));
-    return () => act(async () => complete(imageUrl));
+    return (error?: Error) => act(async () => complete(error));
   }
 
   it.each([false, true])('커서를 옮겨도 처음 위치에 한 번 삽입한다 (앞부분 편집: %s)', async editBefore => {
     const { editor, uploading } = await renderImageDraft();
+    function moveCaret() {
+      editor.commands.setTextSelection(editor.state.doc.content.size - 1);
+    }
+    // The location is fixed by the file choice, even before the alt text is confirmed.
+    if (!editBefore) act(moveCaret);
     const complete = startUpload();
     expect(uploading.mock.calls).toEqual([[true]]);
-    act(() => {
-      if (editBefore) editor.commands.insertContentAt(1, '앞에 추가한 문장 ');
-      editor.commands.setTextSelection(editor.state.doc.content.size - 1);
-    });
+    if (editBefore) {
+      act(() => {
+        editor.commands.insertContentAt(1, '앞에 추가한 문장 ');
+        moveCaret();
+      });
+    }
     await complete();
 
     const document = new DOMParser().parseFromString(editor.getHTML(), 'text/html');
@@ -94,14 +105,14 @@ describe('본문 이미지 삽입 위치', () => {
     expect(uploading.mock.calls).toEqual([[true], [false]]);
   });
 
-  it.each(['replace document', 'remove paragraph'] as const)(
+  it.each(['replace document', 'remove paragraph', 'replace document and reject upload'] as const)(
     '삽입 위치를 잃으면 성공을 알리지 않는다 (%s)',
     async change => {
       const { editor, uploading, view } = await renderImageDraft();
       const complete = startUpload();
       const remaining = '<p>첫 문단</p><p>마지막 문단</p>';
       const replacement = '<p>같은 위치에 다른 문단이 있는 새 본문</p><p>마지막 문단</p>';
-      if (change === 'replace document') {
+      if (change !== 'remove paragraph') {
         view.rerender(<Editor value={replacement} onImageUploadingChange={uploading} />);
       } else {
         act(() => {
@@ -110,11 +121,15 @@ describe('본문 이미지 삽입 위치', () => {
           editor.commands.deleteRange({ from, to });
         });
       }
-      await complete();
+      const error = change === 'replace document and reject upload' ? new Error('Upload timed out') : undefined;
+      await complete(error);
 
-      expect(editor.getHTML()).toBe(change === 'replace document' ? replacement : remaining);
+      expect(editor.getHTML()).toBe(change === 'remove paragraph' ? remaining : replacement);
       expect(notifications.show).toHaveBeenCalledTimes(1);
-      expect(notifications.show).toHaveBeenCalledWith(expect.objectContaining({ color: 'red' }));
+      expect(notifications.show).toHaveBeenCalledWith({
+        color: 'red',
+        message: '본문에서 이미지를 넣을 위치를 다시 선택해 주세요.',
+      });
       expect(screen.queryByRole('group', { name: '본문 이미지 삽입' })).toBeNull();
       expect(uploading.mock.calls).toEqual([[true], [false]]);
     }
