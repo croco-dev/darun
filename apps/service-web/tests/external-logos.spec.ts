@@ -109,14 +109,13 @@ for (const width of [390, 1280]) {
     await setAdminSession(context);
     const cloudinaryLogo = 'https://res.cloudinary.com/demo/image/upload/logo.png';
     const brokenLogo = 'https://res.cloudinary.com/demo/image/upload/broken-logo.png';
+    const isBrokenLogoRequest = (url: URL) =>
+      url.origin === adminOrigin && url.pathname === '/_next/image' && url.searchParams.get('url') === brokenLogo;
     const pageErrors: string[] = [];
     const consoleErrors: string[] = [];
     page.on('pageerror', error => pageErrors.push(error.message));
     page.on('console', message => {
-      if (
-        message.type() === 'error' &&
-        new URL(message.location().url || adminOrigin).searchParams.get('url') !== brokenLogo
-      ) {
+      if (message.type() === 'error' && !isBrokenLogoRequest(new URL(message.location().url, adminOrigin))) {
         consoleErrors.push(message.text());
       }
     });
@@ -131,9 +130,9 @@ for (const width of [390, 1280]) {
         return route.continue();
       }
     );
-    const brokenResponse = page.waitForResponse(response => {
-      const url = new URL(response.url());
-      return url.pathname === '/_next/image' && url.searchParams.get('url') === brokenLogo;
+    let brokenLogoStatus: number | undefined;
+    page.on('response', response => {
+      if (isBrokenLogoRequest(new URL(response.url()))) brokenLogoStatus = response.status();
     });
     await page.goto(`${adminOrigin}/products`);
     const table = page.getByRole('table', { name: '서비스 목록' });
@@ -152,7 +151,7 @@ for (const width of [390, 1280]) {
     await expect.poll(() => cloudinary.evaluate(imageLoaded)).toBeGreaterThan(0);
 
     const broken = logoFor('Broken Logo');
-    expect((await brokenResponse).status()).toBe(404);
+    await expect.poll(() => brokenLogoStatus).toBe(404);
     await expect(broken).toHaveAttribute('src', '/images/default-product-icon.svg');
     await expect.poll(() => broken.evaluate(imageLoaded)).toBeGreaterThan(0);
     await page.screenshot({
@@ -165,8 +164,14 @@ for (const width of [390, 1280]) {
       })
     );
     await page.getByRole('button', { name: '새로고침', exact: true }).click();
-    await expect(broken).toHaveAttribute('src', `${externalLogo}?replacement=1`);
-    await expect.poll(() => broken.evaluate(imageLoaded)).toBeGreaterThan(0);
+    await expect
+      .poll(() =>
+        broken.evaluate(element => {
+          const img = element as HTMLImageElement;
+          return img.complete && img.naturalWidth > 0 ? img.currentSrc : null;
+        })
+      )
+      .toBe(`${externalLogo}?replacement=1`);
     await page.screenshot({
       path: test.info().outputPath(`admin-list-refreshed-${width}.png`),
     });
