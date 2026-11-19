@@ -36,6 +36,13 @@ const cloudinaryProduct = {
   name: 'Cloudinary Logo',
   logoUrl: 'https://res.cloudinary.com/demo/image/upload/logo.png',
 };
+const brokenLogoProduct = {
+  ...product,
+  id: 'broken-product',
+  slug: 'broken-logo',
+  name: 'Broken Logo',
+  logoUrl: 'https://res.cloudinary.com/demo/image/upload/broken-logo.png',
+};
 const png = readFileSync(new URL('../../public/images/favicon-32x32.png', import.meta.url));
 const job = {
   __typename: 'ProductResearchJob',
@@ -72,23 +79,50 @@ createServer(async (request, response) => {
   }
   response.setHeader('Access-Control-Allow-Headers', 'content-type,authorization');
   if (request.method === 'OPTIONS') return response.writeHead(204).end();
-  if (request.url === '/logo.png') return response.writeHead(200, { 'Content-Type': 'image/png' }).end(png);
+  if (request.url?.split('?')[0] === '/logo.png') {
+    return response.writeHead(200, { 'Content-Type': 'image/png' }).end(png);
+  }
   const chunks = [];
   for await (const chunk of request) chunks.push(chunk);
   const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : {};
-  const respond = (operation: { variables?: { slug?: string } }) => ({
-    data: {
-      productBySlug: operation.variables?.slug === 'cloudinary-logo' ? cloudinaryProduct : product,
-      product1: product,
-      product2: cloudinaryProduct,
-      rankedProducts: [product, cloudinaryProduct],
-      recentProducts: [product, cloudinaryProduct],
-      productsCount: 2,
-      searchProducts: [],
-      categories: [],
-      productResearchJob: job,
-    },
-  });
+  const respond = (operation: { operationName?: string; variables?: { slug?: string } }) => {
+    if (operation.operationName === 'AllProductsOnProductListTable') {
+      const refreshedProduct =
+        request.url === '/graphql?refreshed-logos=1'
+          ? {
+              ...brokenLogoProduct,
+              logoUrl: `${product.logoUrl}?replacement=1`,
+            }
+          : brokenLogoProduct;
+      return {
+        data: {
+          allProducts: {
+            edges: [product, cloudinaryProduct, refreshedProduct].map(node => ({ cursor: node.id, node })),
+            pageInfo: {
+              endCursor: null,
+              startCursor: null,
+              hasNextPage: false,
+              hasPreviousPage: false,
+            },
+            totalCount: 3,
+          },
+        },
+      };
+    }
+    return {
+      data: {
+        productBySlug: operation.variables?.slug === 'cloudinary-logo' ? cloudinaryProduct : product,
+        product1: product,
+        product2: cloudinaryProduct,
+        rankedProducts: [product, cloudinaryProduct],
+        recentProducts: [product, cloudinaryProduct],
+        productsCount: 2,
+        searchProducts: [],
+        categories: [],
+        productResearchJob: job,
+      },
+    };
+  };
   response.writeHead(200, { 'Content-Type': 'application/json' });
   response.end(JSON.stringify(Array.isArray(body) ? body.map(respond) : respond(body)));
 }).listen(16480, '127.0.0.1');
