@@ -9,6 +9,7 @@ import { AdminModalOpenContext } from '../AdminModal';
 import type { ImageCaption } from './CaptionedImage';
 import { ImageAltFields } from './ImageAltFields';
 import { ImageCaptionFields } from './ImageCaptionFields';
+import { imageInsertionKey, insertUploadedImage } from './imageInsertion';
 import { LinkFields } from './LinkFields';
 import { applyLink, getCurrentLinkSelection, getLinkSelection, type LinkSelection } from './linkSelection';
 import { MenuItem, menuItemVariants } from './MenuItem';
@@ -130,12 +131,29 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
       return;
     }
 
+    const { from, to } = editor.state.selection;
+    editor.commands.setMeta(imageInsertionKey, { from, to });
     setImageDraft({ kind: 'upload', file });
   };
 
   function closeImageFields() {
+    if (imageDraft?.kind === 'upload' && imageInsertionKey.getState(editor.state)) {
+      editor.commands.setMeta(imageInsertionKey, null);
+    }
     setImageDraft(null);
     if (!disabled && editor.isEditable) editor.commands.focus();
+  }
+
+  function requestNewImagePosition() {
+    closeImageFields();
+    notifications.show({
+      message: '본문에서 이미지를 넣을 위치를 다시 선택해 주세요.',
+      color: 'red',
+    });
+  }
+
+  function getEditableImageInsertion() {
+    return editor.isEditable ? imageInsertionKey.getState(editor.state) : null;
   }
 
   function updateImage(selection: NodeSelection, attributes: { alt: string } | ImageCaption) {
@@ -157,6 +175,11 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
     if (imageDraft.kind === 'alt') return updateImage(imageDraft.selection, { alt });
     if (imageDraft.kind !== 'upload') return;
 
+    if (!getEditableImageInsertion()) {
+      requestNewImagePosition();
+      return;
+    }
+
     const { file } = imageDraft;
     const pending = {
       controller: new AbortController(),
@@ -170,6 +193,12 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
 
       if (activeUpload.current !== pending || editor.isDestroyed) return;
 
+      const insertion = getEditableImageInsertion();
+      if (!insertion) {
+        requestNewImagePosition();
+        return;
+      }
+
       if (!imageUrl) {
         notifications.show({
           message: '이미지 업로드에 실패했습니다.',
@@ -178,14 +207,21 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         return;
       }
 
-      editor.chain().focus().setImage({ src: imageUrl, alt }).run();
-      setImageDraft(null);
+      if (!insertUploadedImage(editor, insertion, imageUrl, alt)) {
+        requestNewImagePosition();
+        return;
+      }
+      closeImageFields();
       notifications.show({
         message: '이미지가 본문에 추가되었습니다.',
         color: 'teal',
       });
     } catch (error) {
       if (activeUpload.current !== pending || editor.isDestroyed) return;
+      if (!getEditableImageInsertion()) {
+        requestNewImagePosition();
+        return;
+      }
       console.error('image upload failed:', error);
       notifications.show({
         message: '이미지 업로드에 실패했습니다.',

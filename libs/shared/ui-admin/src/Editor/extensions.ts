@@ -8,6 +8,7 @@ import { Plugin } from '@tiptap/pm/state';
 import { Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { CaptionedImage } from './CaptionedImage';
+import { ImageInsertionTracking } from './imageInsertion';
 import { getEditorDocumentTableError, readTableRowSpan } from './tableLimits';
 
 // Read native DOM spans so HTML bounds apply before ProseMirror allocates its grid.
@@ -24,6 +25,7 @@ const tableSpanAttributes = {
 
 export function createAdminEditorExtensions(onTableRejected?: (message: string) => void) {
   return [
+    ImageInsertionTracking,
     Extension.create({
       name: 'tableGridLimit',
       addProseMirrorPlugins() {
