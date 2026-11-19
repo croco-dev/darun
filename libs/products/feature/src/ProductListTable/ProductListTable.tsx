@@ -1,10 +1,9 @@
 'use client';
 
-import { Button, ChevronLeft, ChevronRight } from '@darun/ui';
+import { Button, ChevronLeft, ChevronRight, LogoImage } from '@darun/ui';
 import { AdminPanel, AdminEmptyState } from '@darun/ui-admin';
 import { useReactTable, getCoreRowModel, createColumnHelper, flexRender } from '@tanstack/react-table';
-import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useProductListTable } from './useProductListTable';
 
 type Product = {
@@ -15,39 +14,24 @@ type Product = {
   slug: string;
 };
 
-function ProductTableLogo({ logoUrl }: { logoUrl?: string | null }) {
-  const [hasError, setHasError] = useState(false);
-  const [prevLogoUrl, setPrevLogoUrl] = useState(logoUrl);
-
-  if (logoUrl !== prevLogoUrl) {
-    setPrevLogoUrl(logoUrl);
-    setHasError(false);
-  }
-
-  const src = !hasError && logoUrl ? logoUrl : '/images/default-product-icon.svg';
-
-  return (
-    <div className="flex justify-center select-none shrink-0">
-      <Image
-        src={src}
-        unoptimized={!logoUrl || hasError}
-        alt="서비스 로고"
-        width={32}
-        height={32}
-        onError={() => setHasError(true)}
-        className="h-8 w-8 rounded-lg border border-dark-150 object-contain shrink-0"
-      />
-    </div>
-  );
-}
-
 const columnHelper = createColumnHelper<Product>();
 
 const columns = [
   columnHelper.accessor('logoUrl', {
     header: '로고',
     size: 70,
-    cell: info => <ProductTableLogo logoUrl={info.getValue()} />,
+    cell: info => (
+      <div className="flex justify-center select-none shrink-0">
+        <LogoImage
+          src={info.getValue()}
+          fallbackSrc="/images/default-product-icon.svg"
+          alt="서비스 로고"
+          width={32}
+          height={32}
+          className="h-8 w-8 rounded-lg border border-dark-150 object-contain shrink-0"
+        />
+      </div>
+    ),
   }),
   columnHelper.accessor('name', {
     header: '이름',
