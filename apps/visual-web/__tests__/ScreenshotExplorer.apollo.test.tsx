@@ -485,17 +485,53 @@ it.each(suggestionConsumers)(
     expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
     expect(searches()).toHaveLength(1);
 
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    expect(search.getAttribute('aria-activedescendant')).toBe(screen.getByRole('option', { name: '합성 서비스' }).id);
     const outside = screen.getByRole('button', { name: '외부 영역' });
     act(() => outside.focus());
-    fireEvent.click(outside);
+    expect(document.activeElement).toBe(outside);
     expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.getByRole('combobox', { name: label })).toBe(search);
+    expect(search.getAttribute('aria-expanded')).toBe('false');
+    expect(search.hasAttribute('aria-activedescendant')).toBe(false);
     clickSearchInput(search);
     expect(screen.getByText('검색 중...')).toBeTruthy();
     await act(() => vi.advanceTimersByTimeAsync(300));
     expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
+    expect(search.hasAttribute('aria-activedescendant')).toBe(false);
     fireEvent.keyDown(search, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(search.value).toBe('합성');
+  }
+);
+
+it.each(suggestionConsumers)(
+  '$consumer at $path: an in-flight response stays closed after focus leaves',
+  async ({ consumer, path, label }) => {
+    const pending: Array<() => void> = [];
+    mount(path, consumer, <button type="button">외부 영역</button>, pending);
+    await screen.findByText('검색 결과가 없습니다.');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const search = screen.getByLabelText<HTMLInputElement>(label);
+    act(() => search.focus());
+    fireEvent.change(search, { target: { value: '합성' } });
+    await act(() => vi.advanceTimersByTimeAsync(300));
+    expect(pending).toHaveLength(1);
+    expect(screen.getByText('검색 중...')).toBeTruthy();
+
+    const outside = screen.getByRole('button', { name: '외부 영역' });
+    act(() => outside.focus());
+    const showingLoadingAfterBlur = screen.queryByText('검색 중...') !== null;
+    await act(async () => pending[0]());
+    expect(document.activeElement).toBe(outside);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(showingLoadingAfterBlur).toBe(false);
+    expect(search.getAttribute('aria-expanded')).toBe('false');
+    expect(search.value).toBe('합성');
+
+    act(() => search.focus());
+    await act(() => vi.advanceTimersByTimeAsync(300));
+    expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
   }
 );
 

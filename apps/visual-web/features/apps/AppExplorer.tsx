@@ -144,6 +144,8 @@ const View = (props: AppExplorerState) => {
                 id="app-search"
                 type="search"
                 autoComplete="off"
+                role="combobox"
+                aria-autocomplete="list"
                 aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
                 aria-controls="app-search-suggest-listbox"
                 value={searchInput}
