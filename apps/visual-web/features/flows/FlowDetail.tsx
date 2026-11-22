@@ -20,6 +20,7 @@ const FLOW_ZOOM_HEADING_ID = 'flow-zoom-heading';
 const View = ({ status, detail, retry, relatedStatus, retryRelated }: FlowDetailState) => {
   const searchParams = useSearchParams();
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const stepImageRef = useRef<HTMLElement>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [zoomedFlowId, setZoomedFlowId] = useState<string | null>(null);
 
@@ -269,7 +270,12 @@ const View = ({ status, detail, retry, relatedStatus, retryRelated }: FlowDetail
           </div>
         ) : (
           <div className="grid min-w-0 items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
-            <section aria-label="플로 단계 이미지" className="min-w-0 bg-surface-100 p-3 md:p-4">
+            <section
+              ref={stepImageRef}
+              tabIndex={-1}
+              aria-label="플로 단계 이미지"
+              className="min-w-0 bg-surface-100 p-3 focus-visible:outline-2 focus-visible:outline-offset-2 md:p-4"
+            >
               <div className="flex min-w-0 flex-col gap-3">
                 {activeStep && (
                   <figure className="relative flex min-w-0 flex-col gap-2">
@@ -452,6 +458,14 @@ const View = ({ status, detail, retry, relatedStatus, retryRelated }: FlowDetail
         open={zoomedFlowId === detail.id}
         onClose={() => setZoomedFlowId(null)}
         labelledBy={FLOW_ZOOM_HEADING_ID}
+        getReturnFocus={() => {
+          const preview = stepImageRef.current;
+          // Next updates the URL before it can commit the new step. The preview survives both renders.
+          if (new URLSearchParams(window.location.search).get(STEP_QUERY_KEY) !== stepParamRaw) {
+            return preview;
+          }
+          return preview?.querySelector<HTMLButtonElement>('figure button[aria-haspopup="dialog"]') ?? preview;
+        }}
         className="h-[calc(100dvh-2rem)] w-full"
       >
         <div className="flex h-full flex-col gap-3 p-3">
