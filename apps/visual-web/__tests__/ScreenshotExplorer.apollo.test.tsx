@@ -477,8 +477,12 @@ it.each(suggestionConsumers)(
     await act(() => vi.advanceTimersByTimeAsync(150));
     clickSearchInput(search);
     expect(screen.getByText('검색 중...')).toBeTruthy();
+    expect(search.getAttribute('aria-expanded')).toBe('false');
+    expect(search.hasAttribute('aria-controls')).toBe(false);
     await act(() => vi.advanceTimersByTimeAsync(150));
     expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
+    expect(search.getAttribute('aria-expanded')).toBe('true');
+    expect(search.getAttribute('aria-controls')).toBe(screen.getByRole('listbox').id);
     const searches = () => requests.filter(request => request.operation === 'SearchProductsOnVisualExplorer');
     expect(searches()).toHaveLength(1);
     clickSearchInput(search);
@@ -493,6 +497,7 @@ it.each(suggestionConsumers)(
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(screen.getByRole('combobox', { name: label })).toBe(search);
     expect(search.getAttribute('aria-expanded')).toBe('false');
+    expect(search.hasAttribute('aria-controls')).toBe(false);
     expect(search.hasAttribute('aria-activedescendant')).toBe(false);
     clickSearchInput(search);
     expect(screen.getByText('검색 중...')).toBeTruthy();

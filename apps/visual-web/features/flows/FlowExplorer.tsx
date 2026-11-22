@@ -119,6 +119,7 @@ const View = (props: FlowExplorerState) => {
     onSearchInputFocus,
   } = props;
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const hasSuggestions = suggestions.length > 0;
   const hasFilters = searchInput.trim().length > 0 || platform !== null || flowType !== null || product !== null;
 
   return (
@@ -140,8 +141,8 @@ const View = (props: FlowExplorerState) => {
                   autoComplete="off"
                   role="combobox"
                   aria-autocomplete="list"
-                  aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
-                  aria-controls="flow-search-suggest-listbox"
+                  aria-expanded={hasSuggestions}
+                  aria-controls={hasSuggestions ? 'flow-search-suggest-listbox' : undefined}
                   value={searchInput}
                   onChange={event => onSearchInputChange(event.currentTarget.value)}
                   onFocus={onSearchInputFocus}

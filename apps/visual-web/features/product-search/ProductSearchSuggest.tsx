@@ -230,7 +230,10 @@ export function ProductSearchSuggest({
           ))}
         </ul>
       ) : showLoading ? (
-        <div className="flex min-h-11 items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-600 shadow-lg select-none">
+        <div
+          role="status"
+          className="flex min-h-11 items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-600 shadow-lg select-none"
+        >
           검색 중...
         </div>
       ) : null}
