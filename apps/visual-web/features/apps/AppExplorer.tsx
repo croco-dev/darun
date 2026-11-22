@@ -114,6 +114,7 @@ const View = (props: AppExplorerState) => {
     onSearchInputFocus,
   } = props;
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const hasSuggestions = suggestions.length > 0;
 
   return (
     <ExplorerShell
@@ -144,8 +145,10 @@ const View = (props: AppExplorerState) => {
                 id="app-search"
                 type="search"
                 autoComplete="off"
-                aria-expanded={suggestions.length > 0 || (searchInput.trim().length > 0 && isSearchingSuggestions)}
-                aria-controls="app-search-suggest-listbox"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={hasSuggestions}
+                aria-controls={hasSuggestions ? 'app-search-suggest-listbox' : undefined}
                 value={searchInput}
                 onChange={event => onSearchInputChange(event.currentTarget.value)}
                 onFocus={onSearchInputFocus}

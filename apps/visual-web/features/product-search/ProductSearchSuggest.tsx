@@ -59,19 +59,33 @@ export function ProductSearchSuggest({
     }
   }, [suggestions]);
 
-  // Close on outside click
   useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    const ownerDocument = input.ownerDocument;
+    function isInsideSearch(target: EventTarget | null) {
+      return target instanceof Node && (target === input || containerRef.current?.contains(target));
+    }
+
     function handleClick(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node) &&
-        !inputRef.current?.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !isInsideSearch(event.target)) {
         callbacksRef.current.onClose();
       }
     }
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+
+    function handleFocusOut(event: FocusEvent) {
+      if (isInsideSearch(event.target) && !isInsideSearch(event.relatedTarget)) {
+        callbacksRef.current.onClose();
+      }
+    }
+
+    ownerDocument.addEventListener('click', handleClick);
+    ownerDocument.addEventListener('focusout', handleFocusOut);
+    return () => {
+      ownerDocument.removeEventListener('click', handleClick);
+      ownerDocument.removeEventListener('focusout', handleFocusOut);
+    };
   }, [inputRef]);
 
   useEffect(() => {
@@ -216,7 +230,10 @@ export function ProductSearchSuggest({
           ))}
         </ul>
       ) : showLoading ? (
-        <div className="flex min-h-11 items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-600 shadow-lg select-none">
+        <div
+          role="status"
+          className="flex min-h-11 items-center rounded-xl border border-dark-150 bg-white px-3.5 py-2.5 text-sm text-dark-600 shadow-lg select-none"
+        >
           검색 중...
         </div>
       ) : null}

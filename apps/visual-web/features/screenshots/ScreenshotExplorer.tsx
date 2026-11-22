@@ -80,6 +80,7 @@ function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
   const { cards, searchInput, platform, screenType, element, product, catalogMode } = props;
   const searchInputRef = useRef<HTMLInputElement>(null);
   const groups = catalogMode ? groupScreenshotCatalog(cards) : [];
+  const hasSuggestions = props.suggestions.length > 0;
   const hasFilters = !!(searchInput.trim() || platform || screenType || element || product);
   return (
     <ExplorerShell
@@ -103,10 +104,8 @@ function View(props: ScreenshotExplorerState & { catalogMode?: boolean }) {
               autoComplete="off"
               role="combobox"
               aria-autocomplete="list"
-              aria-expanded={
-                props.suggestions.length > 0 || (searchInput.trim().length > 0 && props.isSearchingSuggestions)
-              }
-              aria-controls="screenshot-search-suggest-listbox"
+              aria-expanded={hasSuggestions}
+              aria-controls={hasSuggestions ? 'screenshot-search-suggest-listbox' : undefined}
               value={searchInput}
               onChange={event => props.onSearchInputChange(event.currentTarget.value)}
               onFocus={props.onSearchInputFocus}
