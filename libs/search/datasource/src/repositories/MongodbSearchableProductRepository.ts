@@ -10,13 +10,8 @@ type IndexCatalogStats = {
   indexBuilds?: string[];
   indexSizes?: Record<string, number>;
 };
-type SearchMatch = SearchableProductSchema & { readonly searchScore?: number };
-const SEARCH_BATCH_SIZE = 32;
-const SCOPED_SEARCH_TIMEOUT_MS = 5_000;
 
-function toSearchMatch(product: SearchMatch) {
-  return { ...product, id: product.productId };
-}
+const SCOPED_SEARCH_TIMEOUT_MS = 5_000;
 
 @Service(SearchableProductRepositoryToken)
 export class MongodbSearchableProductRepository implements SearchableProductRepository {
@@ -83,34 +78,16 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
     }
   }
 
-  async searchProduct(query: string, limit?: number, candidateLimit?: number): Promise<SearchableProduct[]> {
+  async searchProduct(
+    query: string,
+    limit?: number,
+    candidateLimit?: number,
+    eligibleProductIds?: readonly string[]
+  ): Promise<SearchableProduct[]> {
+    if (eligibleProductIds?.length === 0) return [];
     await this.ensureConnected();
     const effectiveLimit = candidateLimit ?? limit ?? 20;
-    return (await this.searchMatches(query).limit(effectiveLimit)).map(toSearchMatch);
-  }
-
-  async *searchProductBatches(query: string): AsyncIterable<SearchableProduct[]> {
-    await this.ensureConnected();
-    const cursor = this.searchMatches(query)
-      .option({ maxTimeMS: SCOPED_SEARCH_TIMEOUT_MS })
-      .cursor({ batchSize: SEARCH_BATCH_SIZE });
-    let batch: SearchableProduct[] = [];
-    try {
-      for await (const product of cursor) {
-        batch.push(toSearchMatch(product));
-        if (batch.length === SEARCH_BATCH_SIZE) {
-          yield batch;
-          batch = [];
-        }
-      }
-      if (batch.length > 0) yield batch;
-    } finally {
-      await cursor.close();
-    }
-  }
-
-  private searchMatches(query: string) {
-    return SearchableProductModel.aggregate<SearchMatch>([
+    const search = SearchableProductModel.aggregate<SearchableProductSchema & { readonly searchScore?: number }>([
       {
         $search: {
           index: 'searchable_products_index',
@@ -151,8 +128,14 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
           },
         },
       },
+      ...(eligibleProductIds === undefined ? [] : [{ $match: { productId: { $in: eligibleProductIds } } }]),
       { $addFields: { searchScore: { $meta: 'searchScore' } } },
+      { $limit: effectiveLimit },
     ]);
+    if (eligibleProductIds !== undefined) search.option({ maxTimeMS: SCOPED_SEARCH_TIMEOUT_MS });
+    return search.then(products =>
+      products.map(product => ({ ...product, id: product.productId, searchScore: product.searchScore }))
+    );
   }
   async index(id: string, product: SearchableProduct): Promise<boolean> {
     const revision = searchRevision(product.sourceRevision);

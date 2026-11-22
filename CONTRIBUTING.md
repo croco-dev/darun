@@ -732,7 +732,7 @@ GraphQL SDL이나 원본 operation을 변경하면 `pnpm --filter @darun/provide
 
 목록 API의 `productsByCategory`와 `visualApps`는 기본 24개씩 반환합니다. 호출자는 `pageInfo.endCursor`와 `hasNextPage`로 이어 읽으며, 목록 표시를 위해 모든 페이지나 각 앱의 화면 목록을 미리 읽지 않습니다. 앱 카드에는 `coverScreenshot`과 `screenshotCount`를 사용합니다. 상품의 태그·추천 수는 선택된 필드만 배치 조회하며, 변경 가능한 데이터를 읽는 상품 ID loader는 요청 사이에 결과를 보관하지 않습니다.
 
-Visual 앱 자동완성의 `visualAppSuggestions(query, first)`는 기존 상품 검색의 오타·동의어 매칭을 사용합니다. 검색 후보를 묶음 단위로 확인하고, 카탈로그와 같은 공개·스크린샷 보유 조건을 통과한 앱으로 추천 개수를 채웁니다. `first`는 기본 8개이며 1~8개를 허용합니다. Visual 웹이 해당 필드가 없는 이전 API에 연결되면 카탈로그의 이름·slug 검색으로 제안합니다.
+Visual 앱 자동완성의 `visualAppSuggestions(query, first)`는 기존 상품 검색의 오타·동의어 매칭을 사용합니다. 카탈로그와 같은 공개·스크린샷 보유 조건으로 대상 앱 ID를 조회하고, 검색 결과에 개수 제한을 적용하기 전에 이 조건으로 후보를 거릅니다. 추천 앱의 공개·스크린샷 보유 조건은 응답을 만들 때 다시 확인합니다. `first`는 기본 8개이며 1~8개를 허용합니다. Visual 웹이 해당 필드가 없는 이전 API에 연결되면 카탈로그의 이름·slug 검색으로 제안합니다.
 
 상품의 `voteCount`는 조회 실패 시 `null`, 실제 추천이 없으면 `0`을 반환합니다.
 상세·랭킹·카테고리·대안·비교 화면은 마지막으로 읽은 수치를 유지하면서 실패를 안내하고,

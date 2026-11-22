@@ -490,16 +490,14 @@ export class ProductQueryResolver {
     first: number
   ) {
     const limit = validateListLimit(first, MAX_VISUAL_APP_SUGGESTIONS);
-    const eligibleApps = new Map<string, DomainProduct>();
-    const matches = await this.searchProductUseCase.execute({
-      query: normalizeVisualQuery(query),
-      limit,
-      filterCandidates: async ids => {
-        const apps = await this.productRepository.findVisualAppsByIds(ids);
-        for (const app of apps) eligibleApps.set(app.id, app);
-        return new Set(apps.map(app => app.id));
-      },
-    });
+    const normalized = normalizeVisualQuery(query);
+    if (!normalized) return [];
+    const eligibleProductIds = await this.productRepository.findVisualAppIds();
+    const matches = await this.searchProductUseCase.execute({ query: normalized, limit, eligibleProductIds });
+    if (matches.length === 0) return [];
+
+    const apps = await this.productRepository.findVisualAppsByIds(matches.map(match => match.id));
+    const eligibleApps = new Map(apps.map(app => [app.id, app]));
     return matches.flatMap(({ id }) => {
       const app = eligibleApps.get(id);
       return app ? [app] : [];

@@ -447,6 +447,11 @@ export class PostgresqlProductRepository implements ProductRepository {
     };
   }
 
+  async findVisualAppIds(): Promise<string[]> {
+    const rows = await this.db.select({ id: products.id }).from(products).where(visualAppEligibility);
+    return rows.map(row => row.id);
+  }
+
   async findVisualAppsByIds(ids: string[]): Promise<Product[]> {
     const rows = await this.db
       .select()

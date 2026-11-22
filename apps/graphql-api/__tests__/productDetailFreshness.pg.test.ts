@@ -1808,7 +1808,6 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       const search = {
         index: vi.fn(),
         searchProduct: vi.fn().mockResolvedValue(candidates),
-        searchProductBatches: vi.fn(),
       };
       const useCase = new SearchProduct(
         search,

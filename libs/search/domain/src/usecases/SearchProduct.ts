@@ -1,5 +1,4 @@
 import { Inject, Service } from 'typedi';
-import type { SearchableProduct } from '../entities/SearchableProduct';
 import type { SearchableProductRepository } from '../repositories/SearchableProductRepository';
 import { SearchableProductRepositoryToken } from '../repositories/SearchableProductRepository';
 import type { SearchProductVoteRepository } from '../repositories/SearchProductVoteRepository';
@@ -7,8 +6,6 @@ import { SearchProductVoteRepositoryToken } from '../repositories/SearchProductV
 import { SearchRanker } from '../services/SearchRanker';
 import { SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES } from '../services/SearchRankingPolicy';
 import { SynonymExpander } from '../services/SynonymExpander';
-
-type CandidateFilter = (ids: string[]) => Promise<ReadonlySet<string>>;
 
 @Service()
 export class SearchProduct {
@@ -30,26 +27,33 @@ export class SearchProduct {
    *                       does not affect the existing GraphQL API schema.
    *                       When omitted, the repository default (`MongodbSearchableProductRepository`
    *                       uses `limit = 20`) is applied.
-   * @param params.filterCandidates - Restricts the candidate window to products eligible for the caller.
+   * @param params.eligibleProductIds - Restricts candidates before applying the candidate limit.
    */
   async execute({
     query,
     limit,
-    filterCandidates,
-  }: { query: string } & (
-    { limit?: number; filterCandidates?: never } | { limit: number; filterCandidates: CandidateFilter }
-  )) {
+    eligibleProductIds,
+  }: {
+    query: string;
+    limit?: number;
+    eligibleProductIds?: readonly string[];
+  }) {
     const normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.length === 0) {
+    if (normalizedQuery.length === 0 || eligibleProductIds?.length === 0) {
       return [];
     }
     const expandedQuery = this.synonymExpander.expand(normalizedQuery);
     const candidateLimit =
       limit !== undefined ? Math.min(limit * SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES) : undefined;
     const products =
-      filterCandidates && candidateLimit !== undefined
-        ? await this.findEligibleCandidates(expandedQuery, candidateLimit, filterCandidates)
-        : await this.searchableProductRepository.searchProduct(expandedQuery, limit, candidateLimit);
+      eligibleProductIds === undefined
+        ? await this.searchableProductRepository.searchProduct(expandedQuery, limit, candidateLimit)
+        : await this.searchableProductRepository.searchProduct(
+            expandedQuery,
+            limit,
+            candidateLimit,
+            eligibleProductIds
+          );
     if (products.length === 0) {
       return [];
     }
@@ -62,18 +66,5 @@ export class SearchProduct {
 
     const ranked = this.searchRanker.rank(currentProducts);
     return limit !== undefined ? ranked.slice(0, limit) : ranked;
-  }
-
-  private async findEligibleCandidates(query: string, limit: number, filterCandidates: CandidateFilter) {
-    const products = new Map<string, SearchableProduct>();
-    for await (const batch of this.searchableProductRepository.searchProductBatches(query)) {
-      const eligibleIds = await filterCandidates(batch.map(product => product.id));
-      for (const product of batch) {
-        if (!eligibleIds.has(product.id) || products.has(product.id)) continue;
-        products.set(product.id, product);
-        if (products.size === limit) return [...products.values()];
-      }
-    }
-    return [...products.values()];
   }
 }

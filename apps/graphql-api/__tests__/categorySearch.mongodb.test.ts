@@ -137,7 +137,7 @@ describe.skipIf(!databaseUrl || !mongodbUrl)('카테고리 검색의 실제 Post
       }))
     );
 
-    // Require the eligible app to be behind at least a full cursor batch.
+    // Require the eligible app to be behind the ordinary search's candidate limit.
     const ranked = await vi.waitFor(
       async () => {
         const ids = (await search.searchProduct(typo, undefined, 100)).map(result => result.id);
@@ -147,8 +147,17 @@ describe.skipIf(!databaseUrl || !mongodbUrl)('카테고리 검색의 실제 Post
       { timeout: 60_000, interval: 250 }
     );
     expect(ranked.indexOf(eligible.id)).toBeGreaterThanOrEqual(32);
-    const repository = new PostgresqlProductRepository(db);
-    expect((await repository.findVisualApps({ query: typo, limit: 8 })).products).toEqual([]);
+    expect((await new PostgresqlProductRepository(db).findVisualApps({ query: typo, limit: 8 })).products).toEqual([]);
+    const eligibilityQueries: string[] = [];
+    const repository = new PostgresqlProductRepository(
+      drizzle(connection, {
+        logger: {
+          logQuery: query => {
+            if (query.includes('product_screenshots')) eligibilityQueries.push(query);
+          },
+        },
+      })
+    );
     const unused = undefined!;
     const resolver = new ProductQueryResolver(
       unused,
@@ -194,6 +203,7 @@ describe.skipIf(!databaseUrl || !mongodbUrl)('카테고리 검색의 실제 Post
         visualAppSuggestions: [{ id: eligible.id, name: nearMatch, slug: eligibleSlug }],
         productBySlug: { slug: rows[2].slug },
       });
+      expect(eligibilityQueries).toHaveLength(2);
     } finally {
       await server.stop();
     }
