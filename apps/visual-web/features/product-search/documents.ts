@@ -10,3 +10,18 @@ gql`
     }
   }
 `;
+
+gql`
+  query VisualAppsOnAppSuggestions($query: String!, $first: Int!) {
+    visualApps(query: $query, first: $first) {
+      edges {
+        node {
+          id
+          name
+          slug
+          logoUrl
+        }
+      }
+    }
+  }
+`;

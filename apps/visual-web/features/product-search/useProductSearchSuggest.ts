@@ -1,7 +1,7 @@
 'use client';
 
 import { useLazyQuery } from '@apollo/client/react';
-import { SearchProductsOnVisualExplorerDocument } from '@darun/provider-graphql';
+import { SearchProductsOnVisualExplorerDocument, VisualAppsOnAppSuggestionsDocument } from '@darun/provider-graphql';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const DEBOUNCE_MS = 300;
@@ -17,8 +17,9 @@ export type ProductSuggestion = {
   logoUrl: string;
 };
 
-export function useProductSearchSuggest() {
-  const [search] = useLazyQuery(SearchProductsOnVisualExplorerDocument);
+export function useProductSearchSuggest(scope: 'products' | 'visualApps' = 'products') {
+  const [searchProducts] = useLazyQuery(SearchProductsOnVisualExplorerDocument);
+  const [searchVisualApps] = useLazyQuery(VisualAppsOnAppSuggestionsDocument, { fetchPolicy: 'no-cache' });
   const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -73,22 +74,24 @@ export function useProductSearchSuggest() {
         debounceTimerRef.current = null;
 
         try {
-          const { data } = await search({ variables: { query: trimmed } });
+          const products =
+            scope === 'visualApps'
+              ? (
+                  await searchVisualApps({ variables: { query: trimmed, first: MAX_RESULTS } })
+                ).data?.visualApps.edges.map(edge => edge.node)
+              : (await searchProducts({ variables: { query: trimmed } })).data?.searchProducts?.slice(0, MAX_RESULTS);
 
           if (requestId !== latestSearchRequestId.current) {
             return;
           }
 
-          const products = data?.searchProducts ?? [];
           setSuggestions(
-            products
-              .map(p => ({
-                id: p.id ?? '',
-                name: p.name ?? '',
-                slug: p.slug ?? '',
-                logoUrl: p.logoUrl ?? '',
-              }))
-              .slice(0, MAX_RESULTS)
+            (products ?? []).map(p => ({
+              id: p.id ?? '',
+              name: p.name ?? '',
+              slug: p.slug ?? '',
+              logoUrl: p.logoUrl ?? '',
+            }))
           );
         } catch (error) {
           console.error('Product search suggest failed:', error);
@@ -102,7 +105,7 @@ export function useProductSearchSuggest() {
         }
       }, DEBOUNCE_MS);
     },
-    [search]
+    [scope, searchProducts, searchVisualApps]
   );
 
   return { suggestions, isSearching, clearSuggestions, suggest };

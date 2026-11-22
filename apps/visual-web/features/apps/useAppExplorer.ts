@@ -59,7 +59,7 @@ export function useAppExplorer(): AppExplorerState {
     setSearchInput(query ?? '');
   }, [query]);
 
-  const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest();
+  const { suggestions, isSearching, clearSuggestions, suggest } = useProductSearchSuggest('visualApps');
 
   const apps: AppCard[] = catalog.apps.map(app => ({
     id: app.id,

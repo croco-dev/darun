@@ -12,6 +12,12 @@ import { PostgresqlProductRepository } from '../repositories/PostgresqlProductRe
 
 const url = process.env.VISUAL_APP_SEARCH_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
+const appsWithoutScreens = Array.from({ length: 9 }, (_, index) => ({
+  id: `997-no-screen-${index}`,
+  name: '동명 앱',
+  slug: `no-screen-${index}`,
+}));
+const idsWithoutScreens = new Set(['526-e', ...appsWithoutScreens.map(row => row.id)]);
 const fixtures = [
   { id: '526-a', name: '달력 도구', slug: 'calendar-tool' },
   { id: '526-b', name: 'Calendar Desktop', slug: 'calendar-desktop' },
@@ -22,6 +28,8 @@ const fixtures = [
   { id: '526-g', name: '와일드카드 대조', slug: 'literalXYtool' },
   { id: '526-h', name: 'name%_\\literal', slug: 'name-literal' },
   { id: '526-i', name: 'nameXYliteral', slug: 'name-wildcard-control' },
+  { id: '997-app', name: '동명 앱', slug: 'app-with-screen' },
+  ...appsWithoutScreens,
 ];
 const ids = fixtures.map(row => row.id);
 
@@ -60,7 +68,7 @@ suite('Visual 앱 이름·slug 검색 (격리 PostgreSQL 필요)', () => {
         .insert(productScreenshots)
         .values(
           fixtures
-            .filter(row => row.id !== '526-e')
+            .filter(row => !idsWithoutScreens.has(row.id))
             .map(row => ({ id: `${row.id}-shot`, productId: row.id, imageUrl: 'fixture.png', imageAlt: row.name }))
         );
       // Multiple screenshots must not duplicate the app or inflate its count.
@@ -115,5 +123,15 @@ suite('Visual 앱 이름·slug 검색 (격리 PostgreSQL 필요)', () => {
       products: [],
       total: 0,
     });
+  });
+
+  it('추천 조회 한도보다 많이 매칭되는 화면 없는 동명 앱을 제외한 뒤 화면 있는 앱을 찾는다', async () => {
+    const suggestions = await repo.findVisualApps({ query: '동명 앱', limit: 9 });
+    expect(suggestions.products.map(product => product.slug)).toEqual(['app-with-screen']);
+    expect(suggestions.total).toBe(1);
+
+    const selected = await repo.findVisualApps({ productSlug: 'app-with-screen', limit: 25 });
+    expect(selected.products.map(product => product.slug)).toEqual(['app-with-screen']);
+    expect(await repo.findPublishedOneBySlug('no-screen-0')).toMatchObject({ slug: 'no-screen-0' });
   });
 });
