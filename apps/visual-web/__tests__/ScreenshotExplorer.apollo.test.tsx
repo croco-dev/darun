@@ -202,7 +202,8 @@ function mount(
   consumer: 'screenshots' | 'flows' | 'apps' = 'screenshots',
   controls?: ReactNode,
   pendingSearch?: Array<() => void>,
-  catalogApps?: Array<{ id: string; name: string; slug: string }>
+  catalogApps?: Array<{ id: string; name: string; slug: string }>,
+  appSuggestionError?: { message: string; extensions: { code: string } }
 ) {
   window.history.replaceState(null, '', route);
   const requests: Array<{
@@ -237,18 +238,31 @@ function mount(
           if (pendingSearch) pendingSearch.push(completeSearch);
           else completeSearch();
           return;
-        } else if (operation.operationName === 'VisualAppsOnAppSuggestions') {
+        } else if (operation.operationName === 'VisualAppSuggestionsOnAppExplorer') {
+          if (appSuggestionError) {
+            observer.next({ errors: [appSuggestionError] });
+            observer.complete();
+            return;
+          }
           const { query, first } = operation.variables;
-          const apps = catalogApps ?? [{ id: 'synthetic-7', name: '합성 서비스', slug: 'synthetic-service' }];
+          const apps = catalogApps ?? [
+            {
+              id: 'synthetic-7',
+              name: '합성 서비스',
+              slug: 'synthetic-service',
+            },
+          ];
           const completeSearch = () => {
             observer.next({
               data: {
-                visualApps: {
-                  edges: apps
-                    .filter(app => app.name.includes(String(query)) || app.slug.includes(String(query)))
-                    .slice(0, Number(first))
-                    .map(app => ({ node: { __typename: 'Product', ...app, logoUrl: '' } })),
-                },
+                visualAppSuggestions: apps
+                  .filter(app => app.name.includes(String(query)) || app.slug.includes(String(query)))
+                  .slice(0, Number(first))
+                  .map(app => ({
+                    __typename: 'Product',
+                    ...app,
+                    logoUrl: '',
+                  })),
               },
             });
             observer.complete();
@@ -502,7 +516,7 @@ it.each(suggestionConsumers)(
     expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
     expect(search.getAttribute('aria-expanded')).toBe('true');
     expect(search.getAttribute('aria-controls')).toBe(screen.getByRole('listbox').id);
-    const operation = consumer === 'apps' ? 'VisualAppsOnAppSuggestions' : 'SearchProductsOnVisualExplorer';
+    const operation = consumer === 'apps' ? 'VisualAppSuggestionsOnAppExplorer' : 'SearchProductsOnVisualExplorer';
     const searches = () => requests.filter(request => request.operation === operation);
     expect(searches()).toHaveLength(1);
     clickSearchInput(search);
@@ -700,7 +714,7 @@ it('앱 자동완성에서 화면이 있는 동명 상품을 선택하고 새로
   await act(async () => fireEvent.mouseDown(screen.getByRole('option', { name: '합성 서비스' })));
   vi.useRealTimers();
   expect(window.location.search).toBe('?product=catalog-service');
-  expect(requests.find(request => request.operation === 'VisualAppsOnAppSuggestions')?.variables).toEqual({
+  expect(requests.find(request => request.operation === 'VisualAppSuggestionsOnAppExplorer')?.variables).toEqual({
     first: 8,
     query: '합성',
   });
@@ -744,4 +758,51 @@ it('앱 자동완성에서 화면이 있는 동명 상품을 선택하고 새로
     operation: 'VisualAppsOnCatalog',
     variables: { first: 24, after: null, query: null, productSlug: null },
   });
+});
+
+it.each([
+  {
+    code: 'GRAPHQL_VALIDATION_FAILED',
+    message: 'Cannot query field "visualAppSuggestions" on type "Query".',
+    useCatalog: true,
+  },
+  {
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error',
+    useCatalog: false,
+  },
+])('앱 제안 API가 $code를 반환하면 구버전 스키마에서만 카탈로그를 사용한다', async ({ code, message, useCatalog }) => {
+  const requests = mount(
+    '/apps',
+    'apps',
+    undefined,
+    undefined,
+    [{ id: 'catalog-only', name: '합성 앱', slug: 'catalog-only' }],
+    { message, extensions: { code } }
+  );
+  await screen.findByRole('link', { name: /합성 앱\s*화면/ });
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  fireEvent.change(screen.getByLabelText('앱 검색'), {
+    target: { value: '합성' },
+  });
+  await act(() => vi.advanceTimersByTimeAsync(300));
+  vi.useRealTimers();
+
+  const fallback = requests.filter(
+    request => request.operation === 'VisualAppsOnCatalog' && request.variables.first === 8
+  );
+  if (useCatalog) {
+    expect(screen.getByRole('option', { name: '합성 앱' })).toBeTruthy();
+    expect(fallback).toEqual([
+      {
+        operation: 'VisualAppsOnCatalog',
+        variables: { first: 8, query: '합성' },
+      },
+    ]);
+  } else {
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(fallback).toEqual([]);
+    expect(log).toHaveBeenCalled();
+  }
 });

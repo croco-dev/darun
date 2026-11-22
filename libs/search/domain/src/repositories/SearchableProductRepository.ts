@@ -5,6 +5,7 @@ export interface SearchableProductRepository {
   index(id: string, product: SearchableProduct): Promise<boolean>;
 
   searchProduct(query: string, limit?: number, candidateLimit?: number): Promise<SearchableProduct[]>;
+  searchProductBatches(query: string): AsyncIterable<SearchableProduct[]>;
 }
 
 export const SearchableProductRepositoryToken = new Token<SearchableProductRepository>('SearchableProductRepository');

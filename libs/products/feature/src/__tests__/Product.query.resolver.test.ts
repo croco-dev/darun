@@ -112,6 +112,7 @@ const createProductRepository = (overrides: Partial<ProductRepository> = {}): Pr
   findPublishedByCategoryId: vi.fn<ProductRepository['findPublishedByCategoryId']>().mockResolvedValue([]),
   countPublishedByCategoryId: vi.fn().mockResolvedValue(0),
   findVisualApps: vi.fn().mockResolvedValue({ products: [], total: 0 }),
+  findVisualAppsByIds: vi.fn().mockResolvedValue([]),
   findVisualAppPreviews: vi.fn().mockResolvedValue([]),
   findVisualAppCover: vi.fn().mockResolvedValue(null),
   countVisualAppScreenshots: vi.fn().mockResolvedValue(0),
@@ -192,6 +193,7 @@ const createCompanyRepository = (): CompanyRepository => ({
 const createSearchableProductRepository = (): SearchableProductRepository => ({
   index: vi.fn<SearchableProductRepository['index']>().mockResolvedValue(true),
   searchProduct: vi.fn<SearchableProductRepository['searchProduct']>().mockResolvedValue([]),
+  searchProductBatches: vi.fn<SearchableProductRepository['searchProductBatches']>(),
 });
 
 const createAlternativeProductRepository = (

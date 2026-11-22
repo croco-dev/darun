@@ -920,11 +920,51 @@ describe('SearchProduct', () => {
     });
   });
 
+  it('fills the candidate window with eligible distinct products and closes the search when it is full', async () => {
+    const products = ['no-screen', 'first', 'second', 'third', 'unread'].map(
+      id =>
+        new SearchableProduct({
+          id,
+          slug: id,
+          name: id,
+          summary: '',
+          searchScore: 1,
+        })
+    );
+    const repository = createRepository(products);
+    const ended = vi.fn();
+    vi.mocked(repository.searchProductBatches).mockImplementation(async function* () {
+      try {
+        yield [products[0], products[1], products[1]];
+        yield [products[2], products[3]];
+        yield [products[4]];
+      } finally {
+        ended();
+      }
+    });
+    const eligibleIds = new Set(['first', 'second', 'third', 'unread']);
+    const filterCandidates = vi.fn(async () => eligibleIds);
+
+    const results = await createUseCase(repository).execute({
+      query: 'fixture',
+      limit: 1,
+      filterCandidates,
+    });
+
+    expect(results).toHaveLength(1);
+    expect(eligibleIds.has(results[0].id)).toBe(true);
+    expect(repository.searchProduct).not.toHaveBeenCalled();
+    expect(repository.findByTargetIds).toHaveBeenCalledExactlyOnceWith(['first', 'second', 'third']);
+    expect(filterCandidates).toHaveBeenCalledTimes(2);
+    expect(ended).toHaveBeenCalledOnce();
+  });
+
   const createRepository = (
     products: SearchableProduct[]
   ): SearchableProductRepository & SearchProductVoteRepository => ({
     index: vi.fn<SearchableProductRepository['index']>().mockResolvedValue(true),
     searchProduct: vi.fn<SearchableProductRepository['searchProduct']>().mockResolvedValue(products),
+    searchProductBatches: vi.fn<SearchableProductRepository['searchProductBatches']>(),
     findByTargetIds: vi.fn().mockResolvedValue(
       products.map(product => ({
         targetId: product.id,

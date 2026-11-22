@@ -565,6 +565,7 @@ type Query {
   translationFreshness(entityId: String!, entityType: String!, fields: [String!]!): [TranslationFreshness!]!
   translationJob(id: String!): TranslationJob
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
+  visualAppSuggestions(first: Int! = 8, query: String!): [Product!]!
   visualApps(after: String, first: Int! = 24, productSlug: String, query: String): ProductConnection!
   visualFlow(id: String!): VisualFlow
   visualFlowSaveStatus(id: String!): VisualSaveStatusPayload!

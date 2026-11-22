@@ -48,6 +48,7 @@ type PublishedProduct = DomainProduct;
 const MAX_LIST_LIMIT = 100;
 const MAX_SITEMAP_LIMIT = 200;
 const MAX_SEARCH_RESULTS = 100;
+const MAX_VISUAL_APP_SUGGESTIONS = 8;
 
 function validateListLimit(first: number, max: number): number {
   const limit = first;
@@ -480,6 +481,29 @@ export class ProductQueryResolver {
       productSlug,
     });
     return this.productConnection(products, total, limit, after);
+  }
+
+  @Query(() => [Product], { name: 'visualAppSuggestions' })
+  public async visualAppSuggestions(
+    @Arg('query', () => String) query: string,
+    @Arg('first', () => Int, { defaultValue: MAX_VISUAL_APP_SUGGESTIONS })
+    first: number
+  ) {
+    const limit = validateListLimit(first, MAX_VISUAL_APP_SUGGESTIONS);
+    const eligibleApps = new Map<string, DomainProduct>();
+    const matches = await this.searchProductUseCase.execute({
+      query: normalizeVisualQuery(query),
+      limit,
+      filterCandidates: async ids => {
+        const apps = await this.productRepository.findVisualAppsByIds(ids);
+        for (const app of apps) eligibleApps.set(app.id, app);
+        return new Set(apps.map(app => app.id));
+      },
+    });
+    return matches.flatMap(({ id }) => {
+      const app = eligibleApps.get(id);
+      return app ? [app] : [];
+    });
   }
 
   private productConnection(

@@ -12,16 +12,12 @@ gql`
 `;
 
 gql`
-  query VisualAppsOnAppSuggestions($query: String!, $first: Int!) {
-    visualApps(query: $query, first: $first) {
-      edges {
-        node {
-          id
-          name
-          slug
-          logoUrl
-        }
-      }
+  query VisualAppSuggestionsOnAppExplorer($query: String!, $first: Int!) {
+    visualAppSuggestions(query: $query, first: $first) {
+      id
+      name
+      slug
+      logoUrl
     }
   }
 `;
