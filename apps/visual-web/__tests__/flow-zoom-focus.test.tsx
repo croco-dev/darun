@@ -60,7 +60,7 @@ afterEach(() => {
   Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo');
 });
 
-function openZoom() {
+function openZoom(activation: 'keyboard' | 'pointer' = 'keyboard') {
   const view = () => (
     <FlowDetail.ViewComponent
       status="loaded"
@@ -74,7 +74,12 @@ function openZoom() {
   const preview = screen.getByRole('region', { name: '플로 단계 이미지' });
   fireEvent.load(within(preview).getByRole('img', { name: '검색 화면' }));
   const opener = within(preview).getByRole('button', { name: '확대' });
-  opener.focus();
+  if (activation === 'keyboard') {
+    opener.focus();
+  } else {
+    // A pointer click does not focus a button in Safari.
+    screen.getByRole('button', { name: '링크 복사' }).focus();
+  }
   fireEvent.click(opener);
   const dialog = screen.getByRole('dialog');
   const commitStep = () => {
@@ -121,6 +126,15 @@ it('다른 단계로 이동한 뒤 확대를 닫으면 현재 단계 확대 버�
   fireEvent.load(within(preview).getByRole('img', { name: '결과 화면' }));
   const currentZoom = within(preview).getByRole('button', { name: '확대' });
   fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }));
+  expect(document.activeElement).toBe(currentZoom);
+});
+
+it('클릭한 확대 버튼에 초점이 없어도 닫으면 현재 단계 확대 버튼에 초점을 둔다', () => {
+  const { preview, dialog, nextStep } = openZoom('pointer');
+  nextStep();
+  fireEvent.load(within(preview).getByRole('img', { name: '결과 화면' }));
+  const currentZoom = within(preview).getByRole('button', { name: '확대' });
+  fireEvent(dialog, new Event('cancel', { cancelable: true }));
   expect(document.activeElement).toBe(currentZoom);
 });
 

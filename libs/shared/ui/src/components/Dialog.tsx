@@ -14,8 +14,8 @@ export type DialogProps = {
   labelledBy: string;
   children: ReactNode;
   className?: string;
-  /** Chooses the return target. The opener is null if it has left the document. */
-  getReturnFocus?: (opener: HTMLElement | null) => HTMLElement | null;
+  /** Returns the element to focus after the dialog closes. */
+  getReturnFocus?: () => HTMLElement | null;
 };
 
 export function Dialog({ open, onClose, labelledBy, children, className, getReturnFocus }: DialogProps) {
@@ -29,7 +29,7 @@ export function Dialog({ open, onClose, labelledBy, children, className, getRetu
     previouslyFocusedRef.current = null;
     if (previouslyFocused) {
       const opener = previouslyFocused.isConnected ? previouslyFocused : null;
-      const target = getReturnFocus ? getReturnFocus(opener) : opener;
+      const target = getReturnFocus ? getReturnFocus() : opener;
       target?.focus();
     }
   });

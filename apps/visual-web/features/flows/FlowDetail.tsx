@@ -458,15 +458,13 @@ const View = ({ status, detail, retry, relatedStatus, retryRelated }: FlowDetail
         open={zoomedFlowId === detail.id}
         onClose={() => setZoomedFlowId(null)}
         labelledBy={FLOW_ZOOM_HEADING_ID}
-        getReturnFocus={opener => {
+        getReturnFocus={() => {
           const preview = stepImageRef.current;
           // Next updates the URL before it can commit the new step. The preview survives both renders.
           if (new URLSearchParams(window.location.search).get(STEP_QUERY_KEY) !== stepParamRaw) {
             return preview;
           }
-          return (
-            opener ?? preview?.querySelector<HTMLButtonElement>('figure button[aria-haspopup="dialog"]') ?? preview
-          );
+          return preview?.querySelector<HTMLButtonElement>('figure button[aria-haspopup="dialog"]') ?? preview;
         }}
         className="h-[calc(100dvh-2rem)] w-full"
       >
