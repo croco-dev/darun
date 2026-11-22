@@ -14,10 +14,11 @@ export type DialogProps = {
   labelledBy: string;
   children: ReactNode;
   className?: string;
-  getFallbackFocus?: () => HTMLElement | null;
+  /** Chooses the return target. The opener is null if it has left the document. */
+  getReturnFocus?: (opener: HTMLElement | null) => HTMLElement | null;
 };
 
-export function Dialog({ open, onClose, labelledBy, children, className, getFallbackFocus }: DialogProps) {
+export function Dialog({ open, onClose, labelledBy, children, className, getReturnFocus }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -27,7 +28,8 @@ export function Dialog({ open, onClose, labelledBy, children, className, getFall
     const previouslyFocused = previouslyFocusedRef.current;
     previouslyFocusedRef.current = null;
     if (previouslyFocused) {
-      const target = previouslyFocused.isConnected ? previouslyFocused : getFallbackFocus?.();
+      const opener = previouslyFocused.isConnected ? previouslyFocused : null;
+      const target = getReturnFocus ? getReturnFocus(opener) : opener;
       target?.focus();
     }
   });

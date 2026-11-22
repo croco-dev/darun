@@ -7,10 +7,12 @@ import type { FlowDetailData } from '../features/flows/useFlowDetail';
 
 vi.mock('@darun/utils-router', async importOriginal => ({
   ...(await importOriginal<typeof import('@darun/utils-router')>()),
-  useSearchParams: () => new URLSearchParams(window.location.search),
+  useSearchParams: () => new URLSearchParams(renderedSearch),
 }));
 vi.mock('../features/collections/SaveButton', () => ({ SaveButton: () => null }));
 vi.mock('../features/saves/VisualSaveButton', () => ({ VisualSaveButton: () => null }));
+
+let renderedSearch = '';
 
 const detail: FlowDetailData = {
   id: 'search-flow',
@@ -52,6 +54,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   window.history.replaceState(null, '', '/');
+  renderedSearch = '';
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
   Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
   Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo');
@@ -74,16 +77,21 @@ function openZoom() {
   opener.focus();
   fireEvent.click(opener);
   const dialog = screen.getByRole('dialog');
+  const commitStep = () => {
+    // Next's patched history can commit the new search params after a discrete close event.
+    renderedSearch = window.location.search;
+    rerender(view());
+    expect(opener.isConnected).toBe(false);
+  };
   return {
     preview,
     opener,
     dialog,
+    commitStep,
     nextStep() {
       fireEvent.click(within(dialog).getByRole('button', { name: '다음 단계' }));
-      // Next's patched history updates useSearchParams in the browser.
-      rerender(view());
+      commitStep();
       expect(within(dialog).getByRole('heading').textContent).toContain('2 / 2');
-      expect(opener.isConnected).toBe(false);
     },
   };
 }
@@ -92,6 +100,19 @@ it('같은 단계에서 확대를 닫으면 열었던 버튼에 초점을 돌려
   const { opener, dialog } = openZoom();
   fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }));
   expect(document.activeElement).toBe(opener);
+});
+
+it('새 단계가 아직 렌더링되기 전에 Escape로 닫아도 단계 이미지에 초점이 남는다', () => {
+  const { preview, opener, dialog, commitStep } = openZoom();
+  fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+  expect(window.location.search).toBe('?step=2');
+  expect(opener.isConnected).toBe(true);
+
+  fireEvent(dialog, new Event('cancel', { cancelable: true }));
+  expect(dialog.hasAttribute('open')).toBe(false);
+  commitStep();
+  expect(within(preview).getByRole('img', { name: '결과 화면' })).toBeDefined();
+  expect(document.activeElement).toBe(preview);
 });
 
 it('다른 단계로 이동한 뒤 확대를 닫으면 현재 단계 확대 버튼에 초점을 둔다', () => {
