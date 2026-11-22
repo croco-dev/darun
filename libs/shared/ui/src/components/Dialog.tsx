@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, useEffect, useEffectEvent, useRef } from 'react';
 
 import { lockBodyScroll } from '../lib/body-scroll-lock';
 import { cn } from '../lib/utils';
@@ -14,13 +14,23 @@ export type DialogProps = {
   labelledBy: string;
   children: ReactNode;
   className?: string;
+  getFallbackFocus?: () => HTMLElement | null;
 };
 
-export function Dialog({ open, onClose, labelledBy, children, className }: DialogProps) {
+export function Dialog({ open, onClose, labelledBy, children, className, getFallbackFocus }: DialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  const restoreFocus = useEffectEvent(() => {
+    const previouslyFocused = previouslyFocusedRef.current;
+    previouslyFocusedRef.current = null;
+    if (previouslyFocused) {
+      const target = previouslyFocused.isConnected ? previouslyFocused : getFallbackFocus?.();
+      target?.focus();
+    }
+  });
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -43,11 +53,7 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
       return unlockScroll;
     } else if (dialog.open) {
       dialog.close();
-      const previouslyFocused = previouslyFocusedRef.current;
-      previouslyFocusedRef.current = null;
-      if (previouslyFocused?.isConnected) {
-        previouslyFocused.focus();
-      }
+      restoreFocus();
     }
   }, [open]);
 
@@ -81,10 +87,8 @@ export function Dialog({ open, onClose, labelledBy, children, className }: Dialo
       }
     };
     const handleClose = () => {
-      const previouslyFocused = previouslyFocusedRef.current;
-      previouslyFocusedRef.current = null;
-      if (previouslyFocused?.isConnected) {
-        previouslyFocused.focus();
+      if (!dialog.open) {
+        restoreFocus();
       }
     };
     const handleCancel = (event: Event) => {
