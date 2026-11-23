@@ -57,6 +57,31 @@ const change = (label: string, value: string) => fireEvent.change(input(label), 
 const save = () => fireEvent.click(screen.getByRole('button', { name: /^저장$/ }));
 const loaded = () => waitFor(() => expect(input('기능 이름 (name)').value).toBe('검색'));
 
+it('reports both length errors and accepts corrected Unicode values at the storage limits', async () => {
+  const fixture = mountEditor('기존 요약');
+  fixture.open();
+  await loaded();
+  const name = '🔎'.repeat(99) + '검';
+  const summary = '🚀'.repeat(254) + '색';
+  change('기능 이름 (name)', name + '가');
+  change('요약 (summary)', summary + '나');
+  save();
+
+  expect(input('기능 이름 (name)').getAttribute('aria-invalid')).toBe('true');
+  expect(input('요약 (summary)').getAttribute('aria-invalid')).toBe('true');
+  expect(screen.getAllByRole('alert').map(alert => alert.textContent)).toEqual([
+    '기능 이름은 100자 이내로 입력해 주세요.',
+    '요약은 255자 이내로 입력해 주세요.',
+  ]);
+  expect(fixture.writes).toEqual([]);
+
+  change('기능 이름 (name)', ` ${name} `);
+  change('요약 (summary)', ` ${summary} `);
+  save();
+  await waitFor(() => expect(fixture.onSubmit).toHaveBeenCalledOnce());
+  expect(fixture.writes).toEqual([{ featureId: 'feature-1', input: { name, summary, emoji: '🔎' } }]);
+});
+
 it('saves name and emoji changes on a feature without a summary and reads them on reopening', async () => {
   const fixture = mountEditor(null);
   const view = fixture.open();

@@ -2,6 +2,7 @@
 
 import { gql } from '@apollo/client';
 import { useApolloClient, useMutation } from '@apollo/client/react';
+import { isProductFeatureTextTooLong, PRODUCT_FEATURE_TEXT_LIMITS } from '@darun/products-domain/feature-text';
 import {
   CreateProductFeatureOnNewProductFeatureFormDocument,
   TempProductBySlugOnProductFeatureTableDocument,
@@ -49,9 +50,21 @@ export function useNewProductFeatureForm({ productSlug, children }: NewProductFo
       summary: '',
     },
     validate: {
-      name: value => (!value?.trim() ? '이름을 입력해주세요.' : null),
+      name: value => {
+        const name = value?.trim();
+        if (!name) return '이름을 입력해주세요.';
+        return isProductFeatureTextTooLong('name', name)
+          ? `이름은 ${PRODUCT_FEATURE_TEXT_LIMITS.name}자 이내로 입력해 주세요.`
+          : null;
+      },
       emoji: value => (!value?.trim() ? '이모지를 선택해주세요.' : null),
-      summary: value => (!value?.trim() ? '짧은 설명을 입력해주세요.' : null),
+      summary: value => {
+        const summary = value?.trim();
+        if (!summary) return '짧은 설명을 입력해주세요.';
+        return isProductFeatureTextTooLong('summary', summary)
+          ? `짧은 설명은 ${PRODUCT_FEATURE_TEXT_LIMITS.summary}자 이내로 입력해 주세요.`
+          : null;
+      },
     },
   });
   const [createProductFeature, { loading: isCreating }] = useMutation(
