@@ -1,5 +1,6 @@
 import { Inject, Service } from 'typedi';
 import { ProductFeature } from '../entities/ProductFeature';
+import { assertProductFeatureTextLengths } from '../errors/productFeatureError';
 import type { ProductFeatureRepository } from '../repositories/ProductFeatureRepository';
 import { ProductFeatureRepositoryToken } from '../repositories/ProductFeatureRepository';
 
@@ -21,6 +22,7 @@ export class UpdateProductFeature {
     summary?: string | null;
     emoji?: string;
   }): Promise<ProductFeature> {
+    assertProductFeatureTextLengths(name, summary);
     return this.productFeatureRepository.updateById(featureId, feature => {
       feature.update({
         name,

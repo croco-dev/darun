@@ -1,6 +1,6 @@
 import { Inject, Service } from 'typedi';
 import { ProductFeature } from '../entities/ProductFeature';
-import { productFeatureCreateFailed } from '../errors/productFeatureError';
+import { assertProductFeatureTextLengths, productFeatureCreateFailed } from '../errors/productFeatureError';
 import type { ProductFeatureRepository } from '../repositories/ProductFeatureRepository';
 import { ProductFeatureRepositoryToken } from '../repositories/ProductFeatureRepository';
 
@@ -22,6 +22,7 @@ export class CreateProductFeature {
     emoji: string;
     productId: string;
   }): Promise<ProductFeature> {
+    assertProductFeatureTextLengths(name, summary);
     const newFeature = new ProductFeature({ name, summary, emoji, productId });
 
     const insertedFeature = await this.productFeatureRepository.insert(newFeature);

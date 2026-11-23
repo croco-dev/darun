@@ -157,3 +157,31 @@ it('keeps the selected emoji and other inputs after a failed save for retry', as
   expect(fixture.writes[1]).toEqual(fixture.writes[0]);
   await act(async () => fixture.complete(true));
 });
+
+it('reports both length errors and accepts corrected Unicode values at the storage limits', async () => {
+  const fixture = mountForm();
+  const name = '검색'.repeat(49) + '🔎찾';
+  const summary = '설명'.repeat(127) + '🚀';
+  const nameInput = screen.getByLabelText('이름');
+  const summaryInput = screen.getByLabelText('짧은 설명');
+  typeEmoji('🔎');
+  fireEvent.change(nameInput, { target: { value: name + '가' } });
+  fireEvent.change(summaryInput, { target: { value: summary + '나' } });
+  fireEvent.click(screen.getByRole('button', { name: '등록' }));
+
+  expect(nameInput.getAttribute('aria-invalid')).toBe('true');
+  expect(summaryInput.getAttribute('aria-invalid')).toBe('true');
+  expect(screen.getAllByRole('alert').map(alert => alert.textContent)).toEqual([
+    '이름은 100자 이내로 입력해 주세요.',
+    '짧은 설명은 255자 이내로 입력해 주세요.',
+  ]);
+  expect(fixture.writes).toEqual([]);
+
+  fireEvent.change(nameInput, { target: { value: ` ${name} ` } });
+  fireEvent.change(summaryInput, { target: { value: ` ${summary} ` } });
+  fireEvent.click(screen.getByRole('button', { name: '등록' }));
+  await waitFor(() =>
+    expect(fixture.writes).toEqual([{ input: { productSlug: 'fixture-app', name, summary, emoji: '🔎' } }])
+  );
+  await act(async () => fixture.complete(true));
+});

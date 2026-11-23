@@ -3,6 +3,7 @@
 import { gql } from '@apollo/client';
 import { useApolloClient } from '@apollo/client/react';
 import { useMutation, useQuery } from '@apollo/client/react';
+import { isProductFeatureTextTooLong, PRODUCT_FEATURE_TEXT_LIMITS } from '@darun/products-domain/feature-text';
 import {
   FeatureOnEditProductFeatureItemDocument,
   TempProductBySlugOnProductFeatureTableDocument,
@@ -97,7 +98,17 @@ export function useEditProductFeatureItem({ featureId, onSaved, onSubmit, onCanc
     },
     validate: {
       emoji: value => (!value?.trim() ? '이모지를 입력해주세요.' : null),
-      name: value => (!value?.trim() ? '기능 이름을 입력해주세요.' : null),
+      name: value => {
+        const name = value?.trim();
+        if (!name) return '기능 이름을 입력해주세요.';
+        return isProductFeatureTextTooLong('name', name)
+          ? `기능 이름은 ${PRODUCT_FEATURE_TEXT_LIMITS.name}자 이내로 입력해 주세요.`
+          : null;
+      },
+      summary: value =>
+        isProductFeatureTextTooLong('summary', value?.trim())
+          ? `요약은 ${PRODUCT_FEATURE_TEXT_LIMITS.summary}자 이내로 입력해 주세요.`
+          : null,
     },
   });
 
