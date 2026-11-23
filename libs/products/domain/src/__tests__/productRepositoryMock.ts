@@ -20,6 +20,8 @@ export function createMockRepository(): ProductRepository {
     findPublishedByCategoryId: vi.fn(),
     countPublishedByCategoryId: vi.fn(),
     findVisualApps: vi.fn(),
+    findVisualAppIds: vi.fn(),
+    findVisualAppsByIds: vi.fn(),
     findVisualAppPreviews: vi.fn().mockResolvedValue([]),
     findVisualAppCover: vi.fn(),
     countVisualAppScreenshots: vi.fn(),

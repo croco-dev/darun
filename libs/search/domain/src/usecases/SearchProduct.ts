@@ -27,16 +27,33 @@ export class SearchProduct {
    *                       does not affect the existing GraphQL API schema.
    *                       When omitted, the repository default (`MongodbSearchableProductRepository`
    *                       uses `limit = 20`) is applied.
+   * @param params.eligibleProductIds - Restricts candidates before applying the candidate limit.
    */
-  async execute({ query, limit }: { query: string; limit?: number }) {
+  async execute({
+    query,
+    limit,
+    eligibleProductIds,
+  }: {
+    query: string;
+    limit?: number;
+    eligibleProductIds?: readonly string[];
+  }) {
     const normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.length === 0) {
+    if (normalizedQuery.length === 0 || eligibleProductIds?.length === 0) {
       return [];
     }
     const expandedQuery = this.synonymExpander.expand(normalizedQuery);
     const candidateLimit =
       limit !== undefined ? Math.min(limit * SEARCH_CANDIDATE_MULTIPLIER, MAX_SEARCH_CANDIDATES) : undefined;
-    const products = await this.searchableProductRepository.searchProduct(expandedQuery, limit, candidateLimit);
+    const products =
+      eligibleProductIds === undefined
+        ? await this.searchableProductRepository.searchProduct(expandedQuery, limit, candidateLimit)
+        : await this.searchableProductRepository.searchProduct(
+            expandedQuery,
+            limit,
+            candidateLimit,
+            eligibleProductIds
+          );
     if (products.length === 0) {
       return [];
     }

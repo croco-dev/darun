@@ -920,6 +920,19 @@ describe('SearchProduct', () => {
     });
   });
 
+  it('passes eligible IDs to the candidate lookup and skips an empty scope', async () => {
+    const product = new SearchableProduct({ id: 'catalog-app', slug: 'catalog-app', name: 'App', summary: '' });
+    const repository = createRepository([product]);
+    const useCase = createUseCase(repository);
+
+    expect(await useCase.execute({ query: 'fixture', limit: 8, eligibleProductIds: [] })).toEqual([]);
+    expect(repository.searchProduct).not.toHaveBeenCalled();
+
+    const result = await useCase.execute({ query: ' Fixture ', limit: 8, eligibleProductIds: [product.id] });
+    expect(result.map(match => match.id)).toEqual([product.id]);
+    expect(repository.searchProduct).toHaveBeenCalledExactlyOnceWith('fixture', 8, 24, [product.id]);
+  });
+
   const createRepository = (
     products: SearchableProduct[]
   ): SearchableProductRepository & SearchProductVoteRepository => ({

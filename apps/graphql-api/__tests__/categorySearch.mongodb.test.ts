@@ -1,5 +1,10 @@
 import 'reflect-metadata';
-import { SearchableProduct } from '@darun/search-domain';
+import { PostgresqlProductRepository } from '@darun/products-datasource';
+import { GetPublishedProduct } from '@darun/products-domain';
+import { ProductQueryResolver } from '@darun/products-feature/server';
+import { SearchableProduct, SearchProduct } from '@darun/search-domain';
+import { createServer } from '@darun/utils-apollo-server';
+import { PostgresqlVoteRepository } from '@darun/voting-datasource';
 import { and, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -12,6 +17,7 @@ import { resolve } from 'node:path';
 import { categories } from '../../../libs/products/datasource/src/entities/CategorySchema';
 import { productContentSyncIntents } from '../../../libs/products/datasource/src/entities/ProductContentSyncIntentSchema';
 import { products } from '../../../libs/products/datasource/src/entities/ProductSchema';
+import { productScreenshots } from '../../../libs/products/datasource/src/entities/ProductScreenshotsSchema';
 import { PostgresqlCategoryRepository } from '../../../libs/products/datasource/src/repositories/PostgresqlCategoryRepository';
 import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
 import { ProductContentSyncQueueService } from '../../../libs/products/service/src/ProductContentSyncQueueService';
@@ -75,6 +81,133 @@ describe.skipIf(!databaseUrl || !mongodbUrl)('카테고리 검색의 실제 Post
     await mongoose.disconnect();
     await connection?.end({ timeout: 5 });
   });
+
+  it('Visual 자동완성은 앞선 검색 후보가 모두 부적격이어도 오타로 화면이 있는 공개 앱을 찾는다', async () => {
+    const suffix = randomUUID().slice(0, 8);
+    const nearMatch = `Zelphanote${suffix}`;
+    const typo = `Zelphantoe${suffix}`;
+    const eligibleSlug = `visual-suggest-${suffix}`;
+    const draftSlug = `visual-draft-${suffix}`;
+    const publishedAt = new Date();
+    const rows = await db
+      .insert(products)
+      .values([
+        {
+          slug: eligibleSlug,
+          name: nearMatch,
+          publishedAt,
+          summary: '',
+          logoUrl: '',
+        },
+        {
+          slug: draftSlug,
+          name: typo,
+          publishedAt: null,
+          summary: '',
+          logoUrl: '',
+        },
+        { slug: `visual-same-name-${suffix}`, name: nearMatch, publishedAt, summary: '', logoUrl: '' },
+        ...Array.from({ length: 35 }, (_, index) => ({
+          slug: `visual-screenless-${index}-${suffix}`,
+          name: typo,
+          publishedAt,
+          summary: '',
+          logoUrl: '',
+        })),
+      ])
+      .returning();
+    const [eligible, draft] = rows;
+    await db.insert(productScreenshots).values(
+      [eligible, draft].map(({ id }) => ({
+        productId: id,
+        imageUrl: 'fixture.png',
+        imageAlt: '합성 화면',
+      }))
+    );
+    await SearchableProductModel.collection.insertMany(
+      rows.map(({ id, slug, name }) => ({
+        productId: id,
+        slug,
+        name,
+        summary: '',
+        tags: [],
+        category: '',
+        categoryText: [],
+        votes: 0,
+      }))
+    );
+
+    // Require the eligible app to be behind the ordinary search's candidate limit.
+    const ranked = await vi.waitFor(
+      async () => {
+        const ids = (await search.searchProduct(typo, undefined, 100)).map(result => result.id);
+        expect(ids).toHaveLength(rows.length);
+        return ids;
+      },
+      { timeout: 60_000, interval: 250 }
+    );
+    expect(ranked.indexOf(eligible.id)).toBeGreaterThanOrEqual(32);
+    expect((await new PostgresqlProductRepository(db).findVisualApps({ query: typo, limit: 8 })).products).toEqual([]);
+    const eligibilityQueries: string[] = [];
+    const repository = new PostgresqlProductRepository(
+      drizzle(connection, {
+        logger: {
+          logQuery: query => {
+            if (query.includes('product_screenshots')) eligibilityQueries.push(query);
+          },
+        },
+      })
+    );
+    const unused = undefined!;
+    const resolver = new ProductQueryResolver(
+      unused,
+      unused,
+      unused,
+      unused,
+      new GetPublishedProduct(repository),
+      unused,
+      unused,
+      unused,
+      unused,
+      unused,
+      unused,
+      new SearchProduct(search, new PostgresqlVoteRepository(db)),
+      unused,
+      unused,
+      unused,
+      unused,
+      unused,
+      repository
+    );
+    const server = createServer({
+      options: {
+        resolvers: [ProductQueryResolver],
+        authChecker: () => false,
+        container: { get: () => resolver },
+      },
+      config: { playground: false },
+    });
+    try {
+      const response = await server.executeOperation({
+        query: `query($query: String!, $slug: String!) {
+          visualAppSuggestions(query: $query, first: 8) { id name slug }
+          productBySlug(slug: $slug) { slug }
+        }`,
+        variables: { query: typo, slug: rows[2].slug },
+      });
+      expect(response.body.kind).toBe('single');
+      if (response.body.kind !== 'single') throw new Error('Expected one GraphQL result');
+      const { data, errors } = response.body.singleResult;
+      expect(errors).toBeUndefined();
+      expect(data).toEqual({
+        visualAppSuggestions: [{ id: eligible.id, name: nearMatch, slug: eligibleSlug }],
+        productBySlug: { slug: rows[2].slug },
+      });
+      expect(eligibilityQueries).toHaveLength(2);
+    } finally {
+      await server.stop();
+    }
+  }, 90_000);
 
   it('두 번째 카테고리의 한영 이름·slug로 검색하고 rename 뒤 새 revision의 이름만 저장한다', async () => {
     const suffix = randomUUID().slice(0, 8);

@@ -10,3 +10,14 @@ gql`
     }
   }
 `;
+
+gql`
+  query VisualAppSuggestionsOnAppExplorer($query: String!, $first: Int!) {
+    visualAppSuggestions(query: $query, first: $first) {
+      id
+      name
+      slug
+      logoUrl
+    }
+  }
+`;

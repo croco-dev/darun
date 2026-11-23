@@ -30,6 +30,8 @@ export interface ProductRepository {
     query?: string;
     productSlug?: string;
   }): Promise<{ products: Product[]; total: number }>;
+  findVisualAppIds(): Promise<string[]>;
+  findVisualAppsByIds(ids: string[]): Promise<Product[]>;
   findVisualAppPreviews(productId: string): Promise<ProductScreenshot[]>;
   findVisualAppCover(productId: string): Promise<ProductScreenshot | null>;
   countVisualAppScreenshots(productId: string): Promise<number>;

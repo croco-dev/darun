@@ -202,7 +202,8 @@ function mount(
   consumer: 'screenshots' | 'flows' | 'apps' = 'screenshots',
   controls?: ReactNode,
   pendingSearch?: Array<() => void>,
-  catalogApps?: Array<{ id: string; name: string; slug: string }>
+  catalogApps?: Array<{ id: string; name: string; slug: string }>,
+  appSuggestionError?: { message: string; extensions: { code: string } }
 ) {
   window.history.replaceState(null, '', route);
   const requests: Array<{
@@ -230,6 +231,38 @@ function mount(
                     logoUrl: '',
                   },
                 ],
+              },
+            });
+            observer.complete();
+          };
+          if (pendingSearch) pendingSearch.push(completeSearch);
+          else completeSearch();
+          return;
+        } else if (operation.operationName === 'VisualAppSuggestionsOnAppExplorer') {
+          if (appSuggestionError) {
+            observer.next({ errors: [appSuggestionError] });
+            observer.complete();
+            return;
+          }
+          const { query, first } = operation.variables;
+          const apps = catalogApps ?? [
+            {
+              id: 'synthetic-7',
+              name: '합성 서비스',
+              slug: 'synthetic-service',
+            },
+          ];
+          const completeSearch = () => {
+            observer.next({
+              data: {
+                visualAppSuggestions: apps
+                  .filter(app => app.name.includes(String(query)) || app.slug.includes(String(query)))
+                  .slice(0, Number(first))
+                  .map(app => ({
+                    __typename: 'Product',
+                    ...app,
+                    logoUrl: '',
+                  })),
               },
             });
             observer.complete();
@@ -483,7 +516,8 @@ it.each(suggestionConsumers)(
     expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
     expect(search.getAttribute('aria-expanded')).toBe('true');
     expect(search.getAttribute('aria-controls')).toBe(screen.getByRole('listbox').id);
-    const searches = () => requests.filter(request => request.operation === 'SearchProductsOnVisualExplorer');
+    const operation = consumer === 'apps' ? 'VisualAppSuggestionsOnAppExplorer' : 'SearchProductsOnVisualExplorer';
+    const searches = () => requests.filter(request => request.operation === operation);
     expect(searches()).toHaveLength(1);
     clickSearchInput(search);
     expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
@@ -536,6 +570,10 @@ it.each(suggestionConsumers)(
 
     act(() => search.focus());
     await act(() => vi.advanceTimersByTimeAsync(300));
+    if (consumer === 'apps') {
+      expect(pending).toHaveLength(2);
+      await act(async () => pending[1]());
+    }
     expect(screen.getByRole('option', { name: '합성 서비스' })).toBeTruthy();
   }
 );
@@ -661,10 +699,10 @@ it.each(searchConsumers)('$consumer: retry and pagination cannot run a rejected 
   expect(requests).toEqual([]);
 });
 
-it('앱 선택은 이름이 같은 다른 상품을 제외하고 새로고침·직접 검색·초기화에서 첫 페이지를 사용한다', async () => {
+it('앱 자동완성에서 화면이 있는 동명 상품을 선택하고 새로고침·직접 검색·초기화에서 첫 페이지를 사용한다', async () => {
   const apps = [
-    { id: 'synthetic-7', name: '합성 서비스', slug: 'synthetic-service' },
-    { id: 'other-8', name: '합성 서비스', slug: 'another-service' },
+    { id: 'catalog-7', name: '합성 서비스', slug: 'catalog-service' },
+    { id: 'other-8', name: '합성 서비스 Lite', slug: 'another-service' },
     { id: 'extended-9', name: '합성 서비스 Plus', slug: 'extended-service' },
   ];
   const requests = mount('/apps?q=이전검색&after=old-cursor', 'apps', undefined, undefined, apps);
@@ -675,14 +713,18 @@ it('앱 선택은 이름이 같은 다른 상품을 제외하고 새로고침·�
   await act(() => vi.advanceTimersByTimeAsync(300));
   await act(async () => fireEvent.mouseDown(screen.getByRole('option', { name: '합성 서비스' })));
   vi.useRealTimers();
-  expect(window.location.search).toBe('?product=synthetic-service');
+  expect(window.location.search).toBe('?product=catalog-service');
+  expect(requests.find(request => request.operation === 'VisualAppSuggestionsOnAppExplorer')?.variables).toEqual({
+    first: 8,
+    query: '합성',
+  });
   await screen.findByRole('link', { name: /합성 서비스\s*화면\s*1\s*개/ });
   expect(screen.getAllByRole('link', { name: /화면\s*1\s*개/ }).map(link => link.getAttribute('href'))).toEqual([
-    '/apps/synthetic-service',
+    '/apps/catalog-service',
   ]);
   expect(requests.at(-1)).toEqual({
     operation: 'VisualAppsOnCatalog',
-    variables: { first: 24, after: null, query: null, productSlug: 'synthetic-service' },
+    variables: { first: 24, after: null, query: null, productSlug: 'catalog-service' },
   });
 
   // Remount the real route/provider/hook from the selected URL, without prior local state.
@@ -693,7 +735,7 @@ it('앱 선택은 이름이 같은 다른 상품을 제외하고 새로고침·�
   expect(restored).toEqual([
     {
       operation: 'VisualAppsOnCatalog',
-      variables: { first: 24, after: null, query: null, productSlug: 'synthetic-service' },
+      variables: { first: 24, after: null, query: null, productSlug: 'catalog-service' },
     },
   ]);
 
@@ -716,4 +758,51 @@ it('앱 선택은 이름이 같은 다른 상품을 제외하고 새로고침·�
     operation: 'VisualAppsOnCatalog',
     variables: { first: 24, after: null, query: null, productSlug: null },
   });
+});
+
+it.each([
+  {
+    code: 'GRAPHQL_VALIDATION_FAILED',
+    message: 'Cannot query field "visualAppSuggestions" on type "Query".',
+    useCatalog: true,
+  },
+  {
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error',
+    useCatalog: false,
+  },
+])('앱 제안 API가 $code를 반환하면 구버전 스키마에서만 카탈로그를 사용한다', async ({ code, message, useCatalog }) => {
+  const requests = mount(
+    '/apps',
+    'apps',
+    undefined,
+    undefined,
+    [{ id: 'catalog-only', name: '합성 앱', slug: 'catalog-only' }],
+    { message, extensions: { code } }
+  );
+  await screen.findByRole('link', { name: /합성 앱\s*화면/ });
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  fireEvent.change(screen.getByLabelText('앱 검색'), {
+    target: { value: '합성' },
+  });
+  await act(() => vi.advanceTimersByTimeAsync(300));
+  vi.useRealTimers();
+
+  const fallback = requests.filter(
+    request => request.operation === 'VisualAppsOnCatalog' && request.variables.first === 8
+  );
+  if (useCatalog) {
+    expect(screen.getByRole('option', { name: '합성 앱' })).toBeTruthy();
+    expect(fallback).toEqual([
+      {
+        operation: 'VisualAppsOnCatalog',
+        variables: { first: 8, query: '합성' },
+      },
+    ]);
+  } else {
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(fallback).toEqual([]);
+    expect(log).toHaveBeenCalled();
+  }
 });

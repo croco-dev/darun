@@ -40,6 +40,10 @@ import { isProductSlugConflict } from './productSlugConflict';
 import { lockCategoryMembership, lockProductSource } from './productSourceMutex';
 
 const newestProductsFirst = [desc(products.publishedAt), asc(products.id)];
+const visualAppEligibility = and(
+  isNotNull(products.publishedAt),
+  sql`exists (select 1 from ${productScreenshots} where ${productScreenshots.productId} = ${products.id})`
+);
 
 @Service(ProductRepositoryToken)
 export class PostgresqlProductRepository implements ProductRepository {
@@ -424,8 +428,7 @@ export class PostgresqlProductRepository implements ProductRepository {
   }) {
     const pattern = query ? `%${query.replace(/[\\%_]/g, '\\$&')}%` : undefined;
     const filter = and(
-      isNotNull(products.publishedAt),
-      sql`exists (select 1 from ${productScreenshots} where ${productScreenshots.productId} = ${products.id})`,
+      visualAppEligibility,
       pattern ? or(ilike(products.name, pattern), ilike(products.slug, pattern)) : undefined,
       productSlug ? eq(products.slug, productSlug) : undefined
     );
@@ -442,6 +445,19 @@ export class PostgresqlProductRepository implements ProductRepository {
       products: rows.map(row => this.mapper(row)),
       total: Number(totals[0]?.value ?? 0),
     };
+  }
+
+  async findVisualAppIds(): Promise<string[]> {
+    const rows = await this.db.select({ id: products.id }).from(products).where(visualAppEligibility);
+    return rows.map(row => row.id);
+  }
+
+  async findVisualAppsByIds(ids: string[]): Promise<Product[]> {
+    const rows = await this.db
+      .select()
+      .from(products)
+      .where(and(visualAppEligibility, inArray(products.id, ids)));
+    return rows.map(row => this.mapper(row));
   }
 
   async findVisualAppPreviews(productId: string): Promise<ProductScreenshot[]> {

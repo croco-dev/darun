@@ -11,6 +11,8 @@ type IndexCatalogStats = {
   indexSizes?: Record<string, number>;
 };
 
+const SCOPED_SEARCH_TIMEOUT_MS = 5_000;
+
 @Service(SearchableProductRepositoryToken)
 export class MongodbSearchableProductRepository implements SearchableProductRepository {
   constructor(@Inject(MongodbSearchConnectionToken) private readonly connect: () => void | Promise<void>) {}
@@ -76,10 +78,16 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
     }
   }
 
-  async searchProduct(query: string, limit?: number, candidateLimit?: number): Promise<SearchableProduct[]> {
+  async searchProduct(
+    query: string,
+    limit?: number,
+    candidateLimit?: number,
+    eligibleProductIds?: readonly string[]
+  ): Promise<SearchableProduct[]> {
+    if (eligibleProductIds?.length === 0) return [];
     await this.ensureConnected();
     const effectiveLimit = candidateLimit ?? limit ?? 20;
-    return SearchableProductModel.aggregate<SearchableProductSchema & { readonly searchScore?: number }>([
+    const search = SearchableProductModel.aggregate<SearchableProductSchema & { readonly searchScore?: number }>([
       {
         $search: {
           index: 'searchable_products_index',
@@ -120,9 +128,12 @@ export class MongodbSearchableProductRepository implements SearchableProductRepo
           },
         },
       },
+      ...(eligibleProductIds === undefined ? [] : [{ $match: { productId: { $in: eligibleProductIds } } }]),
       { $addFields: { searchScore: { $meta: 'searchScore' } } },
       { $limit: effectiveLimit },
-    ]).then(products =>
+    ]);
+    if (eligibleProductIds !== undefined) search.option({ maxTimeMS: SCOPED_SEARCH_TIMEOUT_MS });
+    return search.then(products =>
       products.map(product => ({ ...product, id: product.productId, searchScore: product.searchScore }))
     );
   }
