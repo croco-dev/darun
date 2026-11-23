@@ -15,19 +15,19 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HealthResolver } from '../src/app/graphql/Health.resolver';
 import { createGraphQLDiagnostics } from '../src/app/graphqlDiagnostics';
 
-const feature = new ProductFeature({
+const feature = {
   id: 'feature-id',
   productId: 'product-id',
   name: '검색',
   emoji: '🔎',
   summary: '기존 요약',
-});
+} as const;
 
 const repository = {
-  findOneById: vi.fn(async () => feature),
+  findOneById: vi.fn(async () => new ProductFeature(feature)),
   findManyByProductId: vi.fn(),
   insert: vi.fn<ProductFeatureRepository['insert']>(async input => new ProductFeature({ ...input, id: 'new-id' })),
-  updateById: vi.fn<ProductFeatureRepository['updateById']>(async (_, modify) => modify(feature)),
+  updateById: vi.fn<ProductFeatureRepository['updateById']>(async (_, modify) => modify(new ProductFeature(feature))),
 } satisfies ProductFeatureRepository;
 const resolver = new FeatureMutationResolver(
   new CreateProductFeature(repository),
