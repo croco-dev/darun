@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const APPS_PAGE_SIZE = 24;
+const APPS_COUNT_TIMEOUT_MS = 5000;
 
 export const APPS_SELECT = `
   id,
@@ -90,30 +91,37 @@ export async function fetchAppsPage(
     const id = quotePostgrestValue(after.id);
     page = page.or(`name.gt.${name},and(name.eq.${name},id.gt.${id})`);
   }
-  // Rows remain usable when the independent count request fails.
-  const countRequest = after
-    ? filteredQuery(true).then(
-        ({ count, error }) => (error ? null : count),
-        () => null
-      )
-    : null;
-  const [result, count] = await Promise.all([
-    page
+  const countController = after ? new AbortController() : null;
+  const countTimer = countController ? setTimeout(() => countController.abort(), APPS_COUNT_TIMEOUT_MS) : undefined;
+
+  try {
+    // Rows remain usable when the independent count request fails or times out.
+    const countRequest = countController
+      ? filteredQuery(true)
+          .abortSignal(countController.signal)
+          .then(
+            ({ count, error }) => (error ? null : count),
+            () => null
+          )
+      : null;
+    const result = await page
       .order('name', { ascending: true })
       .order('id', { ascending: true })
       .limit(APPS_PAGE_SIZE + 1)
-      .overrideTypes<AppListRow[], { merge: false }>(),
-    countRequest,
-  ]);
-  if (result.error) throw new Error(result.error.message);
+      .overrideTypes<AppListRow[], { merge: false }>();
+    if (result.error) throw new Error(result.error.message);
 
-  const rows = result.data ?? [];
-  const last = rows[APPS_PAGE_SIZE - 1];
-  return {
-    apps: rows.slice(0, APPS_PAGE_SIZE).map(mapAppListRow),
-    totalCount: after ? count : (result.count ?? 0),
-    nextCursor: rows.length > APPS_PAGE_SIZE ? { name: last.name, id: last.id } : null,
-  };
+    const rows = result.data ?? [];
+    const last = rows[APPS_PAGE_SIZE - 1];
+    return {
+      apps: rows.slice(0, APPS_PAGE_SIZE).map(mapAppListRow),
+      totalCount: countRequest ? await countRequest : (result.count ?? 0),
+      nextCursor: rows.length > APPS_PAGE_SIZE ? { name: last.name, id: last.id } : null,
+    };
+  } finally {
+    clearTimeout(countTimer);
+    countController?.abort();
+  }
 }
 
 export function appendNewApps(current: AppListItem[], incoming: AppListItem[]) {

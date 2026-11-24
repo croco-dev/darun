@@ -63,14 +63,18 @@ describe.skipIf(!databaseUrl)('public app lists through PostgREST and PostgreSQL
 
   it('returns the next page when the separate count request fails', async () => {
     await sql`insert into apps (app_store_id, name)
-      select i::text, 'App ' || lpad(i::text, 2, '0') from generate_series(0, 26) i`;
+      select i::text, 'App ' || lpad(i::text, 2, '0') from generate_series(0, 48) i`;
     const first = await fetchAppsPage(client);
     countUnavailable = true;
     try {
       const second = await fetchAppsPage(client, { after: first.nextCursor });
-      expect(second.apps.map(app => app.name)).toEqual(['App 24', 'App 25', 'App 26']);
+      expect(second.apps.map(app => app.name)).toEqual(Array.from({ length: 24 }, (_, i) => `App ${i + 24}`));
       expect(second.totalCount).toBeNull();
-      expect(second.nextCursor).toBeNull();
+      expect(second.nextCursor?.name).toBe('App 47');
+
+      const third = await fetchAppsPage(client, { after: second.nextCursor });
+      expect(third.apps.map(app => app.name)).toEqual(['App 48']);
+      expect(third.nextCursor).toBeNull();
     } finally {
       countUnavailable = false;
     }
