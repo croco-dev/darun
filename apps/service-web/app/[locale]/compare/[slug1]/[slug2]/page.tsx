@@ -125,6 +125,10 @@ export default async function ComparePage({ params }: Props) {
   }
 
   const { product1, product2 } = data;
+  const productColumns = [
+    { id: 'compare-product-1', name: product1.name, logoUrl: product1.logoUrl },
+    { id: 'compare-product-2', name: product2.name, logoUrl: product2.logoUrl },
+  ] as const;
   const t = await getTranslations({
     locale: resolvedParams.locale,
     namespace: 'Compare',
@@ -186,104 +190,88 @@ export default async function ComparePage({ params }: Props) {
             </div>
           </div>
 
-          <div
-            role="region"
+          <table
+            role="table"
             aria-label={isKo ? `${compareTitle} - 상세 비교표` : `${compareTitle} - Detailed comparison`}
-            className="overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
+            className="block w-full overflow-hidden rounded-card-xl border border-dark-150 bg-white shadow-card"
           >
-            <div className="sticky top-[61px] z-20 grid grid-cols-2 divide-x divide-dark-150/80 border-b border-dark-150/80 bg-surface-100/95 backdrop-blur-md p-3.5 sm:p-4 md:p-5 shadow-2xs">
-              <div className="flex min-w-0 items-center gap-2 pr-3 sm:gap-2.5 sm:pr-4 md:pr-5">
-                {product1.logoUrl ? (
-                  <LogoImage
-                    src={product1.logoUrl}
-                    fallbackSrc="/images/default-product-icon.svg"
-                    alt=""
-                    aria-hidden="true"
-                    width={32}
-                    height={32}
-                    className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg border border-dark-150/90 bg-white object-contain p-0.5 shadow-2xs ring-1 ring-black/5"
-                  />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600 shadow-2xs ring-1 ring-black/5"
+            {/* Keep explicit roles because the stacked layout overrides native table display. */}
+            <thead
+              role="rowgroup"
+              className="block border-b border-dark-150/80 bg-surface-100/95 p-3.5 shadow-2xs sm:p-4 md:p-5"
+            >
+              <tr role="row" className="grid grid-cols-2">
+                <td role="cell" className="sr-only" />
+                {productColumns.map(({ id, name, logoUrl }) => (
+                  <th
+                    key={id}
+                    id={id}
+                    role="columnheader"
+                    scope="col"
+                    className="flex min-w-0 items-center gap-2 text-left nth-2:border-r nth-2:border-dark-150/80 nth-2:pr-3 last:pl-3 sm:gap-2.5 sm:nth-2:pr-4 sm:last:pl-4 md:nth-2:pr-5 md:last:pl-5"
                   >
-                    {product1.name.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product1.name}</span>
-              </div>
-              <div className="flex min-w-0 items-center gap-2 pl-3 sm:gap-2.5 sm:pl-4 md:pl-5">
-                {product2.logoUrl ? (
-                  <LogoImage
-                    src={product2.logoUrl}
-                    fallbackSrc="/images/default-product-icon.svg"
-                    alt=""
-                    aria-hidden="true"
-                    width={32}
-                    height={32}
-                    className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg border border-dark-150/90 bg-white object-contain p-0.5 shadow-2xs ring-1 ring-black/5"
-                  />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600 shadow-2xs ring-1 ring-black/5"
-                  >
-                    {product2.name.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{product2.name}</span>
-              </div>
-            </div>
-            <CompareRow
-              label={t('table.name')}
-              colLabel1={product1.name}
-              colLabel2={product2.name}
-              value1={product1.name}
-              value2={product2.name}
-              locale={resolvedParams.locale}
-              testid="name"
-            />
-            <CompareRow
-              label={t('table.summary')}
-              colLabel1={product1.name}
-              colLabel2={product2.name}
-              value1={product1.summary ?? undefined}
-              value2={product2.summary ?? undefined}
-              locale={resolvedParams.locale}
-              testid="summary"
-            />
-            <CompareRow
-              label={t('table.company')}
-              colLabel1={product1.name}
-              colLabel2={product2.name}
-              value1={product1.ownedCompany?.name}
-              value2={product2.ownedCompany?.name}
-              locale={resolvedParams.locale}
-              testid="company"
-            />
-            <CompareRow
-              label={t('table.voteCount')}
-              colLabel1={product1.name}
-              colLabel2={product2.name}
-              custom1={<ProductVoteCount slug={product1.slug} count={product1.voteCount} />}
-              custom2={<ProductVoteCount slug={product2.slug} count={product2.voteCount} />}
-              locale={resolvedParams.locale}
-              testid="vote-count"
-            />
-            <CompareRow
-              label={t('table.tags')}
-              colLabel1={product1.name}
-              colLabel2={product2.name}
-              value1={(product1.tags ?? []).map(t => t.name).join(', ')}
-              value2={(product2.tags ?? []).map(t => t.name).join(', ')}
-              tags1={(product1.tags ?? []).map(t => t.name)}
-              tags2={(product2.tags ?? []).map(t => t.name)}
-              locale={resolvedParams.locale}
-              testid="tags"
-              isLast
-            />
-          </div>
+                    {logoUrl ? (
+                      <LogoImage
+                        src={logoUrl}
+                        fallbackSrc="/images/default-product-icon.svg"
+                        alt=""
+                        aria-hidden="true"
+                        width={32}
+                        height={32}
+                        className="h-7 w-7 shrink-0 rounded-lg border border-dark-150/90 bg-white object-contain p-0.5 shadow-2xs ring-1 ring-black/5 sm:h-8 sm:w-8"
+                      />
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dark-150 bg-surface-200 text-xs font-bold text-dark-600 shadow-2xs ring-1 ring-black/5 sm:h-8 sm:w-8"
+                      >
+                        {name.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="truncate text-xs font-extrabold text-dark-900 sm:text-sm">{name}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody role="rowgroup" className="block">
+              <CompareRow
+                field="name"
+                label={t('table.name')}
+                columns={productColumns}
+                values={[product1.name, product2.name]}
+              />
+              <CompareRow
+                field="summary"
+                label={t('table.summary')}
+                columns={productColumns}
+                values={[product1.summary, product2.summary]}
+              />
+              <CompareRow
+                field="company"
+                label={t('table.company')}
+                columns={productColumns}
+                values={[product1.ownedCompany?.name, product2.ownedCompany?.name]}
+              />
+              <CompareRow
+                field="vote-count"
+                label={t('table.voteCount')}
+                columns={productColumns}
+                values={[
+                  <ProductVoteCount slug={product1.slug} count={product1.voteCount} />,
+                  <ProductVoteCount slug={product2.slug} count={product2.voteCount} />,
+                ]}
+              />
+              <CompareRow
+                field="tags"
+                label={t('table.tags')}
+                columns={productColumns}
+                values={[
+                  renderTags(product1.tags, resolvedParams.locale),
+                  renderTags(product2.tags, resolvedParams.locale),
+                ]}
+              />
+            </tbody>
+          </table>
         </ContentArea>
       </main>
     </Layout>
@@ -291,91 +279,64 @@ export default async function ComparePage({ params }: Props) {
 }
 
 function CompareRow({
+  field,
   label,
-  colLabel1,
-  colLabel2,
-  value1,
-  value2,
-  tags1,
-  tags2,
-  custom1,
-  custom2,
-  locale,
-  testid,
-  isLast,
+  columns,
+  values,
 }: {
+  field: string;
   label: string;
-  colLabel1: string;
-  colLabel2: string;
-  value1?: string;
-  value2?: string;
-  tags1?: string[];
-  tags2?: string[];
-  custom1?: React.ReactNode;
-  custom2?: React.ReactNode;
-  locale?: string;
-  testid: string;
-  isLast?: boolean;
+  columns: readonly { id: string; name: string }[];
+  values: readonly [React.ReactNode, React.ReactNode];
 }) {
+  const rowHeaderId = `compare-field-${field}`;
   return (
-    <div
-      className={`p-4 md:p-5 transition-colors duration-150 hover:bg-surface-50/60 ${
-        isLast ? '' : 'border-b border-dark-150/70'
-      }`}
+    <tr
+      role="row"
+      className="grid grid-cols-1 gap-y-2 border-b border-dark-150/70 p-4 transition-colors duration-150 last:border-b-0 hover:bg-surface-50/60 md:grid-cols-2 md:p-5"
     >
-      <h3 className="mb-2 text-xs font-bold tracking-tight text-dark-500 break-words [word-break:keep-all]">{label}</h3>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-0 md:divide-x md:divide-dark-150/70">
-        <div className="md:pr-5">
-          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden select-none max-w-full truncate">
-            {colLabel1}
-          </div>
-          <div
-            className="text-sm leading-relaxed text-dark-800 break-words [word-break:keep-all]"
-            data-testid={`compare-row-${testid}-1`}
+      <th
+        id={rowHeaderId}
+        role="rowheader"
+        scope="row"
+        className="break-words text-left text-xs font-bold tracking-tight text-dark-500 [word-break:keep-all] md:col-span-2"
+      >
+        {label}
+      </th>
+      {columns.map(({ id, name }, index) => (
+        <td
+          key={id}
+          role="cell"
+          headers={`${rowHeaderId} ${id}`}
+          className="min-w-0 nth-2:md:border-r nth-2:md:border-dark-150/70 nth-2:md:pr-5 last:mt-1 last:border-t last:border-dark-100/70 last:pt-2.5 md:last:mt-0 md:last:border-t-0 md:last:pt-0 md:last:pl-5"
+        >
+          <span
+            aria-hidden="true"
+            className="mb-1.5 block w-fit max-w-full truncate rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs select-none md:hidden"
           >
-            {custom1 ? (
-              custom1
-            ) : tags1 && tags1.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {tags1.map(tag => (
-                  <Chip key={tag} color="filledGray" variant="square">
-                    {getLocalizedTag(tag, locale)}
-                  </Chip>
-                ))}
-              </div>
-            ) : value1 ? (
-              value1
-            ) : (
-              <span className="text-dark-400 font-mono">-</span>
-            )}
-          </div>
-        </div>
-        <div className="border-t border-dark-100/70 pt-2.5 md:border-0 md:pt-0 md:pl-5">
-          <div className="mb-1.5 inline-flex items-center rounded-md border border-dark-150/70 bg-surface-100/90 px-2 py-0.5 text-2xs font-semibold text-dark-600 shadow-2xs md:hidden select-none max-w-full truncate">
-            {colLabel2}
-          </div>
+            {name}
+          </span>
           <div
-            className="text-sm leading-relaxed text-dark-800 break-words [word-break:keep-all]"
-            data-testid={`compare-row-${testid}-2`}
+            className="text-sm leading-relaxed text-dark-800 [overflow-wrap:anywhere] [word-break:keep-all]"
+            data-testid={`compare-row-${field}-${index + 1}`}
           >
-            {custom2 ? (
-              custom2
-            ) : tags2 && tags2.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {tags2.map(tag => (
-                  <Chip key={tag} color="filledGray" variant="square">
-                    {getLocalizedTag(tag, locale)}
-                  </Chip>
-                ))}
-              </div>
-            ) : value2 ? (
-              value2
-            ) : (
-              <span className="text-dark-400 font-mono">-</span>
-            )}
+            {values[index] || <span className="text-dark-400 font-mono">-</span>}
           </div>
-        </div>
-      </div>
+        </td>
+      ))}
+    </tr>
+  );
+}
+
+function renderTags(tags: ProductData['tags'] | undefined, locale: string) {
+  if (!tags?.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tags.map(tag => (
+        <Chip key={tag.id} color="filledGray" variant="square">
+          {getLocalizedTag(tag.name, locale)}
+        </Chip>
+      ))}
     </div>
   );
 }

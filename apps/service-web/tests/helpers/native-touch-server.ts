@@ -71,6 +71,15 @@ const homeCategory = {
   labelEn: 'Productivity tools',
 };
 const homeRecentProduct = { ...nativeTouchProduct, id: 'home-recent', slug: 'recent-fixture', name: 'Recent Fixture' };
+const compareProduct = {
+  ...nativeTouchProduct,
+  id: 'compare-product',
+  slug: 'compare-fixture',
+  name: 'Collaboration and Project Planning Workspace for Distributed Product Teams',
+  summary: 'Overview of a shared workspace for planning releases and coordinating product design across teams.',
+  logoUrl: null,
+  voteCount: null,
+};
 const homeCategoryProducts = {
   __typename: 'ProductConnection',
   totalCount: 1,
@@ -124,6 +133,7 @@ const productWithDesignatedLink = {
 
 function getFixtureProduct(slug?: string) {
   if (slug === homeRecentProduct.slug) return homeRecentProduct;
+  if (slug === compareProduct.slug) return compareProduct;
   if (slug === productWithDesignatedLink.slug) return productWithDesignatedLink;
   return nativeTouchProduct;
 }
@@ -156,6 +166,25 @@ createServer((request, response) => {
   request.on('end', async () => {
     const { operationName, query, variables } = body ? JSON.parse(body) : {};
     response.setHeader('Content-Type', 'application/json');
+    if (operationName === 'ProductsForCompare') {
+      response.end(
+        JSON.stringify({
+          data: {
+            product1: getFixtureProduct(variables.slug1),
+            product2: getFixtureProduct(variables.slug2),
+          },
+        })
+      );
+      return;
+    }
+    if (operationName === 'ProductVoteCount' && variables.slug === compareProduct.slug) {
+      response.end(
+        JSON.stringify({
+          data: { productBySlug: { ...compareProduct, voteCount: 17 } },
+        })
+      );
+      return;
+    }
     if (operationName === 'ProductsCountOnHomePage') {
       if (homeScenario === 'count-delayed-error') {
         heldProductCounts.add(response);
