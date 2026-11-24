@@ -1,4 +1,7 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 export const APPS_PAGE_SIZE = 24;
+const APPS_COUNT_TIMEOUT_MS = 5000;
 
 export const APPS_SELECT = `
   id,
@@ -30,12 +33,7 @@ export type AppListItem = {
   tier: number;
 };
 
-export function getAppsPageRange(page: number, pageSize = APPS_PAGE_SIZE) {
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  return { from, to };
-}
+export type AppsCursor = Pick<AppListItem, 'name' | 'id'>;
 
 export function mapAppListRow(app: AppListRow): AppListItem {
   return {
@@ -60,12 +58,73 @@ export function escapeAppsSearchQuery(value: string) {
 
 export function buildAppsSearchFilter(searchTerm: string) {
   // Escape LIKE literals first, then quote the whole pattern for PostgREST's OR grammar.
-  const pattern = `%${escapeAppsSearchQuery(searchTerm)}%`;
-  const quotedPattern = `"${pattern.replaceAll('\\', String.raw`\\`).replaceAll('"', String.raw`\"`)}"`;
+  const quotedPattern = quotePostgrestValue(`%${escapeAppsSearchQuery(searchTerm)}%`);
 
   return `name.ilike.${quotedPattern},description.ilike.${quotedPattern}`;
 }
 
-export function getHasNextPage(totalCount: number, to: number) {
-  return totalCount > to + 1;
+function quotePostgrestValue(value: string) {
+  const escaped = value.replaceAll('\\', String.raw`\\`).replaceAll('"', String.raw`\"`);
+  return `"${escaped}"`;
+}
+
+export async function fetchAppsPage(
+  supabase: SupabaseClient,
+  { after, searchTerm = '', tier }: { after?: AppsCursor | null; searchTerm?: string; tier?: number } = {}
+) {
+  const search = normalizeAppsSearchTerm(searchTerm);
+  let columns = APPS_SELECT;
+  if (tier === 0) columns = `${APPS_SELECT},assigned_tier:tiers()`;
+  else if (tier !== undefined) columns = APPS_SELECT.replace('tiers (', 'tiers!inner (');
+  function filteredQuery(head = false) {
+    let query = supabase.from('apps').select(columns, { head, count: head || !after ? 'exact' : undefined });
+    // Tier 0 includes explicit zero and apps without a tier assignment.
+    if (tier === 0) query = query.gt('assigned_tier.tier', 0).is('assigned_tier', null);
+    else if (tier !== undefined) query = query.eq('tiers.tier', tier);
+    if (search) query = query.or(buildAppsSearchFilter(search));
+    return query;
+  }
+
+  let page = filteredQuery();
+  if (after) {
+    const name = quotePostgrestValue(after.name);
+    const id = quotePostgrestValue(after.id);
+    page = page.or(`name.gt.${name},and(name.eq.${name},id.gt.${id})`);
+  }
+  const countController = after ? new AbortController() : null;
+  const countTimer = countController ? setTimeout(() => countController.abort(), APPS_COUNT_TIMEOUT_MS) : undefined;
+
+  try {
+    // Rows remain usable when the independent count request fails or times out.
+    const countRequest = countController
+      ? filteredQuery(true)
+          .abortSignal(countController.signal)
+          .then(
+            ({ count, error }) => (error ? null : count),
+            () => null
+          )
+      : null;
+    const result = await page
+      .order('name', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(APPS_PAGE_SIZE + 1)
+      .overrideTypes<AppListRow[], { merge: false }>();
+    if (result.error) throw new Error(result.error.message);
+
+    const rows = result.data ?? [];
+    const last = rows[APPS_PAGE_SIZE - 1];
+    return {
+      apps: rows.slice(0, APPS_PAGE_SIZE).map(mapAppListRow),
+      totalCount: countRequest ? await countRequest : (result.count ?? 0),
+      nextCursor: rows.length > APPS_PAGE_SIZE ? { name: last.name, id: last.id } : null,
+    };
+  } finally {
+    clearTimeout(countTimer);
+    countController?.abort();
+  }
+}
+
+export function appendNewApps(current: AppListItem[], incoming: AppListItem[]) {
+  const seen = new Set(current.map(app => app.id));
+  return [...current, ...incoming.filter(app => !seen.has(app.id))];
 }

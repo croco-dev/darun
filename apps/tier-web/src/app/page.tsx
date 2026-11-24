@@ -1,7 +1,8 @@
 import { TierTabs } from '@/components/TierTabs';
 import { supabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
-import { type AppListItem, fetchHomeAppsPage, normalizeHomeTier } from './home-app-list';
+import { type AppListItem, type AppsCursor, fetchAppsPage } from './apps/app-list';
+import { normalizeHomeTier } from './home-app-list';
 import HomeAppsClient from './HomeAppsClient';
 
 interface HomePageProps {
@@ -26,15 +27,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const currentTier = String(tier);
   let initialApps: AppListItem[] = [];
   let initialTotalCount = 0;
-  let initialHasNextPage = false;
+  let initialNextCursor: AppsCursor | null = null;
   let initialError = false;
 
   try {
-    const firstPage = await fetchHomeAppsPage(supabase, { page: 1, tier });
+    const firstPage = await fetchAppsPage(supabase, { tier });
 
     initialApps = firstPage.apps;
-    initialTotalCount = firstPage.totalCount;
-    initialHasNextPage = firstPage.hasNextPage;
+    initialTotalCount = firstPage.totalCount ?? 0;
+    initialNextCursor = firstPage.nextCursor;
   } catch (error) {
     console.error('Error fetching apps:', error);
     initialError = true;
@@ -58,7 +59,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+        }}
       />
       <div className="page-shell py-8 md:py-10">
         <section className="space-y-5 border-b border-border pb-6 md:pb-8">
@@ -79,7 +82,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <HomeAppsClient
             key={currentTier}
             initialApps={initialApps}
-            initialHasNextPage={initialHasNextPage}
+            initialNextCursor={initialNextCursor}
             initialTotalCount={initialTotalCount}
             tier={tier}
             initialError={initialError}

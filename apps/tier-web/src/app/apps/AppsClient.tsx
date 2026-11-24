@@ -7,71 +7,26 @@ import { Input } from '@/components/ui/input';
 import { createClient } from '@/utils/supabase/client';
 import { LoaderCircle, Search } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  APPS_PAGE_SIZE,
-  APPS_SELECT,
-  type AppListItem,
-  type AppListRow,
-  buildAppsSearchFilter,
-  getAppsPageRange,
-  getHasNextPage,
-  mapAppListRow,
-  normalizeAppsSearchTerm,
-} from './app-list';
+import { type AppListItem, type AppsCursor, appendNewApps, fetchAppsPage, normalizeAppsSearchTerm } from './app-list';
 
 const SEARCH_DEBOUNCE_MS = 250;
 const LOAD_MORE_ROOT_MARGIN = '320px 0px';
 
 const supabase = createClient();
 
-type AppsPageResult = {
-  apps: AppListItem[];
-  totalCount: number;
-  hasNextPage: boolean;
-};
-
-async function fetchAppsPage({ page, searchTerm }: { page: number; searchTerm: string }): Promise<AppsPageResult> {
-  const normalizedSearchTerm = normalizeAppsSearchTerm(searchTerm);
-  const { from, to } = getAppsPageRange(page, APPS_PAGE_SIZE);
-
-  let queryBuilder = supabase
-    .from('apps')
-    .select(APPS_SELECT, { count: 'exact' })
-    .order('name', { ascending: true })
-    .order('id', { ascending: true });
-
-  if (normalizedSearchTerm) {
-    queryBuilder = queryBuilder.or(buildAppsSearchFilter(normalizedSearchTerm));
-  }
-
-  const { data, error, count } = await queryBuilder.range(from, to).overrideTypes<AppListRow[], { merge: false }>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const totalCount = count ?? 0;
-
-  return {
-    apps: data?.map(mapAppListRow) ?? [],
-    totalCount,
-    hasNextPage: getHasNextPage(totalCount, to),
-  };
-}
-
 interface AppsClientProps {
   initialApps: AppListItem[];
   initialTotalCount: number;
-  initialHasNextPage: boolean;
+  initialNextCursor: AppsCursor | null;
 }
 
-export default function AppsClient({ initialApps, initialTotalCount, initialHasNextPage }: AppsClientProps) {
+export default function AppsClient({ initialApps, initialTotalCount, initialNextCursor }: Readonly<AppsClientProps>) {
   const [apps, setApps] = useState<AppListItem[]>(initialApps);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [totalCount, setTotalCount] = useState(initialTotalCount);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(initialHasNextPage);
+  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+  const hasNextPage = nextCursor !== null;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
@@ -81,7 +36,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
   const [initialSnapshot, setInitialSnapshot] = useState({
     apps: initialApps,
     totalCount: initialTotalCount,
-    hasNextPage: initialHasNextPage,
+    nextCursor: initialNextCursor,
   });
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
   const activeRequestIdRef = useRef(0);
@@ -92,12 +47,12 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     debouncedSearchTerm !== requestedTerm ||
     initialSnapshot.apps !== initialApps ||
     initialSnapshot.totalCount !== initialTotalCount ||
-    initialSnapshot.hasNextPage !== initialHasNextPage
+    initialSnapshot.nextCursor !== initialNextCursor
   ) {
     setInitialSnapshot({
       apps: initialApps,
       totalCount: initialTotalCount,
-      hasNextPage: initialHasNextPage,
+      nextCursor: initialNextCursor,
     });
     setRequestedTerm(debouncedSearchTerm);
     setQueryError(null);
@@ -107,8 +62,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     if (!debouncedSearchTerm) {
       setApps(initialApps);
       setTotalCount(initialTotalCount);
-      setCurrentPage(1);
-      setHasNextPage(initialHasNextPage);
+      setNextCursor(initialNextCursor);
     }
   }
 
@@ -144,16 +98,15 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     const requestId = activeRequestIdRef.current;
     let isActive = true;
 
-    void fetchAppsPage({ page: 1, searchTerm: requestedTerm })
+    void fetchAppsPage(supabase, { searchTerm: requestedTerm })
       .then(nextPage => {
         if (!isActive || requestId !== activeRequestIdRef.current) {
           return;
         }
 
         setApps(nextPage.apps);
-        setTotalCount(nextPage.totalCount);
-        setCurrentPage(1);
-        setHasNextPage(nextPage.hasNextPage);
+        setTotalCount(nextPage.totalCount ?? 0);
+        setNextCursor(nextPage.nextCursor);
         setQueryError(null);
       })
       .catch((error: unknown) => {
@@ -163,8 +116,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
 
         setApps([]);
         setTotalCount(0);
-        setCurrentPage(1);
-        setHasNextPage(false);
+        setNextCursor(null);
         setQueryError(error instanceof Error ? error.message : '앱 목록을 불러오지 못했습니다.');
       })
       .finally(() => {
@@ -181,7 +133,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
   }, [requestedTerm, initialSnapshot, searchRetry]);
 
   const loadMore = useCallback(async () => {
-    if (isLoadingMoreRef.current || isRefreshing || !hasNextPage || queryError) {
+    if (isLoadingMoreRef.current || isRefreshing || !nextCursor || queryError) {
       return;
     }
 
@@ -191,11 +143,10 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
     setLoadMoreError(null);
 
     const requestId = activeRequestIdRef.current;
-    const nextPageNumber = currentPage + 1;
 
     try {
-      const nextPage = await fetchAppsPage({
-        page: nextPageNumber,
+      const nextPage = await fetchAppsPage(supabase, {
+        after: nextCursor,
         searchTerm: debouncedSearchTerm,
       });
 
@@ -203,10 +154,9 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
         return;
       }
 
-      setApps(currentApps => [...currentApps, ...nextPage.apps]);
-      setTotalCount(nextPage.totalCount);
-      setCurrentPage(nextPageNumber);
-      setHasNextPage(nextPage.hasNextPage);
+      setApps(currentApps => appendNewApps(currentApps, nextPage.apps));
+      setTotalCount(currentCount => nextPage.totalCount ?? currentCount);
+      setNextCursor(nextPage.nextCursor);
     } catch (error: unknown) {
       if (requestId !== activeRequestIdRef.current) {
         return;
@@ -219,7 +169,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialHasN
         setIsLoadingMore(false);
       }
     }
-  }, [currentPage, debouncedSearchTerm, hasNextPage, isRefreshing, queryError]);
+  }, [debouncedSearchTerm, isRefreshing, nextCursor, queryError]);
 
   useEffect(() => {
     const triggerElement = loadMoreTriggerRef.current;

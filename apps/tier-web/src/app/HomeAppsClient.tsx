@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/utils/supabase/client';
 import { LoaderCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type AppListItem, fetchHomeAppsPage } from './home-app-list';
+import { type AppListItem, type AppsCursor, appendNewApps, fetchAppsPage } from './apps/app-list';
 
 const LOAD_MORE_ROOT_MARGIN = '320px 0px';
 
@@ -14,7 +14,7 @@ const supabase = createClient();
 interface HomeAppsClientProps {
   initialApps: AppListItem[];
   initialTotalCount: number;
-  initialHasNextPage: boolean;
+  initialNextCursor: AppsCursor | null;
   tier: number;
   initialError?: boolean;
 }
@@ -22,21 +22,21 @@ interface HomeAppsClientProps {
 export default function HomeAppsClient({
   initialApps,
   initialTotalCount,
-  initialHasNextPage,
+  initialNextCursor,
   tier,
   initialError = false,
 }: HomeAppsClientProps) {
   const [apps, setApps] = useState<AppListItem[]>(initialApps);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasNextPage, setHasNextPage] = useState(initialHasNextPage);
+  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+  const hasNextPage = nextCursor !== null;
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [readFailed, setReadFailed] = useState(initialError);
   const [initialSnapshot, setInitialSnapshot] = useState({
     apps: initialApps,
     totalCount: initialTotalCount,
-    hasNextPage: initialHasNextPage,
+    nextCursor: initialNextCursor,
     error: initialError,
   });
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null);
@@ -47,19 +47,18 @@ export default function HomeAppsClient({
   if (
     initialSnapshot.apps !== initialApps ||
     initialSnapshot.totalCount !== initialTotalCount ||
-    initialSnapshot.hasNextPage !== initialHasNextPage ||
+    initialSnapshot.nextCursor !== initialNextCursor ||
     initialSnapshot.error !== initialError
   ) {
     setInitialSnapshot({
       apps: initialApps,
       totalCount: initialTotalCount,
-      hasNextPage: initialHasNextPage,
+      nextCursor: initialNextCursor,
       error: initialError,
     });
     setApps(initialApps);
     setTotalCount(initialTotalCount);
-    setCurrentPage(1);
-    setHasNextPage(initialHasNextPage);
+    setNextCursor(initialNextCursor);
     setIsLoadingMore(false);
     setLoadMoreError(null);
     setReadFailed(initialError);
@@ -84,7 +83,7 @@ export default function HomeAppsClient({
   }, []);
 
   const loadMore = useCallback(async () => {
-    if (isLoadingMoreRef.current || (!hasNextPage && !readFailed)) {
+    if (isLoadingMoreRef.current || (!nextCursor && !readFailed)) {
       return;
     }
 
@@ -93,11 +92,10 @@ export default function HomeAppsClient({
     setLoadMoreError(null);
 
     const requestId = activeRequestIdRef.current;
-    const nextPageNumber = readFailed ? 1 : currentPage + 1;
 
     try {
-      const nextPage = await fetchHomeAppsPage(supabase, {
-        page: nextPageNumber,
+      const nextPage = await fetchAppsPage(supabase, {
+        after: nextCursor,
         tier,
       });
 
@@ -105,11 +103,10 @@ export default function HomeAppsClient({
         return;
       }
 
-      setApps(currentApps => (readFailed ? nextPage.apps : [...currentApps, ...nextPage.apps]));
+      setApps(currentApps => (readFailed ? nextPage.apps : appendNewApps(currentApps, nextPage.apps)));
       setReadFailed(false);
-      setTotalCount(nextPage.totalCount);
-      setCurrentPage(nextPageNumber);
-      setHasNextPage(nextPage.hasNextPage);
+      setTotalCount(currentCount => nextPage.totalCount ?? currentCount);
+      setNextCursor(nextPage.nextCursor);
     } catch {
       if (requestId !== activeRequestIdRef.current) {
         return;
@@ -122,7 +119,7 @@ export default function HomeAppsClient({
         setIsLoadingMore(false);
       }
     }
-  }, [currentPage, hasNextPage, tier, readFailed]);
+  }, [nextCursor, readFailed, tier]);
 
   useEffect(() => {
     const triggerElement = loadMoreTriggerRef.current;

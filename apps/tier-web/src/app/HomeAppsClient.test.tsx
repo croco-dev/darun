@@ -2,28 +2,31 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import type { AppListItem } from './home-app-list';
+import type { AppListItem, fetchAppsPage } from './apps/app-list';
 import HomeAppsClient from './HomeAppsClient';
 
 const { fetchPage } = vi.hoisted(() => ({ fetchPage: vi.fn() }));
 vi.mock('@/utils/supabase/client', () => ({ createClient: () => ({}) }));
-vi.mock('./home-app-list', () => ({ fetchHomeAppsPage: fetchPage }));
+vi.mock('./apps/app-list', async importOriginal => ({
+  ...(await importOriginal<typeof import('./apps/app-list')>()),
+  fetchAppsPage: fetchPage,
+}));
 
 it('distinguishes initial failure from empty and retries page one', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   const container = document.createElement('div');
   const root = createRoot(container);
-  fetchPage.mockResolvedValue({ apps: [], totalCount: 0, hasNextPage: false });
+  fetchPage.mockResolvedValue({ apps: [], totalCount: 0, nextCursor: null });
   try {
     await act(async () =>
       root.render(
-        <HomeAppsClient initialApps={[]} initialTotalCount={0} initialHasNextPage={false} initialError tier={0} />
+        <HomeAppsClient initialApps={[]} initialTotalCount={0} initialNextCursor={null} initialError tier={0} />
       )
     );
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
     expect(container.textContent).not.toContain('아직 없습니다');
     await act(async () => container.querySelector('button')!.click());
-    expect(fetchPage).toHaveBeenCalledWith({}, { page: 1, tier: 0 });
+    expect(fetchPage).toHaveBeenCalledWith({}, { after: null, tier: 0 });
     expect(container.querySelector('[role="alert"]')).toBeNull();
     expect(container.textContent).toContain('아직 없습니다');
   } finally {
@@ -56,10 +59,10 @@ it.each(['resolve', 'reject'] as const)(
       iconUrl: null,
       tier: 1,
     });
-    const page = (id: string, hasNextPage = true) => ({
+    const page = (id: string, hasNextPage = true): Awaited<ReturnType<typeof fetchAppsPage>> => ({
       apps: [app(id)],
       totalCount: 4,
-      hasNextPage,
+      nextCursor: hasNextPage ? { id, name: id } : null,
     });
     const previous = Promise.withResolvers<ReturnType<typeof page>>();
     const current = Promise.withResolvers<ReturnType<typeof page>>();
@@ -72,7 +75,9 @@ it.each(['resolve', 'reject'] as const)(
     const root = createRoot(container);
     const render = async (id: string) => {
       await act(async () =>
-        root.render(<HomeAppsClient initialApps={[app(id)]} initialTotalCount={4} initialHasNextPage tier={1} />)
+        root.render(
+          <HomeAppsClient initialApps={[app(id)]} initialTotalCount={4} initialNextCursor={{ id, name: id }} tier={1} />
+        )
       );
     };
     const button = () => container.querySelector('button')!;
@@ -101,18 +106,22 @@ it.each(['resolve', 'reject'] as const)(
         scrollAndIntersect();
       });
       expect(fetchPage.mock.calls.map(([, args]) => args)).toEqual([
-        { page: 2, tier: 1 },
-        { page: 2, tier: 1 },
+        { after: { id: 'previous-first', name: 'previous-first' }, tier: 1 },
+        { after: { id: 'current-first', name: 'current-first' }, tier: 1 },
       ]);
 
-      await act(async () => current.resolve(page('current-second')));
+      await act(async () => current.resolve({ ...page('current-second'), totalCount: null }));
       expect([...container.querySelectorAll('h3')].map(node => node.textContent)).toEqual([
         'current-first',
         'current-second',
       ]);
       expect(button().disabled).toBe(false);
+      expect(container.textContent).toContain('총 4개');
       await act(async () => scrollAndIntersect());
-      expect(fetchPage).toHaveBeenLastCalledWith({}, { page: 3, tier: 1 });
+      expect(fetchPage).toHaveBeenLastCalledWith(
+        {},
+        { after: { id: 'current-second', name: 'current-second' }, tier: 1 }
+      );
       expect([...container.querySelectorAll('h3')].map(node => node.textContent)).toEqual([
         'current-first',
         'current-second',

@@ -2,27 +2,34 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vitest';
+import type { AppListItem, fetchAppsPage } from './app-list';
 import AppsClient from './AppsClient';
 
-const { range } = vi.hoisted(() => ({ range: vi.fn() }));
-vi.mock('@/utils/supabase/client', () => ({
-  createClient: () => {
-    const query = {
-      select: () => query,
-      order: () => query,
-      or: () => query,
-      overrideTypes: () => query,
-      range,
-    };
-    return { from: () => query };
-  },
+const { fetchPage, client } = vi.hoisted(() => ({
+  fetchPage: vi.fn<typeof fetchAppsPage>(),
+  client: {},
 }));
+vi.mock('@/utils/supabase/client', () => ({ createClient: () => client }));
+vi.mock('./app-list', async importOriginal => ({
+  ...(await importOriginal<typeof import('./app-list')>()),
+  fetchAppsPage: fetchPage,
+}));
+
+type Page = Awaited<ReturnType<typeof fetchAppsPage>>;
+
+function app(id: string, name = id): AppListItem {
+  return { id, name, description: null, iconUrl: null, tier: 0 };
+}
+
+function cursor(id: string, name = id) {
+  return { id, name };
+}
 
 test.each(['success', 'failure'] as const)(
   '최초 교차 뒤 재교차 없이 다음 페이지를 한 번씩 열고 %s를 처리한다',
   async outcome => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-    range.mockReset();
+    fetchPage.mockReset();
     vi.stubGlobal(
       'IntersectionObserver',
       class {
@@ -39,72 +46,71 @@ test.each(['success', 'failure'] as const)(
         disconnect() {}
       }
     );
-    const first = Promise.withResolvers<{
-      data: unknown[];
-      count: number;
-      error: { message: string } | null;
-    }>();
-    const page = (start: number, end: number, count: number) => ({
-      data: Array.from({ length: end - start + 1 }, (_, index) => ({
-        id: `app-${start + index}`,
-        name: `App ${start + index}`,
-        description: null,
-        icon_url: null,
-        tiers: null,
-      })),
-      count,
-      error: null,
-    });
-    range.mockReturnValueOnce({ overrideTypes: () => first.promise });
-    const initialApps = Array.from({ length: 24 }, (_, index) => ({
-      id: `app-${index + 1}`,
-      name: `App ${index + 1}`,
-      description: null,
-      iconUrl: null,
-      tier: 0,
-    }));
+    const first = Promise.withResolvers<Page>();
+    const apps = (start: number, end: number) =>
+      Array.from({ length: end - start + 1 }, (_, index) => app(`app-${start + index}`, `App ${start + index}`));
+    const initialApps = apps(1, 24);
+    const firstCursor = cursor('app-24', 'App 24');
+    const secondCursor = cursor('app-48', 'App 48');
+    const nextPage = {
+      apps: apps(25, 48),
+      totalCount: null,
+      nextCursor: secondCursor,
+    };
+    fetchPage.mockReturnValueOnce(first.promise);
     const container = document.createElement('div');
     document.body.append(container);
     const root = createRoot(container);
     const moreButton = () => [...container.querySelectorAll('button')].find(node => node.textContent === '앱 더 보기');
     try {
       await act(async () =>
-        root.render(<AppsClient initialApps={initialApps} initialTotalCount={49} initialHasNextPage />)
+        root.render(<AppsClient initialApps={initialApps} initialTotalCount={49} initialNextCursor={firstCursor} />)
       );
-      expect(range).not.toHaveBeenCalled();
+      expect(fetchPage).not.toHaveBeenCalled();
       await act(async () => window.dispatchEvent(new Event('scroll')));
-      expect(range).not.toHaveBeenCalled();
+      expect(fetchPage).not.toHaveBeenCalled();
       expect(moreButton()).toBeDefined();
       await act(async () => {
         moreButton()!.click();
         moreButton()?.click();
       });
-      expect(range.mock.calls).toEqual([[24, 47]]);
+      expect(fetchPage).toHaveBeenLastCalledWith(client, {
+        after: firstCursor,
+        searchTerm: '',
+      });
       expect(container.querySelector('button')?.disabled).toBe(true);
       await act(async () => window.dispatchEvent(new Event('scroll')));
-      await act(async () =>
-        first.resolve(
-          outcome === 'failure' ? { data: [], count: 0, error: { message: 'next page failed' } } : page(25, 48, 49)
-        )
-      );
-      expect(range).toHaveBeenCalledOnce();
+      await act(async () => {
+        if (outcome === 'failure') first.reject(new Error('next page failed'));
+        else first.resolve(nextPage);
+      });
+      expect(fetchPage).toHaveBeenCalledOnce();
       if (outcome === 'failure') {
         expect(container.querySelectorAll('h3')).toHaveLength(24);
         expect(container.textContent).toContain('next page failed');
-        range.mockReturnValueOnce({ overrideTypes: () => Promise.resolve(page(25, 48, 49)) });
+        fetchPage.mockResolvedValueOnce(nextPage);
         await act(async () => container.querySelector('button')!.click());
-        expect(range.mock.calls).toEqual([
-          [24, 47],
-          [24, 47],
-        ]);
+        expect(fetchPage).toHaveBeenCalledTimes(2);
+        expect(fetchPage).toHaveBeenLastCalledWith(client, {
+          after: firstCursor,
+          searchTerm: '',
+        });
         expect(container.textContent).not.toContain('next page failed');
       }
       expect(container.querySelectorAll('h3')).toHaveLength(48);
       expect(container.textContent).toContain('App 25');
+      expect(container.textContent).toContain('총 49개 결과');
       expect(moreButton()).toBeDefined();
-      range.mockReturnValueOnce({ overrideTypes: () => Promise.resolve(page(49, 49, 49)) });
+      fetchPage.mockResolvedValueOnce({
+        apps: [app('app-24', 'Renamed app 24'), ...apps(49, 49)],
+        totalCount: 49,
+        nextCursor: null,
+      });
       await act(async () => moreButton()!.click());
-      expect(range).toHaveBeenLastCalledWith(48, 71);
+      expect(fetchPage).toHaveBeenLastCalledWith(client, {
+        after: secondCursor,
+        searchTerm: '',
+      });
       expect(container.querySelectorAll('h3')).toHaveLength(49);
       expect(moreButton()).toBeUndefined();
       expect(container.textContent).toContain('모든 앱을 불러왔습니다.');
@@ -132,16 +138,12 @@ test('clearing a pending search restores the catalog and ignores its late respon
       tier: 0,
     },
   ];
-  const { promise, resolve: completeSearch } = Promise.withResolvers<{
-    data: unknown[];
-    count: number;
-    error: null;
-  }>();
-  range.mockReturnValue({ overrideTypes: () => promise });
+  const { promise, resolve: completeSearch } = Promise.withResolvers<Page>();
+  fetchPage.mockReturnValueOnce(promise);
 
   try {
     await act(async () => {
-      root.render(<AppsClient initialApps={initialApps} initialTotalCount={1} initialHasNextPage={false} />);
+      root.render(<AppsClient initialApps={initialApps} initialTotalCount={1} initialNextCursor={null} />);
     });
     const input = container.querySelector('input')!;
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
@@ -156,21 +158,13 @@ test('clearing a pending search restores the catalog and ignores its late respon
     };
 
     await changeSearch('late');
-    expect(range).toHaveBeenCalledOnce();
+    expect(fetchPage).toHaveBeenCalledOnce();
     await changeSearch('');
     await act(async () => {
       completeSearch({
-        data: [
-          {
-            id: 'late',
-            name: 'Late search app',
-            description: null,
-            icon_url: null,
-            tiers: null,
-          },
-        ],
-        count: 1,
-        error: null,
+        apps: [app('late', 'Late search app')],
+        totalCount: 1,
+        nextCursor: null,
       });
     });
     expect(container.querySelector('h3')?.textContent).toBe('Catalog app');
@@ -197,26 +191,17 @@ test.each([
 ] as const)('첫 검색 실패 후 같은 검색어를 재시도한다: %s', async outcome => {
   vi.useFakeTimers();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  range.mockReset();
-  const page = (id: string) => ({
-    data: [{ id, name: id, description: null, icon_url: null, tiers: null }],
-    count: 1,
-    error: null,
+  fetchPage.mockReset();
+  const page = (id: string): Page => ({
+    apps: [app(id)],
+    totalCount: 1,
+    nextCursor: null,
   });
-  const retry = Promise.withResolvers<ReturnType<typeof page>>();
-  range
-    .mockReturnValueOnce({
-      overrideTypes: () =>
-        Promise.resolve({
-          data: [],
-          count: 0,
-          error: { message: 'first failure' },
-        }),
-    })
-    .mockReturnValueOnce({ overrideTypes: () => retry.promise })
-    .mockReturnValueOnce({
-      overrideTypes: () => Promise.resolve(page('new result')),
-    });
+  const retry = Promise.withResolvers<Page>();
+  fetchPage
+    .mockRejectedValueOnce(new Error('first failure'))
+    .mockReturnValueOnce(retry.promise)
+    .mockResolvedValueOnce(page('new result'));
   const initialApps = [
     {
       id: 'catalog',
@@ -231,7 +216,7 @@ test.each([
   const root = createRoot(container);
   try {
     await act(async () =>
-      root.render(<AppsClient initialApps={initialApps} initialTotalCount={1} initialHasNextPage={false} />)
+      root.render(<AppsClient initialApps={initialApps} initialTotalCount={1} initialNextCursor={null} />)
     );
     const input = container.querySelector('input')!;
     const search = async (value: string) => {
@@ -252,19 +237,19 @@ test.each([
     });
     expect(button!.disabled).toBe(true);
     expect(input.value).toBe('  retry  ');
-    expect(range.mock.calls).toEqual([
-      [0, 23],
-      [0, 23],
+    expect(fetchPage.mock.calls).toEqual([
+      [client, { searchTerm: 'retry' }],
+      [client, { searchTerm: 'retry' }],
     ]);
     expect(container.textContent).toContain('검색 결과를 불러오는 중입니다.');
     await act(async () => button!.click());
-    expect(range).toHaveBeenCalledTimes(2);
+    expect(fetchPage).toHaveBeenCalledTimes(2);
 
     if (outcome.startsWith('change')) await search('new');
     if (outcome.startsWith('clear')) await search('');
     await act(async () => {
       if (outcome.endsWith('failure')) retry.reject(new Error('retry failure'));
-      else if (outcome === 'empty') retry.resolve({ data: [], count: 0, error: null });
+      else if (outcome === 'empty') retry.resolve({ apps: [], totalCount: 0, nextCursor: null });
       else retry.resolve(page('retry result'));
     });
 
@@ -300,7 +285,7 @@ test.each(['resolve', 'reject'] as const)(
   async outcome => {
     vi.useFakeTimers();
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-    range.mockReset();
+    fetchPage.mockReset();
     let intersect = () => {};
     vi.stubGlobal(
       'IntersectionObserver',
@@ -317,29 +302,18 @@ test.each(['resolve', 'reject'] as const)(
         }
       }
     );
-    const row = (id: string) => ({
-      id,
-      name: id,
-      description: null,
-      icon_url: null,
-      tiers: null,
+    const page = (id: string, hasMore = true): Page => ({
+      apps: [app(id)],
+      totalCount: 90,
+      nextCursor: hasMore ? cursor(id) : null,
     });
-    const page = (id: string, count = 90) => ({
-      data: [row(id)],
-      count,
-      error: null,
-    });
-    const previous = Promise.withResolvers<ReturnType<typeof page>>();
-    const current = Promise.withResolvers<ReturnType<typeof page>>();
-    range
-      .mockReturnValueOnce({ overrideTypes: () => previous.promise })
-      .mockReturnValueOnce({
-        overrideTypes: () => Promise.resolve(page('search-first')),
-      })
-      .mockReturnValueOnce({ overrideTypes: () => current.promise })
-      .mockReturnValueOnce({
-        overrideTypes: () => Promise.resolve(page('search-last', 49)),
-      });
+    const previous = Promise.withResolvers<Page>();
+    const current = Promise.withResolvers<Page>();
+    fetchPage
+      .mockReturnValueOnce(previous.promise)
+      .mockResolvedValueOnce(page('search-first'))
+      .mockReturnValueOnce(current.promise)
+      .mockResolvedValueOnce(page('search-last', false));
     const container = document.createElement('div');
     document.body.append(container);
     const root = createRoot(container);
@@ -358,10 +332,19 @@ test.each(['resolve', 'reject'] as const)(
     };
     try {
       await act(async () =>
-        root.render(<AppsClient initialApps={initialApps} initialTotalCount={90} initialHasNextPage />)
+        root.render(
+          <AppsClient
+            initialApps={initialApps}
+            initialTotalCount={90}
+            initialNextCursor={cursor('catalog', 'Catalog app')}
+          />
+        )
       );
       await act(async () => scrollAndIntersect());
-      expect(range).toHaveBeenLastCalledWith(24, 47);
+      expect(fetchPage).toHaveBeenLastCalledWith(client, {
+        after: cursor('catalog', 'Catalog app'),
+        searchTerm: '',
+      });
       const input = container.querySelector('input')!;
       await act(async () => {
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, 'search');
@@ -371,10 +354,10 @@ test.each(['resolve', 'reject'] as const)(
       expect(container.querySelector('h3')?.textContent).toBe('search-first');
       expect(container.textContent).not.toContain('다음 앱 목록을 불러오는 중입니다.');
       await act(async () => scrollAndIntersect());
-      expect(range.mock.calls).toEqual([
-        [24, 47],
-        [0, 23],
-        [24, 47],
+      expect(fetchPage.mock.calls).toEqual([
+        [client, { after: cursor('catalog', 'Catalog app'), searchTerm: '' }],
+        [client, { searchTerm: 'search' }],
+        [client, { after: cursor('search-first'), searchTerm: 'search' }],
       ]);
       expect(container.textContent).toContain('다음 앱 목록을 불러오는 중입니다.');
       await act(async () => {
@@ -387,14 +370,17 @@ test.each(['resolve', 'reject'] as const)(
         scrollAndIntersect();
         scrollAndIntersect();
       });
-      expect(range).toHaveBeenCalledTimes(3);
+      expect(fetchPage).toHaveBeenCalledTimes(3);
       await act(async () => current.resolve(page('search-second')));
       expect([...container.querySelectorAll('h3')].map(node => node.textContent)).toEqual([
         'search-first',
         'search-second',
       ]);
       await act(async () => scrollAndIntersect());
-      expect(range).toHaveBeenLastCalledWith(48, 71);
+      expect(fetchPage).toHaveBeenLastCalledWith(client, {
+        after: cursor('search-second'),
+        searchTerm: 'search',
+      });
       expect([...container.querySelectorAll('h3')].map(node => node.textContent)).toEqual([
         'search-first',
         'search-second',
@@ -402,7 +388,7 @@ test.each(['resolve', 'reject'] as const)(
       ]);
       expect(container.textContent).toContain('모든 앱을 불러왔습니다.');
       await act(async () => scrollAndIntersect());
-      expect(range).toHaveBeenCalledTimes(4);
+      expect(fetchPage).toHaveBeenCalledTimes(4);
     } finally {
       await act(async () => root.unmount());
       container.remove();
@@ -416,7 +402,7 @@ test.each(['resolve', 'reject'] as const)(
 test.each(['clear', 'props'] as const)('%s 뒤 새 목록의 더보기 오류를 재시도한다', async transition => {
   vi.useFakeTimers();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  range.mockReset();
+  fetchPage.mockReset();
   let intersect = () => {};
   vi.stubGlobal(
     'IntersectionObserver',
@@ -433,21 +419,10 @@ test.each(['clear', 'props'] as const)('%s 뒤 새 목록의 더보기 오류를
       }
     }
   );
-  const previous = Promise.withResolvers<{
-    data: unknown[];
-    count: number;
-    error: null;
-  }>();
+  const previous = Promise.withResolvers<Page>();
   const container = document.createElement('div');
   document.body.append(container);
   const root = createRoot(container);
-  const app = (id: string) => ({
-    id,
-    name: id,
-    description: null,
-    iconUrl: null,
-    tier: 0,
-  });
   const initialApps = [app('catalog')];
   const scrollAndIntersect = () => {
     window.dispatchEvent(new Event('scroll'));
@@ -461,35 +436,17 @@ test.each(['clear', 'props'] as const)('%s 뒤 새 목록의 더보기 오류를
     });
     await act(async () => vi.advanceTimersByTimeAsync(250));
   };
-  range
-    .mockReturnValueOnce({ overrideTypes: () => previous.promise })
-    .mockReturnValueOnce({
-      overrideTypes: () =>
-        Promise.resolve({
-          data: [],
-          count: 0,
-          error: { message: 'retry me' },
-        }),
-    })
-    .mockReturnValueOnce({
-      overrideTypes: () =>
-        Promise.resolve({
-          data: [
-            {
-              id: 'last',
-              name: 'last',
-              description: null,
-              icon_url: null,
-              tiers: null,
-            },
-          ],
-          count: 25,
-          error: null,
-        }),
+  fetchPage
+    .mockReturnValueOnce(previous.promise)
+    .mockRejectedValueOnce(new Error('retry me'))
+    .mockResolvedValueOnce({
+      apps: [app('last')],
+      totalCount: 25,
+      nextCursor: null,
     });
   try {
     await act(async () =>
-      root.render(<AppsClient initialApps={initialApps} initialTotalCount={48} initialHasNextPage />)
+      root.render(<AppsClient initialApps={initialApps} initialTotalCount={48} initialNextCursor={cursor('catalog')} />)
     );
     if (transition === 'clear') {
       // 첫 검색은 진행 중으로 두고, 검색 지우기로 catalog snapshot을 복원한다.
@@ -498,18 +455,25 @@ test.each(['clear', 'props'] as const)('%s 뒤 새 목록의 더보기 오류를
     } else {
       await act(async () => scrollAndIntersect());
       await act(async () =>
-        root.render(<AppsClient initialApps={[app('replacement')]} initialTotalCount={48} initialHasNextPage />)
+        root.render(
+          <AppsClient
+            initialApps={[app('replacement')]}
+            initialTotalCount={48}
+            initialNextCursor={cursor('replacement')}
+          />
+        )
       );
     }
     await act(async () => scrollAndIntersect());
     expect(container.textContent).toContain('retry me');
     expect(container.textContent).not.toContain('다음 앱 목록을 불러오는 중입니다.');
-    await act(async () => previous.resolve({ data: [], count: 0, error: null }));
+    await act(async () => previous.resolve({ apps: [], totalCount: 0, nextCursor: null }));
     expect(container.textContent).toContain('retry me');
     await act(async () => container.querySelector('button')!.click());
-    expect(range.mock.calls.slice(-2)).toEqual([
-      [24, 47],
-      [24, 47],
+    const after = cursor(transition === 'clear' ? 'catalog' : 'replacement');
+    expect(fetchPage.mock.calls.slice(-2)).toEqual([
+      [client, { after, searchTerm: '' }],
+      [client, { after, searchTerm: '' }],
     ]);
     expect([...container.querySelectorAll('h3')].map(node => node.textContent)).toEqual([
       transition === 'clear' ? 'catalog' : 'replacement',
