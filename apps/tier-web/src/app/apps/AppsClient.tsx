@@ -20,7 +20,7 @@ interface AppsClientProps {
   initialNextCursor: AppsCursor | null;
 }
 
-export default function AppsClient({ initialApps, initialTotalCount, initialNextCursor }: AppsClientProps) {
+export default function AppsClient({ initialApps, initialTotalCount, initialNextCursor }: Readonly<AppsClientProps>) {
   const [apps, setApps] = useState<AppListItem[]>(initialApps);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -105,7 +105,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialNext
         }
 
         setApps(nextPage.apps);
-        setTotalCount(nextPage.totalCount);
+        setTotalCount(nextPage.totalCount ?? 0);
         setNextCursor(nextPage.nextCursor);
         setQueryError(null);
       })
@@ -155,7 +155,7 @@ export default function AppsClient({ initialApps, initialTotalCount, initialNext
       }
 
       setApps(currentApps => appendNewApps(currentApps, nextPage.apps));
-      setTotalCount(nextPage.totalCount);
+      setTotalCount(currentCount => nextPage.totalCount ?? currentCount);
       setNextCursor(nextPage.nextCursor);
     } catch (error: unknown) {
       if (requestId !== activeRequestIdRef.current) {

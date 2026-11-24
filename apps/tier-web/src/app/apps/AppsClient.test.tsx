@@ -54,7 +54,7 @@ test.each(['success', 'failure'] as const)(
     const secondCursor = cursor('app-48', 'App 48');
     const nextPage = {
       apps: apps(25, 48),
-      totalCount: 49,
+      totalCount: null,
       nextCursor: secondCursor,
     };
     fetchPage.mockReturnValueOnce(first.promise);
@@ -99,6 +99,7 @@ test.each(['success', 'failure'] as const)(
       }
       expect(container.querySelectorAll('h3')).toHaveLength(48);
       expect(container.textContent).toContain('App 25');
+      expect(container.textContent).toContain('총 49개 결과');
       expect(moreButton()).toBeDefined();
       fetchPage.mockResolvedValueOnce({
         apps: [app('app-24', 'Renamed app 24'), ...apps(49, 49)],

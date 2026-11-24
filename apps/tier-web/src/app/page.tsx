@@ -34,7 +34,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     const firstPage = await fetchAppsPage(supabase, { tier });
 
     initialApps = firstPage.apps;
-    initialTotalCount = firstPage.totalCount;
+    initialTotalCount = firstPage.totalCount ?? 0;
     initialNextCursor = firstPage.nextCursor;
   } catch (error) {
     console.error('Error fetching apps:', error);

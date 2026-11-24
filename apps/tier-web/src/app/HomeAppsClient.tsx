@@ -105,7 +105,7 @@ export default function HomeAppsClient({
 
       setApps(currentApps => (readFailed ? nextPage.apps : appendNewApps(currentApps, nextPage.apps)));
       setReadFailed(false);
-      setTotalCount(nextPage.totalCount);
+      setTotalCount(currentCount => nextPage.totalCount ?? currentCount);
       setNextCursor(nextPage.nextCursor);
     } catch {
       if (requestId !== activeRequestIdRef.current) {

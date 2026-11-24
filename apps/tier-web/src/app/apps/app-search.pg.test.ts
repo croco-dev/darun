@@ -6,7 +6,10 @@ const databaseUrl = process.env.APP_SEARCH_TEST_DATABASE_URL;
 const restUrl = process.env.APP_SEARCH_TEST_POSTGREST_URL;
 
 describe.skipIf(!databaseUrl)('public app lists through PostgREST and PostgreSQL', () => {
-  const database = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_app_search');
+  let countUnavailable = false;
+  const database = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_app_search', async method => {
+    if (method === 'HEAD' && countUnavailable) throw new DOMException('Count request unavailable', 'AbortError');
+  });
   const { sql, client } = database;
   beforeAll(database.prepare);
   afterAll(database.close);
@@ -56,6 +59,21 @@ describe.skipIf(!databaseUrl)('public app lists through PostgREST and PostgreSQL
     expect(second.apps.map(app => app.name)).toEqual(['App 24', 'App 25']);
     expect(second.totalCount).toBe(mutation === 'insert' ? 27 : 25);
     expect(second.nextCursor).toBeNull();
+  });
+
+  it('returns the next page when the separate count request fails', async () => {
+    await sql`insert into apps (app_store_id, name)
+      select i::text, 'App ' || lpad(i::text, 2, '0') from generate_series(0, 26) i`;
+    const first = await fetchAppsPage(client);
+    countUnavailable = true;
+    try {
+      const second = await fetchAppsPage(client, { after: first.nextCursor });
+      expect(second.apps.map(app => app.name)).toEqual(['App 24', 'App 25', 'App 26']);
+      expect(second.totalCount).toBeNull();
+      expect(second.nextCursor).toBeNull();
+    } finally {
+      countUnavailable = false;
+    }
   });
 
   it('combines literal search with a quoted, tied name and ID boundary', async () => {

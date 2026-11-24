@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import type { AppListItem } from './apps/app-list';
+import type { AppListItem, fetchAppsPage } from './apps/app-list';
 import HomeAppsClient from './HomeAppsClient';
 
 const { fetchPage } = vi.hoisted(() => ({ fetchPage: vi.fn() }));
@@ -59,7 +59,7 @@ it.each(['resolve', 'reject'] as const)(
       iconUrl: null,
       tier: 1,
     });
-    const page = (id: string, hasNextPage = true) => ({
+    const page = (id: string, hasNextPage = true): Awaited<ReturnType<typeof fetchAppsPage>> => ({
       apps: [app(id)],
       totalCount: 4,
       nextCursor: hasNextPage ? { id, name: id } : null,
@@ -110,12 +110,13 @@ it.each(['resolve', 'reject'] as const)(
         { after: { id: 'current-first', name: 'current-first' }, tier: 1 },
       ]);
 
-      await act(async () => current.resolve(page('current-second')));
+      await act(async () => current.resolve({ ...page('current-second'), totalCount: null }));
       expect([...container.querySelectorAll('h3')].map(node => node.textContent)).toEqual([
         'current-first',
         'current-second',
       ]);
       expect(button().disabled).toBe(false);
+      expect(container.textContent).toContain('총 4개');
       await act(async () => scrollAndIntersect());
       expect(fetchPage).toHaveBeenLastCalledWith(
         {},

@@ -63,7 +63,8 @@ export function buildAppsSearchFilter(searchTerm: string) {
 }
 
 function quotePostgrestValue(value: string) {
-  return `"${value.replaceAll('\\', String.raw`\\`).replaceAll('"', String.raw`\"`)}"`;
+  const escaped = value.replaceAll('\\', String.raw`\\`).replaceAll('"', String.raw`\"`);
+  return `"${escaped}"`;
 }
 
 export async function fetchAppsPage(
@@ -71,12 +72,9 @@ export async function fetchAppsPage(
   { after, searchTerm = '', tier }: { after?: AppsCursor | null; searchTerm?: string; tier?: number } = {}
 ) {
   const search = normalizeAppsSearchTerm(searchTerm);
-  const columns =
-    tier === 0
-      ? `${APPS_SELECT},assigned_tier:tiers()`
-      : tier === undefined
-        ? APPS_SELECT
-        : APPS_SELECT.replace('tiers (', 'tiers!inner (');
+  let columns = APPS_SELECT;
+  if (tier === 0) columns = `${APPS_SELECT},assigned_tier:tiers()`;
+  else if (tier !== undefined) columns = APPS_SELECT.replace('tiers (', 'tiers!inner (');
   function filteredQuery(head = false) {
     let query = supabase.from('apps').select(columns, { head, count: head || !after ? 'exact' : undefined });
     // Tier 0 includes explicit zero and apps without a tier assignment.
@@ -92,23 +90,28 @@ export async function fetchAppsPage(
     const id = quotePostgrestValue(after.id);
     page = page.or(`name.gt.${name},and(name.eq.${name},id.gt.${id})`);
   }
-  const [result, total] = await Promise.all([
+  // Rows remain usable when the independent count request fails.
+  const countRequest = after
+    ? filteredQuery(true).then(
+        ({ count, error }) => (error ? null : count),
+        () => null
+      )
+    : null;
+  const [result, count] = await Promise.all([
     page
       .order('name', { ascending: true })
       .order('id', { ascending: true })
       .limit(APPS_PAGE_SIZE + 1)
       .overrideTypes<AppListRow[], { merge: false }>(),
-    // Keep the displayed count for the whole filtered list independent of the cursor.
-    after ? filteredQuery(true) : null,
+    countRequest,
   ]);
   if (result.error) throw new Error(result.error.message);
-  if (total?.error) throw new Error(total.error.message);
 
   const rows = result.data ?? [];
   const last = rows[APPS_PAGE_SIZE - 1];
   return {
     apps: rows.slice(0, APPS_PAGE_SIZE).map(mapAppListRow),
-    totalCount: total?.count ?? result.count ?? 0,
+    totalCount: after ? count : (result.count ?? 0),
     nextCursor: rows.length > APPS_PAGE_SIZE ? { name: last.name, id: last.id } : null,
   };
 }

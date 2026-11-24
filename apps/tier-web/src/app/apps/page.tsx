@@ -24,7 +24,7 @@ export default async function AllAppsPage() {
     <div className="page-shell py-10 md:py-14">
       <AppsClient
         initialApps={firstPage.apps}
-        initialTotalCount={firstPage.totalCount}
+        initialTotalCount={firstPage.totalCount ?? 0}
         initialNextCursor={firstPage.nextCursor}
       />
     </div>
