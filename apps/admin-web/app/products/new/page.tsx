@@ -10,8 +10,8 @@ export default function NewProductPage() {
       title="새로운 서비스"
       backHref="/products"
       rightSide={
-        <Button as={Link} href="/products/new/research" size="sm">
-          조사 이력
+        <Button as={Link} href="/products/new/research" target="_blank" rel="noopener" size="sm">
+          조사 이력 (새 탭)
         </Button>
       }
     >

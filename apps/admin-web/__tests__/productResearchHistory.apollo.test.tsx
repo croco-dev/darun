@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { MockedProvider } from '@apollo/client/testing/react';
-import { AdminProductResearchJobsDocument } from '@darun/provider-graphql';
+import { AdminProductResearchJobsOnProductResearchHistoryDocument } from '@darun/provider-graphql';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -29,8 +29,9 @@ it('빈 브라우저에서 다음 이력 페이지를 재시도하고 기존 상
     officialUrl: 'https://example.test/older',
     status: 'failed',
   };
-  const firstRequest = { query: AdminProductResearchJobsDocument, variables: { after: null } };
-  const olderRequest = { query: AdminProductResearchJobsDocument, variables: { after: 'next-page' } };
+  const query = AdminProductResearchJobsOnProductResearchHistoryDocument;
+  const firstRequest = { query, variables: { after: null } };
+  const olderRequest = { query, variables: { after: 'next-page' } };
   const first = {
     request: firstRequest,
     result: {
@@ -70,10 +71,12 @@ it('빈 브라우저에서 다음 이력 페이지를 재시도하고 기존 상
   const retry = await screen.findByRole('button', { name: '다시 조회' });
   expect(screen.getByRole('status').textContent).toBe('조사 이력을 불러오지 못했습니다.');
   expect(document.activeElement).toBe(next);
+  retry.focus();
   fireEvent.click(retry);
 
   const olderLink = await screen.findByRole('link', { name: /example\.test\/older\s*실패/ });
   expect(olderLink.getAttribute('href')).toBe('/products/new?researchJobId=older%20%2B%20job');
+  expect(document.activeElement).toBe(screen.getByRole('region', { name: '조사 작업 결과' }));
   expect(next.getAttribute('aria-disabled')).toBe('true');
   fireEvent.click(screen.getByRole('button', { name: '이전 페이지' }));
   expect(await screen.findByRole('link', { name: /example\.test\/new\s*진행 중/ })).toBeDefined();

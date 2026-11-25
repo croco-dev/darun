@@ -69,6 +69,11 @@ describe('Admin RSC Pages', () => {
     expect(React.isValidElement(element)).toBe(true);
     expect(element.props.title).toBe('새로운 서비스');
     expect(element.props.backHref).toBe('/products');
+    expect(element.props.rightSide.props).toMatchObject({
+      href: '/products/new/research',
+      target: '_blank',
+      rel: 'noopener',
+    });
   });
 
   it('NewCompanyPage renders PageShell with backHref=/companies without client hooks', () => {
