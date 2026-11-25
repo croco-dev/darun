@@ -109,3 +109,50 @@ it('소개 편집 충돌은 응답으로만 전달하고 예상 밖 오류는 �
     await Sentry.close(2000);
   }
 });
+
+it('관리자 작업의 이어 읽기 커서를 Sentry 이벤트에 남기지 않는다', async () => {
+  const sent = vi.fn(async () => ({}));
+  Sentry.init({
+    dsn: 'https://fixture@telemetry.invalid/1',
+    defaultIntegrations: false,
+    sendClientReports: false,
+    skipOpenTelemetrySetup: true,
+    transport: () => ({ send: sent, flush: async () => true }),
+  });
+  const read = () => {
+    throw new Error('Unexpected read failure');
+  };
+  const server = new ApolloServer({
+    typeDefs: `type Query {
+      translationJobPage(after: String): String
+      productDescriptionJobPage(after: String): String
+      otherPage(after: String): String
+    }`,
+    resolvers: { Query: { translationJobPage: read, productDescriptionJobPage: read, otherPage: read } },
+    plugins: [createGraphQLDiagnostics()],
+    formatError: (formatted, error) => formatServerError(formatted, error, false),
+  });
+  try {
+    await server.start();
+    const output = await server.executeOperation({
+      query: `query Continuations($boundary: String) {
+        translations: translationJobPage(after: $boundary)
+        descriptions: productDescriptionJobPage(after: "private-description-position")
+        otherPage(after: "public-position")
+      }`,
+      variables: { boundary: 'private-translation-position' },
+    });
+    if (output.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+    expect(output.body.singleResult.errors).toHaveLength(3);
+    expect(await Sentry.flush(2000)).toBe(true);
+    expect(sent).toHaveBeenCalledTimes(3);
+    const envelopes = JSON.stringify(sent.mock.calls);
+    expect(envelopes).not.toContain('private-translation-position');
+    expect(envelopes).not.toContain('private-description-position');
+    expect(envelopes).toContain('public-position');
+    expect(envelopes).toContain('[REDACTED]');
+  } finally {
+    await server.stop();
+    await Sentry.close(2000);
+  }
+});

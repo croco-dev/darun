@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node';
 import { Kind, parse, print, visit, type DocumentNode, type ValueNode } from 'graphql';
 
 const SECRET_ARGUMENTS: Record<string, true> = { apiKey: true, braveApiKey: true, exclusionNote: true };
+const ADMIN_JOB_PAGE_FIELDS = new Set(['translationJobPage', 'productDescriptionJobPage']);
 const REDACTED = '[REDACTED]';
 // Sentry names its protocol identity fields exactly where it uses them, so
 // redaction knows them by path instead of by leaf key: `event.type`, the trace
@@ -59,8 +60,15 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
     });
   };
   let redactedDocument = visit(document, {
-    Argument(node) {
-      if (!Object.prototype.hasOwnProperty.call(SECRET_ARGUMENTS, node.name.value)) return;
+    Argument(node, _key, _parent, _path, ancestors) {
+      const field = ancestors[ancestors.length - 1];
+      const privateJobCursor =
+        node.name.value === 'after' &&
+        field &&
+        'kind' in field &&
+        field.kind === Kind.FIELD &&
+        ADMIN_JOB_PAGE_FIELDS.has(field.name.value);
+      if (!privateJobCursor && !Object.prototype.hasOwnProperty.call(SECRET_ARGUMENTS, node.name.value)) return;
       if (node.value.kind === Kind.VARIABLE) {
         secretVariables.add(node.value.name.value);
         collectSecret(variables?.[node.value.name.value]);

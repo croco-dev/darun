@@ -123,20 +123,23 @@ describe('LlmJobListSection', () => {
           data:
             document === GetProductDescriptionJobsOnAdminDocument
               ? {
-                  productDescriptionJobs: [
-                    {
-                      id: 'legacy-description',
-                      productId: 'product-legacy',
-                      productSlug: 'legacy-product',
-                      status,
-                      message: 'AI 소개 생성이 완료되었습니다.',
-                      error: '이전 공급자 503 오류',
-                      createdAt: '2026-09-17T06:00:00.000Z',
-                      updatedAt: '2026-09-17T06:01:00.000Z',
-                    },
-                  ],
+                  productDescriptionJobPage: {
+                    jobs: [
+                      {
+                        id: 'legacy-description',
+                        productId: 'product-legacy',
+                        productSlug: 'legacy-product',
+                        status,
+                        message: 'AI 소개 생성이 완료되었습니다.',
+                        error: '이전 공급자 503 오류',
+                        createdAt: '2026-09-17T06:00:00.000Z',
+                        updatedAt: '2026-09-17T06:01:00.000Z',
+                      },
+                    ],
+                    nextCursor: null,
+                  },
                 }
-              : { translationJobs: [] },
+              : { translationJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
           refetch: vi.fn(),
@@ -189,7 +192,9 @@ describe('LlmJobListSection', () => {
     vi.mocked(useQuery).mockImplementation(document => {
       if (document === GetTranslationJobsOnAdminDocument) {
         return {
-          data: { translationJobs: mockTranslationJobs },
+          data: {
+            translationJobPage: { jobs: mockTranslationJobs, nextCursor: null },
+          },
           loading: false,
           error: undefined,
           refetch: vi.fn(),
@@ -197,15 +202,23 @@ describe('LlmJobListSection', () => {
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
         return {
-          data: { productDescriptionJobs: mockDescriptionJobs },
+          data: {
+            productDescriptionJobPage: {
+              jobs: mockDescriptionJobs,
+              nextCursor: null,
+            },
+          },
           loading: false,
           error: undefined,
           refetch: vi.fn(),
         } as unknown as ReturnType<typeof useQuery>;
       }
-      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
-        typeof useQuery
-      >;
+      return {
+        data: undefined,
+        loading: false,
+        error: undefined,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useQuery>;
     });
 
     render(<LlmJobListSection />);
@@ -248,7 +261,7 @@ describe('LlmJobListSection', () => {
     vi.mocked(useQuery).mockImplementation(document => {
       if (document === GetTranslationJobsOnAdminDocument) {
         return {
-          data: { translationJobs: [] },
+          data: { translationJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
           refetch: vi.fn(),
@@ -256,15 +269,23 @@ describe('LlmJobListSection', () => {
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
         return {
-          data: { productDescriptionJobs: mockDescriptionJobs },
+          data: {
+            productDescriptionJobPage: {
+              jobs: mockDescriptionJobs,
+              nextCursor: null,
+            },
+          },
           loading: false,
           error: undefined,
           refetch: refetchDesc,
         } as unknown as ReturnType<typeof useQuery>;
       }
-      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
-        typeof useQuery
-      >;
+      return {
+        data: undefined,
+        loading: false,
+        error: undefined,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useQuery>;
     });
 
     render(<LlmJobListSection />);
@@ -300,7 +321,9 @@ describe('LlmJobListSection', () => {
     vi.mocked(useQuery).mockImplementation(document => {
       if (document === GetTranslationJobsOnAdminDocument) {
         return {
-          data: { translationJobs: mockTranslationJobs },
+          data: {
+            translationJobPage: { jobs: mockTranslationJobs, nextCursor: null },
+          },
           loading: false,
           error: undefined,
           refetch: refetchTrans,
@@ -308,15 +331,18 @@ describe('LlmJobListSection', () => {
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
         return {
-          data: { productDescriptionJobs: [] },
+          data: { productDescriptionJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
           refetch: vi.fn(),
         } as unknown as ReturnType<typeof useQuery>;
       }
-      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
-        typeof useQuery
-      >;
+      return {
+        data: undefined,
+        loading: false,
+        error: undefined,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useQuery>;
     });
 
     render(<LlmJobListSection />);
@@ -349,7 +375,7 @@ describe('LlmJobListSection', () => {
     vi.mocked(useQuery).mockImplementation(document => {
       if (document === GetTranslationJobsOnAdminDocument) {
         return {
-          data: { translationJobs: [] },
+          data: { translationJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
           refetch: vi.fn(),
@@ -357,15 +383,23 @@ describe('LlmJobListSection', () => {
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
         return {
-          data: { productDescriptionJobs: mockDescriptionJobs },
+          data: {
+            productDescriptionJobPage: {
+              jobs: mockDescriptionJobs,
+              nextCursor: null,
+            },
+          },
           loading: false,
           error: undefined,
           refetch: vi.fn(),
         } as unknown as ReturnType<typeof useQuery>;
       }
-      return { data: undefined, loading: false, error: undefined, refetch: vi.fn() } as unknown as ReturnType<
-        typeof useQuery
-      >;
+      return {
+        data: undefined,
+        loading: false,
+        error: undefined,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useQuery>;
     });
 
     render(<LlmJobListSection />);

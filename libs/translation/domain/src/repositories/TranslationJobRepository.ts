@@ -59,4 +59,13 @@ export interface TranslationJobRepository {
     limit?: number;
     offset?: number;
   }): Promise<TranslationJobEntity[]>;
+
+  findJobPage(options: {
+    status?: TranslationJobStatus;
+    limit: number;
+    after?: { createdAt: string; id: string };
+  }): Promise<{
+    jobs: TranslationJobEntity[];
+    next?: { createdAt: string; id: string };
+  }>;
 }

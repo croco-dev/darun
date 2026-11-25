@@ -67,4 +67,13 @@ export interface ProductDescriptionJobRepository {
     limit?: number;
     offset?: number;
   }): Promise<ProductDescriptionJobSummary[]>;
+
+  findJobPage(options: {
+    status?: ProductDescriptionJobStatus;
+    limit: number;
+    after?: { createdAt: string; id: string };
+  }): Promise<{
+    jobs: ProductDescriptionJobSummary[];
+    next?: { createdAt: string; id: string };
+  }>;
 }
