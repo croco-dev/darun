@@ -135,21 +135,20 @@ suite('GraphQL과 PostgreSQL을 통한 관리자 작업 이력 조회', () => {
       );
       expect(first.nextCursor).toBeTruthy();
 
-      await sql`update ${sql(table)} set status = 'completed' where id in ('job-102', 'job-101', 'job-003')`;
+      await sql`update ${sql(table)} set status = 'completed' where id in ('job-102', 'job-101')`;
       await sql`insert into ${sql(table)} select (jsonb_populate_record(null::${sql(table)},
       to_jsonb(row) || '{"id":"a-newer-job","created_at":"2026-11-24T12:00:00.123457"}'::jsonb)).*
       from ${sql(table)} row where id = 'job-100'`;
 
-      const after = first.nextCursor!;
-      const continuation = await page(field, {
-        status: 'in_progress',
-        first: 100,
-        after,
-      });
-      expect(continuation).toEqual({
+      const continuationVariables = { status: 'in_progress', first: 100, after: first.nextCursor! };
+      const expectedContinuation = {
         jobs: [{ id: 'job-002' }, { id: 'z-older-job' }],
         nextCursor: null,
-      });
+      };
+      expect(await page(field, continuationVariables)).toEqual(expectedContinuation);
+
+      await sql`update ${sql(table)} set status = 'completed' where id = 'job-003'`;
+      expect(await page(field, continuationVariables)).toEqual(expectedContinuation);
       expect((await page(field, { status: 'in_progress', first: 1 })).jobs).toEqual([{ id: 'a-newer-job' }]);
       if (table === 'product_description_jobs') {
         expect(

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
 import {
   GetProductDescriptionJobsOnAdminDocument,
   GetTranslationJobsOnAdminDocument,
@@ -10,7 +10,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LlmJobListSection } from '../features/llm-jobs/LlmJobListSection';
-const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+const { push, mockWatchPage, mockReadPage } = vi.hoisted(() => ({
+  push: vi.fn(),
+  mockWatchPage: vi.fn<(document: unknown) => object>(),
+  mockReadPage: vi.fn(),
+}));
 vi.mock('@darun/utils-router', () => ({
   useRouter: () => ({ push }),
   usePathname: () => '/llm-jobs',
@@ -18,7 +22,10 @@ vi.mock('@darun/utils-router', () => ({
 }));
 
 vi.mock('@apollo/client/react', () => ({
-  useQuery: vi.fn(),
+  useQuery: (document: unknown) => ({
+    ...mockWatchPage(document),
+    client: { query: mockReadPage },
+  }),
   useMutation: vi.fn(),
 }));
 
@@ -42,13 +49,28 @@ vi.mock('@darun/ui-admin', async importOriginal => {
   };
 });
 
+function watchJobLists({
+  translations = [],
+  descriptions = [],
+}: { translations?: object[]; descriptions?: object[] } = {}) {
+  mockWatchPage.mockImplementation(document => {
+    if (document === GetTranslationJobsOnAdminDocument) {
+      return { data: { translationJobPage: { jobs: translations, nextCursor: null } } };
+    }
+    if (document === GetProductDescriptionJobsOnAdminDocument) {
+      return { data: { productDescriptionJobPage: { jobs: descriptions, nextCursor: null } } };
+    }
+    return {};
+  });
+}
+
 describe('LlmJobListSection', () => {
-  const mockReadPage = vi.fn();
   const mockRetryTranslation = vi.fn();
   const mockRetryDescription = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    watchJobLists();
     mockReadPage.mockResolvedValue({
       data: {
         translationJobPage: { jobs: [], nextCursor: null },
@@ -82,24 +104,14 @@ describe('LlmJobListSection', () => {
   });
 
   it('로딩 중일 때 로딩 상태를 렌더링한다', () => {
-    vi.mocked(useQuery).mockReturnValue({
-      data: undefined,
-      loading: true,
-      error: undefined,
-      client: { query: mockReadPage },
-    } as unknown as ReturnType<typeof useQuery>);
+    mockWatchPage.mockReturnValue({ loading: true });
 
     render(<LlmJobListSection />);
     expect(screen.getByText('불러오는 중...')).toBeDefined();
   });
 
   it('에러 발생 시 에러 상태와 다시 시도 버튼을 렌더링한다', () => {
-    vi.mocked(useQuery).mockReturnValue({
-      data: undefined,
-      loading: false,
-      error: new Error('Failed to fetch jobs'),
-      client: { query: mockReadPage },
-    } as unknown as ReturnType<typeof useQuery>);
+    mockWatchPage.mockReturnValue({ error: new Error('Failed to fetch jobs') });
 
     render(<LlmJobListSection />);
     expect(screen.getByText('문제가 발생했습니다.')).toBeDefined();
@@ -114,46 +126,25 @@ describe('LlmJobListSection', () => {
   });
 
   it('작업이 없을 때 빈 상태 메시지를 렌더링한다', () => {
-    vi.mocked(useQuery).mockReturnValue({
-      data: undefined,
-      loading: false,
-      error: undefined,
-      client: { query: mockReadPage },
-    } as unknown as ReturnType<typeof useQuery>);
-
     render(<LlmJobListSection />);
     expect(screen.getByText('등록된 LLM 작업이 없습니다.')).toBeDefined();
   });
 
   it.each(['completed', 'pending', 'failed'] as const)('%s 소개 작업은 완료 안내와 현재 실패를 구분한다', status => {
-    vi.mocked(useQuery).mockImplementation(
-      document =>
-        ({
-          data:
-            document === GetProductDescriptionJobsOnAdminDocument
-              ? {
-                  productDescriptionJobPage: {
-                    jobs: [
-                      {
-                        id: 'legacy-description',
-                        productId: 'product-legacy',
-                        productSlug: 'legacy-product',
-                        status,
-                        message: 'AI 소개 생성이 완료되었습니다.',
-                        error: '이전 공급자 503 오류',
-                        createdAt: '2026-09-17T06:00:00.000Z',
-                        updatedAt: '2026-09-17T06:01:00.000Z',
-                      },
-                    ],
-                    nextCursor: null,
-                  },
-                }
-              : { translationJobPage: { jobs: [], nextCursor: null } },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        }) as unknown as ReturnType<typeof useQuery>
-    );
+    watchJobLists({
+      descriptions: [
+        {
+          id: 'legacy-description',
+          productId: 'product-legacy',
+          productSlug: 'legacy-product',
+          status,
+          message: 'AI 소개 생성이 완료되었습니다.',
+          error: '이전 공급자 503 오류',
+          createdAt: '2026-09-17T06:00:00.000Z',
+          updatedAt: '2026-09-17T06:01:00.000Z',
+        },
+      ],
+    });
 
     render(<LlmJobListSection />);
     const row = within(screen.getByText('product-legacy').closest('tr')!);
@@ -198,37 +189,7 @@ describe('LlmJobListSection', () => {
       },
     ];
 
-    vi.mocked(useQuery).mockImplementation(document => {
-      if (document === GetTranslationJobsOnAdminDocument) {
-        return {
-          data: {
-            translationJobPage: { jobs: mockTranslationJobs, nextCursor: null },
-          },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      if (document === GetProductDescriptionJobsOnAdminDocument) {
-        return {
-          data: {
-            productDescriptionJobPage: {
-              jobs: mockDescriptionJobs,
-              nextCursor: null,
-            },
-          },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      return {
-        data: undefined,
-        loading: false,
-        error: undefined,
-        client: { query: mockReadPage },
-      } as unknown as ReturnType<typeof useQuery>;
-    });
+    watchJobLists({ translations: mockTranslationJobs, descriptions: mockDescriptionJobs });
 
     render(<LlmJobListSection />);
 
@@ -266,35 +227,7 @@ describe('LlmJobListSection', () => {
       },
     ];
 
-    vi.mocked(useQuery).mockImplementation(document => {
-      if (document === GetTranslationJobsOnAdminDocument) {
-        return {
-          data: { translationJobPage: { jobs: [], nextCursor: null } },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      if (document === GetProductDescriptionJobsOnAdminDocument) {
-        return {
-          data: {
-            productDescriptionJobPage: {
-              jobs: mockDescriptionJobs,
-              nextCursor: null,
-            },
-          },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      return {
-        data: undefined,
-        loading: false,
-        error: undefined,
-        client: { query: mockReadPage },
-      } as unknown as ReturnType<typeof useQuery>;
-    });
+    watchJobLists({ descriptions: mockDescriptionJobs });
 
     render(<LlmJobListSection />);
 
@@ -327,32 +260,7 @@ describe('LlmJobListSection', () => {
       },
     ];
 
-    vi.mocked(useQuery).mockImplementation(document => {
-      if (document === GetTranslationJobsOnAdminDocument) {
-        return {
-          data: {
-            translationJobPage: { jobs: mockTranslationJobs, nextCursor: null },
-          },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      if (document === GetProductDescriptionJobsOnAdminDocument) {
-        return {
-          data: { productDescriptionJobPage: { jobs: [], nextCursor: null } },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      return {
-        data: undefined,
-        loading: false,
-        error: undefined,
-        client: { query: mockReadPage },
-      } as unknown as ReturnType<typeof useQuery>;
-    });
+    watchJobLists({ translations: mockTranslationJobs });
 
     render(<LlmJobListSection />);
 
@@ -381,35 +289,7 @@ describe('LlmJobListSection', () => {
       },
     ];
 
-    vi.mocked(useQuery).mockImplementation(document => {
-      if (document === GetTranslationJobsOnAdminDocument) {
-        return {
-          data: { translationJobPage: { jobs: [], nextCursor: null } },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      if (document === GetProductDescriptionJobsOnAdminDocument) {
-        return {
-          data: {
-            productDescriptionJobPage: {
-              jobs: mockDescriptionJobs,
-              nextCursor: null,
-            },
-          },
-          loading: false,
-          error: undefined,
-          client: { query: mockReadPage },
-        } as unknown as ReturnType<typeof useQuery>;
-      }
-      return {
-        data: undefined,
-        loading: false,
-        error: undefined,
-        client: { query: mockReadPage },
-      } as unknown as ReturnType<typeof useQuery>;
-    });
+    watchJobLists({ descriptions: mockDescriptionJobs });
 
     render(<LlmJobListSection />);
 
