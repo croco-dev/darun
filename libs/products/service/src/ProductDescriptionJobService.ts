@@ -91,6 +91,10 @@ export class ProductDescriptionJobService {
     return this.productDescriptionJobRepository.findJobs(options);
   }
 
+  getJobPage(options: Parameters<ProductDescriptionJobRepository['findJobPage']>[0]) {
+    return this.productDescriptionJobRepository.findJobPage(options);
+  }
+
   async retryProductDescriptionJob(
     jobId: string,
     requestId?: string | null

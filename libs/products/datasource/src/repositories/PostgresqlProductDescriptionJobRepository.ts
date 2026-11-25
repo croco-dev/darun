@@ -20,6 +20,31 @@ import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-o
 import { Inject, Service } from 'typedi';
 import { type ProductDescriptionJobRow, productDescriptionJobs } from '../entities/ProductDescriptionJobSchema';
 
+const descriptionJobSummaryColumns = {
+  id: productDescriptionJobs.id,
+  productId: productDescriptionJobs.productId,
+  status: productDescriptionJobs.status,
+  message: productDescriptionJobs.message,
+  error: productDescriptionJobs.error,
+  evidenceHash: productDescriptionJobs.evidenceHash,
+  evidenceHashVersion: productDescriptionJobs.evidenceHashVersion,
+  baseDescriptionHash: productDescriptionJobs.baseDescriptionHash,
+  writerModel: productDescriptionJobs.writerModel,
+  reviewerModel: productDescriptionJobs.reviewerModel,
+  writerPromptVersion: productDescriptionJobs.writerPromptVersion,
+  reviewerPromptVersion: productDescriptionJobs.reviewerPromptVersion,
+  rendererVersion: productDescriptionJobs.rendererVersion,
+  leaseToken: productDescriptionJobs.leaseToken,
+  leaseUntil: productDescriptionJobs.leaseUntil,
+  attemptCount: productDescriptionJobs.attemptCount,
+  runNotBefore: productDescriptionJobs.runNotBefore,
+  nextDispatchAt: productDescriptionJobs.nextDispatchAt,
+  retryOfJobId: productDescriptionJobs.retryOfJobId,
+  appliedAt: productDescriptionJobs.appliedAt,
+  createdAt: productDescriptionJobs.createdAt,
+  updatedAt: productDescriptionJobs.updatedAt,
+};
+
 type JobDbTx = Parameters<Parameters<Drizzle['transaction']>[0]>[0];
 
 @Service(ProductDescriptionJobRepositoryToken)
@@ -310,32 +335,7 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       const limit = Math.min(options?.limit ?? 50, 100);
       const offset = Math.max(options?.offset ?? 0, 0);
 
-      const baseQuery = this.db
-        .select({
-          id: productDescriptionJobs.id,
-          productId: productDescriptionJobs.productId,
-          status: productDescriptionJobs.status,
-          message: productDescriptionJobs.message,
-          error: productDescriptionJobs.error,
-          evidenceHash: productDescriptionJobs.evidenceHash,
-          evidenceHashVersion: productDescriptionJobs.evidenceHashVersion,
-          baseDescriptionHash: productDescriptionJobs.baseDescriptionHash,
-          writerModel: productDescriptionJobs.writerModel,
-          reviewerModel: productDescriptionJobs.reviewerModel,
-          writerPromptVersion: productDescriptionJobs.writerPromptVersion,
-          reviewerPromptVersion: productDescriptionJobs.reviewerPromptVersion,
-          rendererVersion: productDescriptionJobs.rendererVersion,
-          leaseToken: productDescriptionJobs.leaseToken,
-          leaseUntil: productDescriptionJobs.leaseUntil,
-          attemptCount: productDescriptionJobs.attemptCount,
-          runNotBefore: productDescriptionJobs.runNotBefore,
-          nextDispatchAt: productDescriptionJobs.nextDispatchAt,
-          retryOfJobId: productDescriptionJobs.retryOfJobId,
-          appliedAt: productDescriptionJobs.appliedAt,
-          createdAt: productDescriptionJobs.createdAt,
-          updatedAt: productDescriptionJobs.updatedAt,
-        })
-        .from(productDescriptionJobs);
+      const baseQuery = this.db.select(descriptionJobSummaryColumns).from(productDescriptionJobs);
 
       const rows = options?.status
         ? await baseQuery
@@ -349,6 +349,34 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
             .offset(offset);
 
       return rows.map(row => this.toSummary(row));
+    } catch (error) {
+      throw databaseReadFailed(error);
+    }
+  }
+
+  async findJobPage({ status, limit, after }: Parameters<ProductDescriptionJobRepository['findJobPage']>[0]) {
+    try {
+      const rows = await this.db
+        .select({
+          ...descriptionJobSummaryColumns,
+          cursorCreatedAt: sql<string>`to_char(${productDescriptionJobs.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.US')`,
+        })
+        .from(productDescriptionJobs)
+        .where(
+          and(
+            status ? eq(productDescriptionJobs.status, status) : undefined,
+            after
+              ? sql`(${productDescriptionJobs.createdAt}, ${productDescriptionJobs.id}) < (${after.createdAt}::timestamp, ${after.id})`
+              : undefined
+          )
+        )
+        .orderBy(desc(productDescriptionJobs.createdAt), desc(productDescriptionJobs.id))
+        .limit(limit + 1);
+      const last = rows.length > limit ? rows[limit - 1] : undefined;
+      return {
+        jobs: rows.slice(0, limit).map(row => this.toSummary(row)),
+        next: last && { createdAt: last.cursorCreatedAt, id: last.id },
+      };
     } catch (error) {
       throw databaseReadFailed(error);
     }

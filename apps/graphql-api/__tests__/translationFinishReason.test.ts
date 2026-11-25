@@ -82,6 +82,7 @@ describe('translation job completion reasons', () => {
         completeJobLease: vi.fn(),
         findRecoverableJobs: vi.fn(),
         findJobs: vi.fn(),
+        findJobPage: vi.fn(),
       };
       const sourceStore: TranslationSourceStore = {
         read: vi.fn().mockResolvedValue(snapshot),

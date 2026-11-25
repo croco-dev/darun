@@ -450,6 +450,11 @@ type ProductDescriptionJob {
   writerModel: String
 }
 
+type ProductDescriptionJobPage {
+  jobs: [ProductDescriptionJob!]!
+  nextCursor: String
+}
+
 type ProductEdge {
   cursor: String!
   node: Product!
@@ -558,6 +563,7 @@ type Query {
   """
   productContentSyncStatus(slug: String!): ProductContentSyncOverview!
   productDescriptionJob(id: String!): ProductDescriptionJob
+  productDescriptionJobPage(after: String, first: Int, status: String): ProductDescriptionJobPage!
   productDescriptionJobs(limit: Int, offset: Int, status: String): [ProductDescriptionJob!]!
   productResearchJob(id: String!): ProductResearchJob
   productsByCategory(after: String, first: Int! = 24, locale: String! = "ko", slug: String!): ProductConnection!
@@ -577,6 +583,7 @@ type Query {
   """
   translationFreshness(entityId: String!, entityType: String!, fields: [String!]!): [TranslationFreshness!]!
   translationJob(id: String!): TranslationJob
+  translationJobPage(after: String, first: Int, status: String): TranslationJobPage!
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
   visualAppSuggestions(first: Int! = 8, query: String!): [Product!]!
   visualApps(after: String, first: Int! = 24, productSlug: String, query: String): ProductConnection!
@@ -737,6 +744,11 @@ type TranslationJob {
   runNotBefore: DateTimeISO
   status: String!
   updatedAt: DateTimeISO
+}
+
+type TranslationJobPage {
+  jobs: [TranslationJob!]!
+  nextCursor: String
 }
 
 input UpdateAlternativeProductInput {

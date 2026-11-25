@@ -20,6 +20,7 @@ const groups = {
     '__tests__/translationIntegrity.pg.test.ts': 'TRANSLATION_TEST_DATABASE_URL',
     '__tests__/alternativeReplacement.pg.test.ts': 'ALTERNATIVE_TEST_DATABASE_URL',
     '__tests__/productDetailFreshness.pg.test.ts': 'PRODUCT_DETAIL_TEST_DATABASE_URL',
+    '__tests__/adminJobHistory.pg.test.ts': 'ADMIN_JOB_HISTORY_TEST_DATABASE_URL',
     '__tests__/adminProductFlowPagination.pg.test.ts': 'ADMIN_FLOW_TEST_DATABASE_URL',
     '__tests__/screenshotFlowPagination.pg.test.ts': 'RELATED_FLOW_TEST_DATABASE_URL',
   },

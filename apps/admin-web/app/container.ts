@@ -6,8 +6,12 @@ import { RetryLink } from '@apollo/client/link/retry';
 import { productLinkSchemaCompatibility } from '@darun/products-feature';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
+import { llmJobHistoryCompatibility } from '../features/llm-jobs/llmJobHistoryCompatibility';
 
-const httpErrorLink = new ErrorLink(({ error }) => {
+const httpErrorLink = new ErrorLink(({ error, operation }) => {
+  const fetchOptions = operation.getContext().fetchOptions as RequestInit | undefined;
+  if (error.name === 'AbortError' && fetchOptions?.signal?.aborted) return;
+
   if (CombinedGraphQLErrors.is(error)) {
     for (const entry of error.errors) {
       if (!entry) continue;
@@ -77,6 +81,7 @@ const apolloClient = new ApolloClient({
     httpErrorLink,
     createTimeoutLink(),
     productLinkSchemaCompatibility,
+    llmJobHistoryCompatibility,
     operationExtensionsLink,
     httpLink,
   ]),

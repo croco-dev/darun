@@ -679,7 +679,7 @@ suite별 실행 건수와 skip 건수를 기록합니다. lease 검사는 `W4_PG
 `darun_lease_integrity` DB만 허용하며 기존 개발 DB를 기본값으로 사용하지 않습니다.
 
 일반 `pnpm test`는 URL 또는 opt-in이 없는 DB suite를 계속 건너뜁니다. 직접 검증하려면
-**격리된 로컬 PostgreSQL**에 다음 URL의 DB 9개를 먼저 생성하고 CI와 같은 명령을 실행합니다.
+**격리된 로컬 PostgreSQL**에 다음 URL의 DB 13개를 먼저 생성하고 세 그룹을 CI와 같은 명령으로 실행합니다.
 예시 포트는 PR CI와 같은 `55437`입니다. 각 suite가 자기 DB의 migration을 준비합니다.
 
 ```bash
@@ -688,6 +688,10 @@ export TRANSLATION_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/daru
 export ATOMIC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
 export ALTERNATIVE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity
 export PRODUCT_DETAIL_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_detail_freshness
+export RELATED_FLOW_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_related_flows
+export ADMIN_FLOW_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_admin_flows
+export ADMIN_JOB_HISTORY_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_job_history
+export VISUAL_SAVE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_visual_save
 export FLOW_DETAIL_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_flow_detail
 export DESCRIPTION_EVIDENCE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity
 export W4_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity
@@ -695,8 +699,8 @@ export MIGRATION_BASELINE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:554
 export W4_PG=1
 reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"
 REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$reporter"
-REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts --reporter=default --reporter="$reporter"
-REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts src/__tests__/ProductFlowDetail.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts __tests__/screenshotFlowPagination.pg.test.ts __tests__/adminProductFlowPagination.pg.test.ts __tests__/adminJobHistory.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts src/__tests__/ProductFlowDetail.pg.test.ts src/__tests__/VisualSave.pg.test.ts --reporter=default --reporter="$reporter"
 ```
 
 PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
@@ -766,8 +770,13 @@ nullable 응답을 처리하는 웹을 먼저 배포한 뒤 API를 배포할 수
 보장하지 않습니다. 완료된 작업의 후보·적용 이력과 기존 claim/lease/recovery는 유지합니다.
 
 관리자 `translationJobs`는 기본 50건, `limit` 1~100 정수와 `offset` 0 이상의 안전한 정수를 허용합니다. `status`는 `pending`, `in_progress`, `completed`, `failed`, `superseded`만 허용하며 생략 또는 `null`이면 전체 상태를 조회합니다. 잘못된 입력은 서비스와 SQL 실행 전에 `translation/invalid-job-list-args`로 거절하며 저장소 직접 호출에도 같은 검증을 적용합니다. 입력 오류를 정상 빈 목록으로 처리하거나 한도 안으로 자동 보정하지 않습니다.
-관리자 목록의 번역 더보기와 이미 읽은 목록의 갱신은 100건씩 `offset`으로 조회합니다. 더보기 실패 시 기존 행을 유지하고 같은 위치에서 재시도하며, 필터 변경 전 요청의 늦은 응답은 현재 목록에 합치지 않습니다.
-번역 작업은 `createdAt DESC, id DESC`로 정렬해 생성 시각이 같아도 페이지 경계의 순서를 고정합니다.
+관리자 작업 목록은 `translationJobPage`와 `productDescriptionJobPage`로 각각 100건씩 읽습니다.
+`nextCursor`가 있으면 같은 작업 종류와 상태의 다음 요청에 `after`로 전달합니다. 커서는 마지막 행의 생성 시각을 마이크로초까지 보존하고, 같은 시각의 행은 ID 내림차순으로 이어 읽습니다. 앞쪽 작업이 상태 필터에서 빠지거나 새 작업이 추가되어도 이전 경계 뒤에서 이어집니다.
+갱신은 첫 페이지를 요청한 뒤 열린 페이지 수만큼 새 경계로 다시 읽습니다. 더보기 실패 시 기존 행을 유지하고 같은 커서로 재시도합니다.
+기존 `translationJobs`와 `productDescriptionJobs`의 offset 호출은 계속 지원합니다. 관리자 웹이 먼저 배포되어 API에 페이지 필드가 아직 없으면 기존 offset 목록으로 읽습니다. 다음 갱신에서 새 필드를 사용할 수 있으면 커서로 이어 읽습니다.
+
+격리된 로컬 `darun_job_history` DB를 `ADMIN_JOB_HISTORY_TEST_DATABASE_URL`로 지정하고
+`pnpm --filter graphql-api exec vitest run __tests__/adminJobHistory.pg.test.ts`를 실행하면 두 목록에서 상태 변경·신규 삽입 전후의 페이지 경계와 권한을 확인할 수 있습니다.
 
 번역·소개 작업의 단건/목록 조회는 SELECT가 성공한 경우에만 `null`/빈 목록을 반환합니다. 접속·시간 초과는 `database/read-unavailable`, 테이블·컬럼 등 스키마 불일치는 `database/read-schema-invalid`, 나머지 조회 실패는 `database/read-failed`로 전달하며 SQL·parameter·원시 cause를 포함하지 않습니다. 관리자 목록은 일부 조회가 실패해도 이미 읽은 행과 오류 안내를 함께 표시합니다. 목록의 다시 시도와 후보 ID 다시 열기는 조회만 반복하며 작업 생성·큐 전송을 자동 실행하지 않습니다.
 

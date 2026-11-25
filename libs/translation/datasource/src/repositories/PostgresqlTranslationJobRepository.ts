@@ -10,7 +10,7 @@ import {
   translationJobListArgs,
 } from '@darun/translation-domain';
 import { JOB_DISPATCH_RESERVATION_MS, JOB_MAX_ATTEMPTS, jobDispatchStatus, jobRetryDelay } from '@darun/utils-llm';
-import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, gt, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { translationJobs, type TranslationJobRow } from '../entities/TranslationJobSchema';
 
@@ -432,6 +432,34 @@ export class PostgresqlTranslationJobRepository implements TranslationJobReposit
         .offset(offset);
 
       return rows.map(row => this.toEntity(row));
+    } catch (error) {
+      throw databaseReadFailed(error);
+    }
+  }
+
+  async findJobPage({ status, limit, after }: Parameters<TranslationJobRepository['findJobPage']>[0]) {
+    try {
+      const rows = await this.db
+        .select({
+          ...getTableColumns(translationJobs),
+          cursorCreatedAt: sql<string>`to_char(${translationJobs.createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.US')`,
+        })
+        .from(translationJobs)
+        .where(
+          and(
+            status ? eq(translationJobs.status, status) : undefined,
+            after
+              ? sql`(${translationJobs.createdAt}, ${translationJobs.id}) < (${after.createdAt}::timestamp, ${after.id})`
+              : undefined
+          )
+        )
+        .orderBy(desc(translationJobs.createdAt), desc(translationJobs.id))
+        .limit(limit + 1);
+      const last = rows.length > limit ? rows[limit - 1] : undefined;
+      return {
+        jobs: rows.slice(0, limit).map(row => this.toEntity(row)),
+        next: last && { createdAt: last.cursorCreatedAt, id: last.id },
+      };
     } catch (error) {
       throw databaseReadFailed(error);
     }

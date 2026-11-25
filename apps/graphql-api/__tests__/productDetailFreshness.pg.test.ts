@@ -67,6 +67,7 @@ import {
   TempProductBySlugOnEditProductDescriptionDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
+  type GetProductDescriptionJobsOnAdminQuery,
 } from '../../../libs/__generated__/graphql';
 import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
 import { ProductCoreMutationResolver } from '../../../libs/products/feature/src/ProductCoreMutationResolver';
@@ -1220,10 +1221,10 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         authChecker: ({ context }) => context.admin === true,
       });
       const read = () =>
-        execute({
+        execute<GetProductDescriptionJobsOnAdminQuery>({
           schema,
           document: GetProductDescriptionJobsOnAdminDocument,
-          variableValues: { limit: count },
+          variableValues: { first: count },
           contextValue: { admin: true },
         });
       return { schema, read, jobs, rows };
@@ -1237,7 +1238,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       const result = await read();
       expect(result.errors).toBeUndefined();
       const byId = new Map(rows.map(row => [row.id, row.slug]));
-      expect(result.data?.productDescriptionJobs).toEqual(
+      expect(result.data?.productDescriptionJobPage.jobs).toEqual(
         [...jobs].reverse().map(job =>
           expect.objectContaining({
             id: job.id,
@@ -1258,7 +1259,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         message = 'done-' || id, writer_model = 'writer', reviewer_model = 'reviewer'`;
       const result = await read();
       expect(result.errors).toBeUndefined();
-      expect(result.data?.productDescriptionJobs).toEqual(
+      expect(result.data?.productDescriptionJobPage.jobs).toEqual(
         [...jobs].reverse().map(job =>
           expect.objectContaining({
             id: job.id,
@@ -1411,11 +1412,11 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
     it('같은 warm reader의 다음 요청은 별도 writer의 commit·rollback·삭제·재생성을 반영한다', async () => {
       const { schema, read, rows } = await fixture(1);
-      expect((await read()).data?.productDescriptionJobs).toEqual([
+      expect((await read()).data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'current-product-0' }),
       ]);
       await writer`update products set slug = 'renamed-product' where id = ${rows[0].id}`;
-      expect((await read()).data?.productDescriptionJobs).toEqual([
+      expect((await read()).data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'renamed-product' }),
       ]);
       await expect(
@@ -1424,19 +1425,19 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           throw new Error('synthetic rollback');
         })
       ).rejects.toThrow('synthetic rollback');
-      expect((await read()).data?.productDescriptionJobs).toEqual([
+      expect((await read()).data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'renamed-product' }),
       ]);
       await writer`delete from products where id = ${rows[0].id}`;
       const missing = await read();
       expect(missing.errors).toHaveLength(1);
       expect(missing.errors![0].message).toBe('소개 후보에 연결된 제품을 찾지 못했습니다.');
-      expect(missing.errors![0].path).toEqual(['productDescriptionJobs', 0, 'productSlug']);
+      expect(missing.errors![0].path).toEqual(['productDescriptionJobPage', 'jobs', 0, 'productSlug']);
       expect(missing.data).toBeNull();
       await writer`insert into products ${writer({ ...rows[0], slug: 'restored-product' })}`;
       const restored = await read();
       expect(restored.errors).toBeUndefined();
-      expect(restored.data?.productDescriptionJobs).toEqual([
+      expect(restored.data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'restored-product' }),
       ]);
       const single = await graphql({
