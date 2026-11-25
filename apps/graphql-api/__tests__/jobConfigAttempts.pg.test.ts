@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { ApolloServer } from '@apollo/server';
 import {
   ApplyProductDescriptionCandidate,
   GenerateProductDescriptionCandidate,
@@ -13,7 +14,12 @@ import {
   LlmTranslationProvider,
 } from '@darun/translation-datasource';
 import { LlmSettingService, TranslationJobService } from '@darun/translation-service';
-import { AuthRole, createAuthChecker, createServer as createApolloServer } from '@darun/utils-apollo-server';
+import {
+  AuthRole,
+  createAuthChecker,
+  createServer as createApolloServer,
+  type GraphQLContext,
+} from '@darun/utils-apollo-server';
 import type * as UtilsLlm from '@darun/utils-llm';
 import { LlmClient, LLM_DEFAULT_KEY_REJECTION_MESSAGE, RetryableError } from '@darun/utils-llm';
 import type { Context, SQSEvent, SQSHandler } from 'aws-lambda';
@@ -44,6 +50,7 @@ import { ProductMutationResolver } from '../../../libs/products/feature/src/Prod
 import { ProductDescriptionMutationResolver } from '../../../libs/products/feature/src/ProductDescription.mutation.resolver';
 import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/src/ProductDescription.query.resolver';
 import { ProductResearchQueryResolver } from '../../../libs/products/feature/src/ProductResearch.resolver';
+import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
 import { translationJobs } from '../../../libs/translation/datasource/src/entities/TranslationJobSchema';
 import { translations } from '../../../libs/translation/datasource/src/entities/TranslationSchema';
 import { TranslationMutationResolver } from '../../../libs/translation/feature/src/Translation.mutation.resolver';
@@ -295,13 +302,14 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
         logger: { logQuery: query => queries.push(query) },
       })
     );
-    const server = createApolloServer({
-      options: {
+    const server = new ApolloServer<GraphQLContext>({
+      schema: buildSchemaSync({
         resolvers: [ProductResearchQueryResolver],
         authChecker: createAuthChecker(),
         container: { get: () => new ProductResearchQueryResolver(reader) },
-      },
-      config: { playground: false },
+        skipCheck: true,
+      }),
+      formatError: (formatted, error) => formatServerError(formatted, error, false),
     });
     const insert = (number: number, status: string, time: string) => connection`
       insert into product_research_jobs (id, request_key, official_url, status, created_at, result_json)
@@ -346,7 +354,7 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
     const originalSecret = process.env['CURSOR_SIGNATURE_SECRET'];
     process.env['CURSOR_SIGNATURE_SECRET'] = 'research-history-fixture';
     try {
-      await insert(1, 'pending', '2099-01-01 00:00:00.000001');
+      await insert(8, 'pending', '2099-01-01 00:00:00.000001');
       await insert(2, 'failed', '2099-01-01 00:00:00.000002');
       await insert(3, 'completed', '2099-01-01 00:00:00.000002');
       await insert(4, 'in_progress', '2099-01-01 00:00:00.000002');
@@ -374,7 +382,7 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       expect(second.errors).toBeUndefined();
       expect(second.data!.adminProductResearchJobs.jobs.map(job => [job.id, job.status])).toEqual([
         [prefix + 2, 'failed'],
-        [prefix + 1, 'pending'],
+        [prefix + 8, 'pending'],
       ]);
       expect(queries).toHaveLength(2);
       for (const query of queries) expect(query).not.toMatch(/"result_json"|"reviewed_input"|"request_key"/);

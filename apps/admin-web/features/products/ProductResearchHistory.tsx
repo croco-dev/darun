@@ -30,6 +30,10 @@ const statusLabels = new Map([
   ['failed', '실패'],
 ]);
 
+const loadingTitle = '조사 이력을 불러오는 중...';
+const errorTitle = '조사 이력을 불러오지 못했습니다.';
+const emptyTitle = '저장된 조사 작업이 없습니다.';
+
 export function ProductResearchHistory() {
   const [cursors, setCursors] = useState<string[]>([]);
   const { data, error, loading, refetch } = useQuery(AdminProductResearchJobsDocument, {
@@ -38,20 +42,31 @@ export function ProductResearchHistory() {
   });
   const page = data?.adminProductResearchJobs;
   const nextCursor = page?.nextCursor;
+  const pageNumber = cursors.length + 1;
+  const statusMessage = loading
+    ? loadingTitle
+    : error
+      ? errorTitle
+      : page?.jobs.length
+        ? `${pageNumber}페이지, 작업 ${page.jobs.length}개`
+        : emptyTitle;
 
   return (
     <AdminPanel className="overflow-hidden">
-      {error ? (
+      <div role="status" className="sr-only">
+        {statusMessage}
+      </div>
+      {loading ? (
+        <AdminLoadingState title={loadingTitle} />
+      ) : error ? (
         <AdminErrorState
-          title="조사 이력을 불러오지 못했습니다."
+          title={errorTitle}
           action={
             <Button type="button" size="sm" onClick={() => void refetch().catch(() => {})}>
               다시 조회
             </Button>
           }
         />
-      ) : loading ? (
-        <AdminLoadingState title="조사 이력을 불러오는 중..." />
       ) : page?.jobs.length ? (
         <ul className="divide-y divide-dark-200" aria-label="조사 작업">
           {page.jobs.map(job => (
@@ -72,7 +87,7 @@ export function ProductResearchHistory() {
           ))}
         </ul>
       ) : (
-        <AdminEmptyState title="저장된 조사 작업이 없습니다." />
+        <AdminEmptyState title={emptyTitle} />
       )}
 
       <nav
@@ -92,9 +107,7 @@ export function ProductResearchHistory() {
         >
           이전 페이지
         </Button>
-        <span className="text-sm text-dark-600" aria-live="polite">
-          {cursors.length + 1} 페이지
-        </span>
+        <span className="text-sm text-dark-600">{pageNumber} 페이지</span>
         <Button
           type="button"
           size="sm"
