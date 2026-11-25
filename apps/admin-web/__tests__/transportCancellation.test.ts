@@ -105,6 +105,22 @@ it('reproduces cancellation leaking through the previous BatchHttpLink transport
   expect(vi.getTimerCount()).toBe(0);
 });
 
+it('관리자 요청을 취소하면 오류를 기록하지 않고 시간 초과는 기록한다', async () => {
+  const f = fixture(admin.apolloClient.link, true);
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const cancelled = f.start(first);
+  const timedOut = f.start(second, 50);
+
+  cancelled.controller.abort();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(cancelled.error).toHaveBeenCalledWith(expect.objectContaining({ name: 'AbortError' }));
+  expect(log).not.toHaveBeenCalled();
+
+  await vi.advanceTimersByTimeAsync(50);
+  expect(timedOut.error).toHaveBeenCalledWith(expect.any(TimeoutError));
+  expect(log).toHaveBeenCalledWith('[Network error]:', expect.any(TimeoutError));
+});
+
 for (const [name, container] of [
   ['service', service],
   ['admin', admin],

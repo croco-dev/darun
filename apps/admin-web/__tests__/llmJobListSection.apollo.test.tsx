@@ -40,6 +40,7 @@ vi.mock('@darun/ui-admin', async importOriginal => ({
 interface Request {
   name: string;
   variables: Record<string, unknown>;
+  signal?: AbortSignal;
   resolve: (data: Record<string, unknown>) => void;
   network: () => void;
   graphql: () => void;
@@ -120,6 +121,7 @@ function setup(translation = false) {
         const request: Request = {
           name: operation.operationName ?? '',
           variables: operation.variables,
+          signal: operation.getContext().fetchOptions?.signal,
           resolve(data) {
             observer.next({ data: responseData(data) });
             observer.complete();
@@ -427,6 +429,71 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     vi.useRealTimers();
   });
 
+  it('작업 종류를 바꾸면 진행 중인 첫 페이지 갱신을 취소한다', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fixture = setup();
+    await fixture.lists([translationRow(0)]);
+    await flush(() => fireEvent.click(screen.getByRole('button', { name: '새로고침' })));
+    const translationRefresh = await fixture.take('GetTranslationJobsOnAdmin');
+    const descriptionRefresh = await fixture.take('GetProductDescriptionJobsOnAdmin');
+
+    await flush(() => fireEvent.click(screen.getByRole('button', { name: '영문 번역' })));
+    await flush(() => translationRefresh.network());
+    expect(screen.queryByText('일부 작업 목록을 조회하지 못했습니다.')).toBeNull();
+    expect(translationRefresh.signal?.aborted).toBe(true);
+    expect(descriptionRefresh.signal?.aborted).toBe(true);
+    expect(screen.getByTitle('Product: entity-0')).toBeTruthy();
+  });
+
+  it('같은 상태에서 작업 종류를 바꿔도 갱신된 첫 페이지를 유지한다', async () => {
+    const fixture = setup();
+    await fixture.lists([translationRow(0)]);
+    await flush(() => fireEvent.click(screen.getByRole('button', { name: '새로고침' })));
+    const translation = await fixture.take('GetTranslationJobsOnAdmin');
+    const descriptionRefresh = await fixture.take('GetProductDescriptionJobsOnAdmin');
+    await flush(() => {
+      translation.resolve({ translationJobs: [translationRow(1), translationRow(0)] });
+      descriptionRefresh.resolve({ productDescriptionJobs: [description()] });
+    });
+    await waitFor(() => expect(screen.getByTitle('Product: entity-1')).toBeTruthy());
+
+    await flush(() => fireEvent.click(screen.getByRole('button', { name: '영문 번역' })));
+    expect(screen.queryByRole('link', { name: 'failed-A 소개 후보 열기' })).toBeNull();
+    expect(screen.getByTitle('Product: entity-1')).toBeTruthy();
+  });
+
+  it('과거 페이지 갱신에 실패하면 열린 목록을 보존하고 다시 시도할 수 있다', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fixture = await firstTranslationPage();
+    await flush(() =>
+      fireEvent.click(screen.getByText('더 보기 (+100건)', { selector: 'button > span' }).closest('button')!)
+    );
+    const next = await fixture.take('GetTranslationJobsOnAdmin');
+    await flush(() => next.resolve({ translationJobs: [translationRow(100)] }));
+    expect(screen.getByText('현재 101건 표시 중')).toBeTruthy();
+
+    const updated = [translationRow(200), ...Array.from({ length: 99 }, (_, i) => translationRow(i))];
+    await flush(() => fireEvent.click(screen.getByText('새로고침', { selector: 'button > span' }).closest('button')!));
+    const fresh = await fixture.take('GetTranslationJobsOnAdmin');
+    await flush(() => fresh.resolve({ translationJobs: updated }));
+    const tailFailure = await fixture.take('GetTranslationJobsOnAdmin');
+    await flush(() => tailFailure.network());
+    expect(await screen.findByText('일부 작업 목록을 조회하지 못했습니다.')).toBeTruthy();
+    expect(screen.getByText('현재 101건 표시 중')).toBeTruthy();
+    expect(screen.getByTitle('Product: entity-100')).toBeTruthy();
+    expect(screen.queryByTitle('Product: entity-200')).toBeNull();
+
+    await flush(() => fireEvent.click(screen.getByText('다시 시도', { selector: 'button > span' }).closest('button')!));
+    const retryFirst = await fixture.take('GetTranslationJobsOnAdmin');
+    await flush(() => retryFirst.resolve({ translationJobs: updated }));
+    const retryTail = await fixture.take('GetTranslationJobsOnAdmin');
+    expect(retryTail.variables).toEqual({ first: 100, after: 'cursor:translation-98' });
+    await flush(() => retryTail.resolve({ translationJobs: [translationRow(99), translationRow(100)] }));
+    await waitFor(() => expect(screen.getByTitle('Product: entity-200')).toBeTruthy());
+    expect(screen.getByText('현재 102건 표시 중')).toBeTruthy();
+    expect(screen.queryByText('일부 작업 목록을 조회하지 못했습니다.')).toBeNull();
+  });
+
   it('refreshes the pages opened while a translation retry was pending', async () => {
     const fixture = setup();
     const first = await fixture.take('GetTranslationJobsOnAdmin');
@@ -497,6 +564,7 @@ describe('list retry authority through real Apollo hooks and default cache', () 
     await flush(() =>
       fireEvent.click(screen.getByText('실패', { selector: 'button, button > span' }).closest('button')!)
     );
+    expect(old.signal?.aborted).toBe(true);
     const filtered = await fixture.take('GetTranslationJobsOnAdmin');
     expect(filtered.variables).toEqual({
       status: 'failed',

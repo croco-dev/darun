@@ -17,36 +17,44 @@ export function useLlmJobPages<Key extends string, Job extends { id: string }>(
   options: { scope: string; status?: string; skip: boolean }
 ) {
   const { scope, status, skip } = options;
-  const { client, data, loading, error, refetch } = useQuery(document, {
+  const { client, data, loading, error } = useQuery(document, {
     variables: { status, first: PAGE_SIZE },
     fetchPolicy: 'cache-and-network',
     skip,
   });
   const [history, setHistory] = useState<LoadedHistory<Job>>();
   const [busyScope, setBusyScope] = useState<string | null>(null);
-  const generation = useRef(0);
-  const busy = useRef(false);
+  const [refreshedFirst, setRefreshedFirst] = useState<{ status?: string; page: JobPage<Job> }>();
+  const [refreshFailure, setRefreshFailure] = useState<{ scope: string; error: unknown }>();
+  const activeRequest = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    busy.current = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 돌아온 필터에서도 첫 페이지부터 시작한다.
     setHistory(undefined);
     setBusyScope(null);
+    // 같은 작업 종류·상태를 계속 표시할 때는 갱신된 첫 페이지를 유지한다.
+    setRefreshedFirst(first => (!skip && first?.status === status ? first : undefined));
+    setRefreshFailure(undefined);
     return () => {
-      generation.current += 1;
+      activeRequest.current?.abort();
+      activeRequest.current = null;
     };
-  }, [scope]);
+  }, [scope, skip, status]);
 
-  const firstPage = data?.[field];
+  const refreshedPage = refreshedFirst?.status === status ? refreshedFirst?.page : undefined;
+  const firstPage = refreshedPage ?? data?.[field];
   const loaded = history?.scope === scope ? history.pages : undefined;
   const nextCursor = loaded ? loaded.at(-1)?.nextCursor : firstPage?.nextCursor;
+  const initialError = refreshedPage ? undefined : error;
+  const listError = refreshFailure?.scope === scope ? refreshFailure.error : initialError;
 
-  const readOlderPage = useCallback(
-    async (after: string) => {
+  const readPage = useCallback(
+    async (after: string | undefined, signal: AbortSignal) => {
       const result = await client.query({
         query: document,
         variables: { status, first: PAGE_SIZE, after },
         fetchPolicy: 'no-cache',
+        context: { fetchOptions: { signal }, queryDeduplication: false },
       });
       const page = result.data?.[field];
       if (!page) throw new Error('작업 목록 응답을 확인하지 못했습니다.');
@@ -56,20 +64,20 @@ export function useLlmJobPages<Key extends string, Job extends { id: string }>(
   );
 
   const update = useCallback(
-    async (read: (isCurrent: () => boolean) => Promise<JobPage<Job>[] | undefined>) => {
-      if (skip || busy.current) return;
-      const request = generation.current;
-      const isCurrent = () => generation.current === request;
-      busy.current = true;
+    async (read: (signal: AbortSignal) => Promise<JobPage<Job>[]>) => {
+      if (skip || activeRequest.current) return;
+      const controller = new AbortController();
+      activeRequest.current = controller;
+      const { signal } = controller;
       setBusyScope(scope);
       try {
-        const pages = await read(isCurrent);
-        if (pages && isCurrent()) setHistory({ scope, pages });
+        const pages = await read(signal);
+        if (!signal.aborted) setHistory({ scope, pages });
       } catch (error) {
-        if (isCurrent()) throw error;
+        if (!signal.aborted) throw error;
       } finally {
-        if (isCurrent()) {
-          busy.current = false;
+        if (!signal.aborted) {
+          activeRequest.current = null;
           setBusyScope(null);
         }
       }
@@ -80,25 +88,31 @@ export function useLlmJobPages<Key extends string, Job extends { id: string }>(
   const loadMore = useCallback(async () => {
     const pages = loaded ?? (firstPage ? [firstPage] : undefined);
     if (!pages || !nextCursor) return;
-    await update(async () => [...pages, await readOlderPage(nextCursor)]);
-  }, [firstPage, loaded, nextCursor, readOlderPage, update]);
+    await update(async signal => [...pages, await readPage(nextCursor, signal)]);
+  }, [firstPage, loaded, nextCursor, readPage, update]);
 
   const refresh = useCallback(async () => {
-    await update(async isCurrent => {
-      const first = (await refetch()).data?.[field];
-      if (!first) throw new Error('작업 목록 응답을 확인하지 못했습니다.');
-      if (!loaded) return undefined;
-
-      const pages = [first];
-      let after = first.nextCursor;
-      while (after && pages.length < loaded.length && isCurrent()) {
-        const page = await readOlderPage(after);
-        pages.push(page);
-        after = page.nextCursor;
+    await update(async signal => {
+      try {
+        const first = await readPage(undefined, signal);
+        const pages = [first];
+        let after = first.nextCursor;
+        while (after && loaded && pages.length < loaded.length && !signal.aborted) {
+          const page = await readPage(after, signal);
+          pages.push(page);
+          after = page.nextCursor;
+        }
+        if (!signal.aborted) {
+          setRefreshedFirst({ status, page: first });
+          setRefreshFailure(undefined);
+        }
+        return pages;
+      } catch (error) {
+        if (!signal.aborted) setRefreshFailure({ scope, error });
+        throw error;
       }
-      return pages;
     });
-  }, [field, loaded, readOlderPage, refetch, update]);
+  }, [loaded, readPage, scope, status, update]);
 
   const seen = new Set<string>();
   const rows = skip ? [] : (loaded?.flatMap(page => page.jobs) ?? firstPage?.jobs ?? []);
@@ -109,7 +123,7 @@ export function useLlmJobPages<Key extends string, Job extends { id: string }>(
       return true;
     }),
     loading: !skip && (loading || busyScope === scope),
-    error: skip ? undefined : error,
+    error: skip ? undefined : listError,
     hasMore: !skip && Boolean(nextCursor),
     loadMore,
     refresh,

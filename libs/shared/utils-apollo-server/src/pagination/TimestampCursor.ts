@@ -11,7 +11,7 @@ export function encodeTimestampCursor(scope: string, position: TimestampPosition
 
 export function decodeTimestampCursor(scope: string, cursor: string): TimestampPosition {
   const invalid = () => createDomainError('pagination/invalid-cursor', '목록 커서가 올바르지 않습니다.');
-  if (cursor.length > 1024) throw invalid();
+  if (cursor.length > 1024 || Buffer.from(cursor, 'base64').toString('base64') !== cursor) throw invalid();
 
   let decoded: Record<(typeof keys)[number], string>;
   try {

@@ -512,7 +512,7 @@ export function LlmJobListSection() {
         </div>
       </div>
 
-      {queryError && jobs.length > 0 && (
+      {Boolean(queryError) && jobs.length > 0 && (
         <AdminErrorState
           title="일부 작업 목록을 조회하지 못했습니다."
           error={queryError}

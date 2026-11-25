@@ -15,7 +15,7 @@ import { resolve } from 'node:path';
 const url = process.env.ADMIN_JOB_HISTORY_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
 
-suite('admin job history through GraphQL and PostgreSQL', () => {
+suite('GraphQL과 PostgreSQL을 통한 관리자 작업 이력 조회', () => {
   let sql: ReturnType<typeof postgres>;
   let server: ReturnType<typeof createServer>;
   let queries: string[];
@@ -114,14 +114,19 @@ suite('admin job history through GraphQL and PostgreSQL', () => {
     const columns = table === 'translation_jobs' ? sql`entity_type, entity_id` : sql`product_id`;
     const values = table === 'translation_jobs' ? sql`'Product', 'fixture'` : sql`'fixture'`;
     await sql`insert into ${sql(table)} (id, status, created_at, ${columns})
-      select case when i = 1 then 'z-older-job' else 'job-' || lpad(i::text, 3, '0') end, 'in_progress',
-        timestamp '2026-11-24 12:00:00.123456' + case when i = 1 then interval '-1 microsecond' else interval '0' end,
+      select case when i = 1 then 'z-older-job' else 'job-' || lpad(i::text, 3, '0') end,
+        case when i in (0, 103) then 'completed' else 'in_progress' end,
+        timestamp '2026-11-24 12:00:00.123456' + case
+          when i = 1 then interval '-1 microsecond'
+          when i = 103 then interval '2 microseconds'
+          else interval '0'
+        end,
         ${values}
-      from generate_series(1, 102) i`;
+      from generate_series(0, 103) i`;
   }
 
   it.each(kinds)(
-    '$field continues across a moved boundary and a newer insert with precise timestamps',
+    '$field 앞쪽 작업의 상태 변경과 신규 삽입 뒤에도 생성 시각과 ID 경계에서 이어 읽는다',
     async ({ field, legacy, table }) => {
       await fill(table);
       const first = await page(field, { status: 'in_progress', first: 100 });
@@ -166,7 +171,7 @@ suite('admin job history through GraphQL and PostgreSQL', () => {
     }
   );
 
-  it.each(kinds)('$field rejects unauthorized or incorrectly scoped pages before SQL', async ({ field, table }) => {
+  it.each(kinds)('$field 권한이 없거나 커서의 범위가 다른 요청은 SQL 실행 전에 거절한다', async ({ field, table }) => {
     await fill(table);
     const { nextCursor } = await page(field, {
       status: 'in_progress',
@@ -179,6 +184,7 @@ suite('admin job history through GraphQL and PostgreSQL', () => {
       [field, { status: 'completed', after: nextCursor! }],
       [otherField, { status: 'in_progress', after: nextCursor! }],
       [field, { status: 'in_progress', after: 'malformed' }],
+      [field, { status: 'in_progress', after: `!${nextCursor!}` }],
     ] as const) {
       expect((await request(target, variables)).errors?.[0]?.extensions?.code).toBe('pagination/invalid-cursor');
     }
@@ -196,11 +202,14 @@ suite('admin job history through GraphQL and PostgreSQL', () => {
     expect(queries).toEqual([]);
   });
 
-  it.each(kinds)('$field omits continuation for exactly one full page', async ({ field, table }) => {
-    await fill(table);
-    await sql`delete from ${sql(table)} where id in ('job-101', 'job-102')`;
-    const result = await page(field, { status: 'in_progress', first: 100 });
-    expect(result.jobs).toHaveLength(100);
-    expect(result.nextCursor).toBeNull();
-  });
+  it.each(kinds)(
+    '$field 한 페이지가 가득 차도 남은 작업이 없으면 다음 커서를 반환하지 않는다',
+    async ({ field, table }) => {
+      await fill(table);
+      await sql`delete from ${sql(table)} where id in ('job-101', 'job-102')`;
+      const result = await page(field, { status: 'in_progress', first: 100 });
+      expect(result.jobs).toHaveLength(100);
+      expect(result.nextCursor).toBeNull();
+    }
+  );
 });

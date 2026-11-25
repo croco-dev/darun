@@ -679,7 +679,7 @@ suite별 실행 건수와 skip 건수를 기록합니다. lease 검사는 `W4_PG
 `darun_lease_integrity` DB만 허용하며 기존 개발 DB를 기본값으로 사용하지 않습니다.
 
 일반 `pnpm test`는 URL 또는 opt-in이 없는 DB suite를 계속 건너뜁니다. 직접 검증하려면
-**격리된 로컬 PostgreSQL**에 다음 URL의 DB 9개를 먼저 생성하고 CI와 같은 명령을 실행합니다.
+**격리된 로컬 PostgreSQL**에 다음 URL의 DB 13개를 먼저 생성하고 세 그룹을 CI와 같은 명령으로 실행합니다.
 예시 포트는 PR CI와 같은 `55437`입니다. 각 suite가 자기 DB의 migration을 준비합니다.
 
 ```bash
@@ -688,6 +688,10 @@ export TRANSLATION_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/daru
 export ATOMIC_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_atomic_integrity
 export ALTERNATIVE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_alternative_integrity
 export PRODUCT_DETAIL_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_detail_freshness
+export RELATED_FLOW_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_related_flows
+export ADMIN_FLOW_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_admin_flows
+export ADMIN_JOB_HISTORY_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_job_history
+export VISUAL_SAVE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_visual_save
 export FLOW_DETAIL_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_flow_detail
 export DESCRIPTION_EVIDENCE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_description_integrity
 export W4_DATABASE_URL=postgresql://sync:sync@127.0.0.1:55437/darun_lease_integrity
@@ -695,8 +699,8 @@ export MIGRATION_BASELINE_TEST_DATABASE_URL=postgresql://sync:sync@127.0.0.1:554
 export W4_PG=1
 reporter="$PWD/apps/graphql-api/scripts/required-postgres-reporter.ts"
 REQUIRED_POSTGRES_GROUP=baseline pnpm --filter graphql-api exec vitest run __tests__/migrationBaseline.pg.test.ts --reporter=default --reporter="$reporter"
-REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts --reporter=default --reporter="$reporter"
-REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts src/__tests__/ProductFlowDetail.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=graphql pnpm --filter graphql-api exec vitest run __tests__/jobConfigAttempts.pg.test.ts __tests__/translationIntegrity.pg.test.ts __tests__/alternativeReplacement.pg.test.ts __tests__/productDetailFreshness.pg.test.ts __tests__/screenshotFlowPagination.pg.test.ts __tests__/adminProductFlowPagination.pg.test.ts __tests__/adminJobHistory.pg.test.ts --reporter=default --reporter="$reporter"
+REQUIRED_POSTGRES_GROUP=products pnpm --filter @darun/products-datasource exec vitest run src/__tests__/W3AtomicApplyMaterialize.pg.test.ts src/__tests__/descriptionEvidence.postgresql.test.ts src/__tests__/W4JobLeaseRecovery.pg.test.ts src/__tests__/ProductFlowDetail.pg.test.ts src/__tests__/VisualSave.pg.test.ts --reporter=default --reporter="$reporter"
 ```
 
 PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.

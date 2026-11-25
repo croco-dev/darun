@@ -43,11 +43,18 @@ vi.mock('@darun/ui-admin', async importOriginal => {
 });
 
 describe('LlmJobListSection', () => {
+  const mockReadPage = vi.fn();
   const mockRetryTranslation = vi.fn();
   const mockRetryDescription = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockReadPage.mockResolvedValue({
+      data: {
+        translationJobPage: { jobs: [], nextCursor: null },
+        productDescriptionJobPage: { jobs: [], nextCursor: null },
+      },
+    });
     mockRetryTranslation.mockResolvedValue({ data: { retryTranslationJob: { id: 'job-1', status: 'pending' } } });
     mockRetryDescription.mockResolvedValue({
       data: { retryProductDescriptionJob: { id: 'desc-job-new', productSlug: 'test-product', status: 'pending' } },
@@ -79,7 +86,7 @@ describe('LlmJobListSection', () => {
       data: undefined,
       loading: true,
       error: undefined,
-      refetch: vi.fn(),
+      client: { query: mockReadPage },
     } as unknown as ReturnType<typeof useQuery>);
 
     render(<LlmJobListSection />);
@@ -87,12 +94,11 @@ describe('LlmJobListSection', () => {
   });
 
   it('에러 발생 시 에러 상태와 다시 시도 버튼을 렌더링한다', () => {
-    const refetch = vi.fn();
     vi.mocked(useQuery).mockReturnValue({
       data: undefined,
       loading: false,
       error: new Error('Failed to fetch jobs'),
-      refetch,
+      client: { query: mockReadPage },
     } as unknown as ReturnType<typeof useQuery>);
 
     render(<LlmJobListSection />);
@@ -101,7 +107,10 @@ describe('LlmJobListSection', () => {
     expect(screen.getByText('다시 시도')).toBeDefined();
 
     fireEvent.click(screen.getByText('다시 시도'));
-    expect(refetch).toHaveBeenCalled();
+    expect(mockReadPage).toHaveBeenCalledWith(expect.objectContaining({ query: GetTranslationJobsOnAdminDocument }));
+    expect(mockReadPage).toHaveBeenCalledWith(
+      expect.objectContaining({ query: GetProductDescriptionJobsOnAdminDocument })
+    );
   });
 
   it('작업이 없을 때 빈 상태 메시지를 렌더링한다', () => {
@@ -109,7 +118,7 @@ describe('LlmJobListSection', () => {
       data: undefined,
       loading: false,
       error: undefined,
-      refetch: vi.fn(),
+      client: { query: mockReadPage },
     } as unknown as ReturnType<typeof useQuery>);
 
     render(<LlmJobListSection />);
@@ -142,7 +151,7 @@ describe('LlmJobListSection', () => {
               : { translationJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
-          refetch: vi.fn(),
+          client: { query: mockReadPage },
         }) as unknown as ReturnType<typeof useQuery>
     );
 
@@ -197,7 +206,7 @@ describe('LlmJobListSection', () => {
           },
           loading: false,
           error: undefined,
-          refetch: vi.fn(),
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
@@ -210,14 +219,14 @@ describe('LlmJobListSection', () => {
           },
           loading: false,
           error: undefined,
-          refetch: vi.fn(),
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       return {
         data: undefined,
         loading: false,
         error: undefined,
-        refetch: vi.fn(),
+        client: { query: mockReadPage },
       } as unknown as ReturnType<typeof useQuery>;
     });
 
@@ -245,7 +254,6 @@ describe('LlmJobListSection', () => {
   });
 
   it('소개 생성 작업 실패 건의 재시도 클릭 시 retryProductDescriptionJob을 실행한다', async () => {
-    const refetchDesc = vi.fn();
     const mockDescriptionJobs = [
       {
         id: 'desc-job-failed',
@@ -264,7 +272,7 @@ describe('LlmJobListSection', () => {
           data: { translationJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
-          refetch: vi.fn(),
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
@@ -277,14 +285,14 @@ describe('LlmJobListSection', () => {
           },
           loading: false,
           error: undefined,
-          refetch: refetchDesc,
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       return {
         data: undefined,
         loading: false,
         error: undefined,
-        refetch: vi.fn(),
+        client: { query: mockReadPage },
       } as unknown as ReturnType<typeof useQuery>;
     });
 
@@ -298,12 +306,13 @@ describe('LlmJobListSection', () => {
         variables: { id: 'desc-job-failed', requestId: expect.any(String) },
       });
       expect(mockRetryTranslation).not.toHaveBeenCalled();
-      expect(refetchDesc).toHaveBeenCalled();
+      expect(mockReadPage).toHaveBeenCalledWith(
+        expect.objectContaining({ query: GetProductDescriptionJobsOnAdminDocument })
+      );
     });
   });
 
   it('번역 작업 실패 건의 재시도 클릭 시 retryTranslationJob을 실행한다', async () => {
-    const refetchTrans = vi.fn();
     const mockTranslationJobs = [
       {
         id: 'trans-job-failed',
@@ -326,7 +335,7 @@ describe('LlmJobListSection', () => {
           },
           loading: false,
           error: undefined,
-          refetch: refetchTrans,
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
@@ -334,14 +343,14 @@ describe('LlmJobListSection', () => {
           data: { productDescriptionJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
-          refetch: vi.fn(),
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       return {
         data: undefined,
         loading: false,
         error: undefined,
-        refetch: vi.fn(),
+        client: { query: mockReadPage },
       } as unknown as ReturnType<typeof useQuery>;
     });
 
@@ -355,7 +364,7 @@ describe('LlmJobListSection', () => {
         variables: { id: 'trans-job-failed' },
       });
       expect(mockRetryDescription).not.toHaveBeenCalled();
-      expect(refetchTrans).toHaveBeenCalled();
+      expect(mockReadPage).toHaveBeenCalledWith(expect.objectContaining({ query: GetTranslationJobsOnAdminDocument }));
     });
   });
 
@@ -378,7 +387,7 @@ describe('LlmJobListSection', () => {
           data: { translationJobPage: { jobs: [], nextCursor: null } },
           loading: false,
           error: undefined,
-          refetch: vi.fn(),
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       if (document === GetProductDescriptionJobsOnAdminDocument) {
@@ -391,14 +400,14 @@ describe('LlmJobListSection', () => {
           },
           loading: false,
           error: undefined,
-          refetch: vi.fn(),
+          client: { query: mockReadPage },
         } as unknown as ReturnType<typeof useQuery>;
       }
       return {
         data: undefined,
         loading: false,
         error: undefined,
-        refetch: vi.fn(),
+        client: { query: mockReadPage },
       } as unknown as ReturnType<typeof useQuery>;
     });
 
