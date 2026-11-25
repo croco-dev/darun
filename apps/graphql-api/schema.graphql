@@ -53,6 +53,18 @@ type AdminProductFlowSummary {
   title: String!
 }
 
+type AdminProductResearchJobPage {
+  jobs: [AdminProductResearchJobSummary!]!
+  nextCursor: String
+}
+
+type AdminProductResearchJobSummary {
+  createdAt: DateTimeISO!
+  id: ID!
+  officialUrl: String!
+  status: String!
+}
+
 type ApplyProductDescriptionCandidatePayload {
   alreadyApplied: Boolean!
   job: ProductDescriptionJob!
@@ -524,6 +536,7 @@ type Query {
   adminProductFlow(id: String!): VisualFlow
   adminProductFlowSummaries(after: String, first: Int! = 24, productSlug: String!): AdminProductFlowConnection!
   adminProductFlows(productSlug: String!): [VisualFlow!]!
+  adminProductResearchJobs(after: String, first: Int! = 20): AdminProductResearchJobPage!
   allCompanies(page: Int!): CompanyPagination!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   categories(first: Int!, locale: String! = "ko"): [Category!]!

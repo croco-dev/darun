@@ -189,6 +189,30 @@ export class ProductResearchJob {
   updatedAt: Date;
 }
 
+@ObjectType('AdminProductResearchJobSummary')
+export class AdminProductResearchJobSummary {
+  @Field(() => ID)
+  id: string;
+
+  @Field(() => String)
+  officialUrl: string;
+
+  @Field(() => String)
+  status: string;
+
+  @Field(() => GraphQLISODateTime)
+  createdAt: Date;
+}
+
+@ObjectType('AdminProductResearchJobPage')
+export class AdminProductResearchJobPage {
+  @Field(() => [AdminProductResearchJobSummary])
+  jobs: AdminProductResearchJobSummary[];
+
+  @Field(() => String, { nullable: true })
+  nextCursor: string | null;
+}
+
 @InputType('RequestProductResearchInput')
 export class RequestProductResearchInput {
   @Field()

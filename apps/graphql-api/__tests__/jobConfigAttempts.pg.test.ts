@@ -13,7 +13,7 @@ import {
   LlmTranslationProvider,
 } from '@darun/translation-datasource';
 import { LlmSettingService, TranslationJobService } from '@darun/translation-service';
-import { createServer as createApolloServer } from '@darun/utils-apollo-server';
+import { AuthRole, createAuthChecker, createServer as createApolloServer } from '@darun/utils-apollo-server';
 import type * as UtilsLlm from '@darun/utils-llm';
 import { LlmClient, LLM_DEFAULT_KEY_REJECTION_MESSAGE, RetryableError } from '@darun/utils-llm';
 import type { Context, SQSEvent, SQSHandler } from 'aws-lambda';
@@ -286,6 +286,122 @@ suite('Claimed configuration attempts in dedicated PostgreSQL', () => {
       table: productResearchJobs,
     };
   }
+
+  it('관리자 조사 이력은 요약만 조회하고 같은 시각과 마이크로초 경계를 순서대로 이어 읽는다', async () => {
+    const prefix = randomUUID();
+    const queries: string[] = [];
+    const reader = new PostgresqlProductResearchJobRepository(
+      drizzle(connection, {
+        logger: { logQuery: query => queries.push(query) },
+      })
+    );
+    const server = createApolloServer({
+      options: {
+        resolvers: [ProductResearchQueryResolver],
+        authChecker: createAuthChecker(),
+        container: { get: () => new ProductResearchQueryResolver(reader) },
+      },
+      config: { playground: false },
+    });
+    const insert = (number: number, status: string, time: string) => connection`
+      insert into product_research_jobs (id, request_key, official_url, status, created_at, result_json)
+      values (${prefix + number}, ${prefix + number}, ${`https://example.test/${number}`}, ${status},
+        ${time}::timestamp, 'stored result body')
+    `;
+    function authContext(roles: AuthRole[], signedIn: boolean) {
+      return {
+        requestId: 'research-history',
+        getUserId: async () => (signedIn ? 'fixture-user' : undefined),
+        getUserIdOrThrow: async () => 'fixture-user',
+        getRoles: async () => roles,
+      };
+    }
+    async function execute(variables: { first: number; after?: string }, roles = [AuthRole.Admin], signedIn = true) {
+      const result = await server.executeOperation<{
+        adminProductResearchJobs: {
+          jobs: {
+            id: string;
+            status: string;
+            officialUrl: string;
+            createdAt: string;
+          }[];
+          nextCursor: string | null;
+        };
+      }>(
+        {
+          query: `query($first: Int!, $after: String) {
+            adminProductResearchJobs(first: $first, after: $after) {
+              jobs { id officialUrl status createdAt }
+              nextCursor
+            }
+          }`,
+          variables,
+        },
+        { contextValue: authContext(roles, signedIn) }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected one GraphQL response');
+      return result.body.singleResult;
+    }
+
+    const originalSecret = process.env['CURSOR_SIGNATURE_SECRET'];
+    process.env['CURSOR_SIGNATURE_SECRET'] = 'research-history-fixture';
+    try {
+      await insert(1, 'pending', '2099-01-01 00:00:00.000001');
+      await insert(2, 'failed', '2099-01-01 00:00:00.000002');
+      await insert(3, 'completed', '2099-01-01 00:00:00.000002');
+      await insert(4, 'in_progress', '2099-01-01 00:00:00.000002');
+      const first = await execute({ first: 2 });
+      expect(first.errors).toBeUndefined();
+      const firstPage = first.data!.adminProductResearchJobs;
+      expect(firstPage.jobs).toEqual([
+        {
+          id: prefix + 4,
+          officialUrl: 'https://example.test/4',
+          status: 'in_progress',
+          createdAt: '2099-01-01T00:00:00.000Z',
+        },
+        {
+          id: prefix + 3,
+          officialUrl: 'https://example.test/3',
+          status: 'completed',
+          createdAt: '2099-01-01T00:00:00.000Z',
+        },
+      ]);
+      expect(firstPage.nextCursor).toEqual(expect.any(String));
+
+      await insert(5, 'pending', '2099-01-01 00:00:00.000003');
+      const second = await execute({ first: 2, after: firstPage.nextCursor! });
+      expect(second.errors).toBeUndefined();
+      expect(second.data!.adminProductResearchJobs.jobs.map(job => [job.id, job.status])).toEqual([
+        [prefix + 2, 'failed'],
+        [prefix + 1, 'pending'],
+      ]);
+      expect(queries).toHaveLength(2);
+      for (const query of queries) expect(query).not.toMatch(/"result_json"|"reviewed_input"|"request_key"/);
+
+      queries.length = 0;
+      const denied = await execute({ first: 2 }, []);
+      expect(denied.errors?.[0].extensions?.code).toBe('UNAUTHORIZED');
+      const anonymous = await execute({ first: 2 }, [], false);
+      expect(anonymous.errors?.[0].extensions?.code).toBe('UNAUTHORIZED');
+      const detail = await server.executeOperation(
+        { query: 'query($id: String!) { productResearchJob(id: $id) { id } }', variables: { id: prefix + 4 } },
+        { contextValue: authContext([], true) }
+      );
+      if (detail.body.kind !== 'single') throw new Error('Expected one GraphQL response');
+      expect(detail.body.singleResult.errors?.[0].extensions?.code).toBe('UNAUTHORIZED');
+      for (const variables of [{ first: 0 }, { first: 51 }, { first: 2, after: 'tampered' }]) {
+        const invalid = await execute(variables);
+        expect(invalid.errors?.[0].extensions?.code).toBe('product/invalid-args');
+      }
+      expect(queries).toEqual([]);
+    } finally {
+      if (originalSecret === undefined) delete process.env['CURSOR_SIGNATURE_SECRET'];
+      else process.env['CURSOR_SIGNATURE_SECRET'] = originalSecret;
+      await connection`delete from product_research_jobs where id like ${prefix + '%'}`;
+      await server.stop();
+    }
+  });
 
   it('리서치 작업 행이 없는 메시지는 SQS 처리 실패로 반환한다', async () => {
     await expect(deliver(researchWorker, { jobId: randomUUID() })).rejects.toThrow('Research queue identity mismatch');
