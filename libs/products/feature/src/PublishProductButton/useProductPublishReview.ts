@@ -63,7 +63,11 @@ export function useProductPublishReview({ id, slug, publication }: ProductPublis
 
   async function publish() {
     if (!canPublish) return;
-    await publishProduct(review?.reviewToken);
+    if (review) {
+      await publishProduct({ kind: 'review', reviewToken: review.reviewToken });
+    } else if (legacyApi) {
+      await publishProduct({ kind: 'legacy' });
+    }
   }
 
   return { id, publishing, loading, error, review, reviewChanged, legacyApi, canPublish, refresh, publish };

@@ -1,6 +1,6 @@
 import { isProductLinkUrl, ProductLinkRole } from '@darun/products-domain/link';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { categories } from '../entities/CategorySchema';
 import { productLinks } from '../entities/ProductLinksSchema';
@@ -44,7 +44,9 @@ export class PostgresqlProductPublishReview {
         const screenshot = await tx
           .select({ id: productScreenshots.id })
           .from(productScreenshots)
-          .where(eq(productScreenshots.productId, product.id))
+          .where(
+            and(eq(productScreenshots.productId, product.id), sql`${productScreenshots.imageUrl} ~ '[^[:space:]]'`)
+          )
           .limit(1);
         const officialLinks = links.filter(link => link.role === ProductLinkRole.official);
         const officialLinkStatus = officialLinks.length

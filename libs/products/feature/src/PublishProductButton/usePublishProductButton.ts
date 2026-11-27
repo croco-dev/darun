@@ -30,6 +30,8 @@ type PublishProductButtonProps = {
   slug: string;
 };
 
+type PublishConfirmation = { kind: 'review'; reviewToken: string } | { kind: 'legacy' };
+
 export function usePublishProductButton({ slug }: PublishProductButtonProps) {
   const [reviewChanged, setReviewChanged] = useState(false);
   const { data, loading: isQueryLoading } = useQuery(TempProductOnPublishProductButtonDocument, {
@@ -53,10 +55,13 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     }
   );
 
-  const publishProduct = async (reviewToken?: string) => {
+  const publishProduct = async (confirmation: PublishConfirmation) => {
     if (isPublishing || Boolean(data?.tempProductBySlug?.publishedAt)) {
       return;
     }
+    const reviewToken = confirmation.kind === 'review' ? confirmation.reviewToken : undefined;
+    if (confirmation.kind === 'review' && (typeof reviewToken !== 'string' || !reviewToken.trim())) return;
+
     try {
       await publishProductMutation({
         variables: {

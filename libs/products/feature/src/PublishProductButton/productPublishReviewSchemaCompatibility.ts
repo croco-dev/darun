@@ -14,6 +14,7 @@ function isReviewFieldUnavailable(result: ApolloLink.Result | null) {
     Array.isArray(errors) &&
     errors.length === 1 &&
     errors[0]?.extensions?.code === 'GRAPHQL_VALIDATION_FAILED' &&
+    errors[0]?.path === undefined &&
     typeof errors[0]?.message === 'string' &&
     /^Cannot query field "adminProductPublishReview" on type "Query"\.(?: Did you mean .+\?)?$/.test(errors[0].message)
   );
@@ -30,6 +31,9 @@ function isLegacyJsonError(error: unknown) {
 
 function isUsableReviewResult(result: ApolloLink.Result) {
   const { data, errors } = result;
+  const review = data?.adminProductPublishReview;
+  if (review != null && (typeof review.reviewToken !== 'string' || !review.reviewToken.trim())) return false;
+
   return (
     errors == null ||
     (Array.isArray(errors) &&

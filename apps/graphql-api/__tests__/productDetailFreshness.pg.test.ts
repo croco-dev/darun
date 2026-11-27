@@ -293,7 +293,8 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         await tx`insert into categories (id, slug, label_ko, label_en)
           values (${categoryId}, ${categoryId}, '검토 분류', 'Review category')`;
         await tx`insert into product_screenshots (id, product_id, image_url, image_alt)
-          values (${otherId}, ${otherId}, '/other.png', '다른 서비스 화면')`;
+          values (${otherId}, ${otherId}, '/other.png', '다른 서비스 화면'),
+                 (${id}, ${id}, ${' \t '}, '이미지 주소 없음')`;
         await tx`insert into product_links (id, product_id, title, icon_url, link, display_link)
           values (${id}, ${id}, '공식 사이트', '', 'https://example.com', 'example.com')`;
       });
@@ -375,8 +376,8 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       await writer.begin(async tx => {
         await tx`update products set category_ids = ${JSON.stringify([categoryId])}::json,
           description = ${description}, content_revision = content_revision + 1 where id = ${id}`;
-        await tx`insert into product_screenshots (id, product_id, image_url, image_alt)
-          values (${id}, ${id}, '/review.png', '검토 서비스 화면')`;
+        await tx`update product_screenshots set image_url = '/review.png', image_alt = '검토 서비스 화면'
+          where id = ${id}`;
         await tx`insert into translation_jobs (id, entity_type, entity_id, locale, status)
           values (${id}, 'Product', ${id}, 'en', 'failed')`;
       });

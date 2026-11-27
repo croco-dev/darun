@@ -78,7 +78,7 @@ describe('발행 준비 상태 API 배포 호환성', () => {
 
     await act(() => result.current.publish());
 
-    expect(publishProduct).toHaveBeenCalledExactlyOnceWith(undefined);
+    expect(publishProduct).toHaveBeenCalledExactlyOnceWith({ kind: 'legacy' });
   });
 
   it.each([
@@ -131,7 +131,10 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     await act(() => result.current.publish());
 
     if (canPublish) {
-      expect(publishProduct).toHaveBeenCalledExactlyOnceWith('fixture-review-token');
+      expect(publishProduct).toHaveBeenCalledExactlyOnceWith({
+        kind: 'review',
+        reviewToken: 'fixture-review-token',
+      });
     } else {
       expect(publishProduct).not.toHaveBeenCalled();
     }
@@ -162,4 +165,34 @@ describe('발행 준비 상태 API 배포 호환성', () => {
 
     expect(publishProduct).not.toHaveBeenCalled();
   });
+
+  it.each([undefined, null, ''])('검토 토큰이 %s이면 현행 API 응답으로 발행을 진행하지 않는다', async reviewToken => {
+    const { result, publishProduct } = mountReview(200, {
+      data: { adminProductPublishReview: { ...reviewData.adminProductPublishReview, reviewToken } },
+    });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.review).toBeUndefined();
+    expect(result.current.canPublish).toBe(false);
+
+    await act(() => result.current.publish());
+
+    expect(publishProduct).not.toHaveBeenCalled();
+  });
+
+  it.each(['application/json', 'application/graphql-response+json'])(
+    '%s에서 필드 실행 경로가 담긴 오류는 구버전 스키마 오류로 취급하지 않는다',
+    async contentType => {
+      const { result, publishProduct } = mountReview(
+        400,
+        { errors: [{ ...missingReview, path: ['adminProductPublishReview'] }] },
+        contentType
+      );
+      await waitFor(() => expect(result.current.error).toBeDefined());
+      expect(result.current.legacyApi).toBe(false);
+
+      await act(() => result.current.publish());
+
+      expect(publishProduct).not.toHaveBeenCalled();
+    }
+  );
 });
