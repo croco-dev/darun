@@ -7,7 +7,7 @@ import {
   rowIsHeader,
   selectedRect,
   TableMap,
-  toggleHeader,
+  tableNodeTypes,
 } from '@tiptap/pm/tables';
 import { type Editor, useEditorState } from '@tiptap/react';
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
@@ -23,6 +23,8 @@ const tableActions = [
   ['deleteColumn', '선택한 열 삭제'],
   ['deleteTable', '표 삭제'],
 ] as const;
+
+type TableToolProps = Readonly<{ editor: Editor; disabled: boolean }>;
 
 function canInsertTable(state: EditorState) {
   return state.selection instanceof TextSelection && state.selection.empty && !isInTable(state);
@@ -66,29 +68,11 @@ function getTableOptions(state: EditorState) {
   });
   const headerRow = rowIsHeader(map, table, 0);
   const headerColumn = columnIsHeader(map, table, 0);
-  const singleCell = map.map.every(position => position === map.map[0]);
   return {
     valid: true,
     hasUnsafeRowEdits: unsafeRowBoundaries.size > 0,
-    singleCell,
     headerRow,
     headerColumn,
-    canToggleRow:
-      singleCell ||
-      map.cellsInRect({
-        top: 0,
-        bottom: 1,
-        left: headerColumn ? 1 : 0,
-        right: width,
-      }).length > 0,
-    canToggleColumn:
-      singleCell ||
-      map.cellsInRect({
-        top: headerRow ? 1 : 0,
-        bottom: height,
-        left: 0,
-        right: 1,
-      }).length > 0,
     actions: {
       addRowBefore: addRow && !unsafeRowBoundaries.has(top),
       addRowAfter: addRow && !unsafeRowBoundaries.has(bottom),
@@ -101,7 +85,7 @@ function getTableOptions(state: EditorState) {
   } as const;
 }
 
-function InsertTableFields({ editor, disabled }: { editor: Editor; disabled: boolean }) {
+function InsertTableFields({ editor, disabled }: TableToolProps) {
   const [rows, setRows] = useState('2');
   const [columns, setColumns] = useState('2');
   const [withHeaderRow, setWithHeaderRow] = useState(true);
@@ -139,7 +123,7 @@ function InsertTableFields({ editor, disabled }: { editor: Editor; disabled: boo
     <>
       <fieldset className="flex flex-wrap items-center gap-2" disabled={disabled}>
         <label className="flex items-center gap-1">
-          행 수
+          <span>행 수</span>
           <input
             className={inputClass}
             inputMode="numeric"
@@ -152,7 +136,7 @@ function InsertTableFields({ editor, disabled }: { editor: Editor; disabled: boo
           />
         </label>
         <label className="flex items-center gap-1">
-          열 수
+          <span>열 수</span>
           <input
             className={inputClass}
             inputMode="numeric"
@@ -181,7 +165,7 @@ function InsertTableFields({ editor, disabled }: { editor: Editor; disabled: boo
   );
 }
 
-function TableOptions({ editor, disabled }: { editor: Editor; disabled: boolean }) {
+function TableOptions({ editor, disabled }: TableToolProps) {
   const { table, insertable } = useEditorState({
     editor,
     selector: () => ({
@@ -194,9 +178,24 @@ function TableOptions({ editor, disabled }: { editor: Editor; disabled: boolean 
   function toggleHeading(axis: 'row' | 'column') {
     if (!editor.isEditable || disabled) return;
     const current = getTableOptions(editor.state);
-    if (!current?.valid || !(axis === 'row' ? current.canToggleRow : current.canToggleColumn)) return;
-    if (current.singleCell) editor.commands.toggleHeaderCell();
-    else editor.commands.command(({ state, dispatch }) => toggleHeader(axis)(state, dispatch));
+    if (!current?.valid) return;
+    editor.commands.command(({ state, tr }) => {
+      const { table, tableStart, map } = selectedRect(state);
+      const row = map.cellsInRect({ top: 0, bottom: 1, left: 0, right: map.width });
+      const column = map.cellsInRect({ top: 0, bottom: map.height, left: 0, right: 1 });
+      const selected = axis === 'row' ? row : column;
+      const isHeader = axis === 'row' ? current.headerRow : current.headerColumn;
+      const otherIsHeader = axis === 'row' ? current.headerColumn : current.headerRow;
+      const preserveCorner = row.length > 1 && column.length > 1 && otherIsHeader;
+      const types = tableNodeTypes(state.schema);
+      const cellType = isHeader ? types.cell : types.header_cell;
+      for (const offset of selected) {
+        if (offset === map.map[0] && preserveCorner) continue;
+        const cell = table.nodeAt(offset);
+        if (cell && cell.type !== cellType) tr.setNodeMarkup(tableStart + offset, cellType, cell.attrs);
+      }
+      return true;
+    });
     editor.view.focus();
   }
 
@@ -222,13 +221,13 @@ function TableOptions({ editor, disabled }: { editor: Editor; disabled: boolean 
       <MenuItem
         label="첫 행 머리글"
         active={table.valid && table.headerRow}
-        disabled={disabled || !table.valid || !table.canToggleRow}
+        disabled={disabled || !table.valid}
         onClick={() => toggleHeading('row')}
       />
       <MenuItem
         label="첫 열 머리글"
         active={table.valid && table.headerColumn}
-        disabled={disabled || !table.valid || !table.canToggleColumn}
+        disabled={disabled || !table.valid}
         onClick={() => toggleHeading('column')}
       />
       {table.valid && table.hasUnsafeRowEdits && (
@@ -238,7 +237,7 @@ function TableOptions({ editor, disabled }: { editor: Editor; disabled: boolean 
   );
 }
 
-export function TableTools({ editor, disabled }: { editor: Editor; disabled: boolean }) {
+export function TableTools({ editor, disabled }: TableToolProps) {
   const [open, setOpen] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -286,16 +285,15 @@ export function TableTools({ editor, disabled }: { editor: Editor; disabled: boo
       >
         표 도구
       </button>
-      <div
+      <fieldset
         id={panelId}
-        role="group"
         aria-label="표 편집"
         hidden={!open}
-        className="basis-full rounded-lg border border-dark-200 bg-surface-100/40 p-2 text-sm"
+        className="min-w-0 basis-full rounded-lg border border-dark-200 bg-surface-100/40 p-2 text-sm"
         onKeyDown={closeOnEscape}
       >
         {open && <TableOptions editor={editor} disabled={disabled} />}
-      </div>
+      </fieldset>
     </>
   );
 }

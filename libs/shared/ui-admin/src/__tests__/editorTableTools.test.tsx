@@ -162,6 +162,18 @@ describe('본문 표 도구', () => {
     expect(element.querySelector('td[rowspan="2"][colspan="2"]')?.textContent).toBe('공통 요금');
   });
 
+  it.each([
+    ['첫 열 머리글', '<tr><td>플랜</td></tr><tr><td>가격</td></tr>'],
+    ['첫 행 머리글', '<tr><td>플랜</td><td>가격</td></tr>'],
+  ])('한 행이나 한 열로 된 표에서 %s을 켰다가 끄면 두 셀이 모두 되돌아온다', async (label, rows) => {
+    const { core, element } = await openEditor(`<table>${rows}</table>`);
+    selectCell(core, '플랜');
+    click(label);
+    expect([...element.querySelectorAll('th')].map(cell => cell.textContent)).toEqual(['플랜', '가격']);
+    click(label);
+    expect([...element.querySelectorAll('td')].map(cell => cell.textContent)).toEqual(['플랜', '가격']);
+  });
+
   it('두 방향으로 병합된 셀 때문에 나머지 셀이 이동할 수 있는 행 편집만 거절한다', async () => {
     const { core, element, onChange } = await openEditor(
       '<p>표 앞</p><table><tr><td rowspan="2" colspan="2">왼쪽 병합</td><td>첫 행 가운데</td>' +
