@@ -7,8 +7,10 @@ export class ProductPublishReviewUnavailableError extends Error {
   }
 }
 
-function isReviewFieldUnavailable(errors: unknown) {
+function isReviewFieldUnavailable(result: ApolloLink.Result | null) {
+  const errors = result?.errors;
   return (
+    result?.data == null &&
     Array.isArray(errors) &&
     errors.length === 1 &&
     errors[0]?.extensions?.code === 'GRAPHQL_VALIDATION_FAILED' &&
@@ -20,10 +22,23 @@ function isReviewFieldUnavailable(errors: unknown) {
 function isLegacyJsonError(error: unknown) {
   if (!ServerError.is(error) || error.statusCode !== 400) return false;
   try {
-    return isReviewFieldUnavailable(JSON.parse(error.bodyText)?.errors);
+    return isReviewFieldUnavailable(JSON.parse(error.bodyText));
   } catch {
     return false;
   }
+}
+
+function isUsableReviewResult(result: ApolloLink.Result) {
+  const { data, errors } = result;
+  return (
+    errors == null ||
+    (Array.isArray(errors) &&
+      errors.every(
+        error =>
+          typeof error?.message === 'string' &&
+          (data == null || (error.path?.[0] === 'adminProductPublishReview' && error.path?.[1] === 'translation'))
+      ))
+  );
 }
 
 // Apollo can deliver GraphQL response bodies even when their HTTP status indicates failure.
@@ -34,13 +49,9 @@ export const productPublishReviewSchemaCompatibility = new ApolloLink((operation
     const subscription = forward(operation).subscribe({
       next: result => {
         const response = operation.getContext().response as Response | undefined;
-        if (
-          (response?.status === 200 || response?.status === 400) &&
-          result.data == null &&
-          isReviewFieldUnavailable(result.errors)
-        ) {
+        if ((response?.status === 200 || response?.status === 400) && isReviewFieldUnavailable(result)) {
           observer.error(new ProductPublishReviewUnavailableError());
-        } else if (response?.status === 200) {
+        } else if (response?.status === 200 && isUsableReviewResult(result)) {
           observer.next(result);
         } else {
           observer.error(new Error('The product publish review HTTP request failed.'));

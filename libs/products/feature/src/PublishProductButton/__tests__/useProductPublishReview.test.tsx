@@ -12,9 +12,25 @@ const missingReview = {
   extensions: { code: 'GRAPHQL_VALIDATION_FAILED' },
 };
 
+const reviewData = {
+  adminProductPublishReview: {
+    id: 'test',
+    publishedAt: null,
+    reviewToken: 'fixture-review-token',
+    hasName: true,
+    hasSummary: false,
+    hasDescription: false,
+    hasCategory: false,
+    hasLogo: false,
+    hasScreenshot: false,
+    officialLinkStatus: 'MISSING',
+    translation: null,
+  },
+};
+
 function mountReview(
   status: number,
-  response: ApolloLink.Result,
+  response: unknown,
   contentType = 'application/graphql-response+json',
   reviewChanged = false
 ) {
@@ -106,21 +122,7 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     [500, false],
   ])('HTTP %s의 검토 데이터가 발행을 허용하는지 확인한다', async (status, canPublish) => {
     const { result, publishProduct } = mountReview(status, {
-      data: {
-        adminProductPublishReview: {
-          id: 'test',
-          publishedAt: null,
-          reviewToken: 'fixture-review-token',
-          hasName: true,
-          hasSummary: false,
-          hasDescription: false,
-          hasCategory: false,
-          hasLogo: false,
-          hasScreenshot: false,
-          officialLinkStatus: 'MISSING',
-          translation: null,
-        },
-      },
+      data: reviewData,
       errors: [{ message: 'Translation unavailable', path: ['adminProductPublishReview', 'translation'] }],
     });
     await waitFor(() => expect(result.current.error).toBeDefined());
@@ -133,5 +135,31 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     } else {
       expect(publishProduct).not.toHaveBeenCalled();
     }
+  });
+
+  it.each([
+    [400, 'application/json'],
+    [400, 'application/graphql-response+json'],
+    [200, 'application/graphql-response+json'],
+  ])('HTTP %s (%s)에서 검토 데이터와 스키마 오류가 함께 오면 발행을 막는다', async (status, contentType) => {
+    const { result, publishProduct } = mountReview(status, { data: reviewData, errors: [missingReview] }, contentType);
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.legacyApi).toBe(false);
+    expect(result.current.canPublish).toBe(false);
+
+    await act(() => result.current.publish());
+
+    expect(publishProduct).not.toHaveBeenCalled();
+  });
+
+  it('검토 데이터와 함께 잘못된 오류 목록이 오면 발행을 막는다', async () => {
+    const { result, publishProduct } = mountReview(200, { data: reviewData, errors: [null] });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.review).toBeUndefined();
+    expect(result.current.canPublish).toBe(false);
+
+    await act(() => result.current.publish());
+
+    expect(publishProduct).not.toHaveBeenCalled();
   });
 });
