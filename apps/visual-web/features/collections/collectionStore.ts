@@ -61,14 +61,16 @@ const listeners = new Set<() => void>();
 
 function isSavedItem(value: unknown): value is SavedItem {
   if (typeof value !== 'object' || value === null) return false;
-  if (!(
-    'kind' in value &&
-    'id' in value &&
-    'title' in value &&
-    'imageUrl' in value &&
-    'href' in value &&
-    'productName' in value
-  )) {
+  if (
+    !(
+      'kind' in value &&
+      'id' in value &&
+      'title' in value &&
+      'imageUrl' in value &&
+      'href' in value &&
+      'productName' in value
+    )
+  ) {
     return false;
   }
   const kind = value.kind;

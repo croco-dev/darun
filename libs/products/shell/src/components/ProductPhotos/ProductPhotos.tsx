@@ -2,8 +2,8 @@
 
 import { Maximize2, Sparkles } from '@darun/ui';
 import { bind } from '@darun/utils-structure-react';
-import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useState } from 'react';
 import Zoom from 'react-medium-image-zoom';
 import { ProductSectionContent } from '../ProductSectionContent';

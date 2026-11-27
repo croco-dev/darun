@@ -13,16 +13,13 @@
     "./visual-ui-elements": "./src/visual-ui-elements/VisualUiElementOptions.ts"
   },
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "VOTE_IP_SALT=test vitest run",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "typedi": "catalog:"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*"
   }

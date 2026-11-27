@@ -2,8 +2,8 @@
 
 import { ChevronRight, ContentArea, Search } from '@darun/ui';
 import { Link } from '@darun/utils-router';
-import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
+import Image from 'next/image';
 import type { ReactNode } from 'react';
 
 type MainHeroBannerProps = { headline: ReactNode };

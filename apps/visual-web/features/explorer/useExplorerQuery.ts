@@ -267,7 +267,7 @@ export function useExplorerQuery<TNode, TCard>(
       .fetchMore({
         variables: { after: endCursor },
         updateQuery: (previous: unknown, { fetchMoreResult }: { fetchMoreResult: unknown }) => {
-          const previousConnection = options.getConnection(previous);
+          const _previousConnection = options.getConnection(previous);
           const incomingConnection = options.getConnection(fetchMoreResult);
           if (!incomingConnection) {
             return previous as never;

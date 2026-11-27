@@ -90,7 +90,7 @@ describe.each(['name', 'summary'] as const)('%s 길이 검증', field => {
     upload.mockResolvedValue('https://example.com/logo.png');
     act(() => result.current.form.setValues(fixed));
     await act(async () => {
-      await result.current.form.onSubmit(result.current.submit)();
+      result.current.form.onSubmit(result.current.submit)();
     });
     expect(upload).toHaveBeenCalledOnce();
     expect(f.writes).toHaveLength(1);
@@ -116,7 +116,7 @@ describe.each(['name', 'summary'] as const)('%s 길이 검증', field => {
     const fixed = { ...values, [field]: '😀'.repeat(255) };
     act(() => result.current.form.setValues(fixed));
     await act(async () => {
-      await result.current.form.onSubmit(result.current.submit)();
+      result.current.form.onSubmit(result.current.submit)();
     });
     expect(f.writes).toHaveLength(1);
     expect(f.writes[0].input).toMatchObject(fixed);
@@ -144,7 +144,7 @@ describe('신규 상품 slug 검증', () => {
       upload.mockResolvedValue('https://example.com/logo.png');
       act(() => result.current.form.setValues(fixed));
       await act(async () => {
-        await result.current.form.onSubmit(result.current.submit)();
+        result.current.form.onSubmit(result.current.submit)();
       });
       expect(upload).toHaveBeenCalledOnce();
       expect(f.writes[0].input).toMatchObject({ slug: fixed.slug });

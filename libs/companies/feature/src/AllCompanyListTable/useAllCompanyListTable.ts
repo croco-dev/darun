@@ -5,7 +5,6 @@ import { useQuery } from '@apollo/client/react';
 import { AllCompaniesOnAllCompanyListTableDocument } from '@darun/provider-graphql';
 import { useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query AllCompaniesOnAllCompanyListTable($page: Int!) {
     allCompanies(page: $page) {

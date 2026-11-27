@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 120,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "arrowParens": "avoid",
+  "endOfLine": "lf",
+  "sortPackageJson": false,
+  "sortImports": {
+    "customGroups": [{ "groupName": "scoped", "elementNamePattern": ["@*/**"] }],
+    "groups": ["scoped", "external", "builtin", "parent", ["sibling", "index"], "unknown"],
+    "ignoreCase": true,
+    "newlinesBetween": false,
+    "partitionByNewline": true
+  },
+  "ignorePatterns": [
+    "**/__generated__/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/.next/**",
+    "**/next-env.d.ts",
+    "**/*.{json,jsonc,json5,yaml,yml,md,mdx,css,scss,less,html,graphql,gql,toml}"
+  ]
+}

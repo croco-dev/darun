@@ -22,7 +22,6 @@ import { useState } from 'react';
 import { formatAsKst } from '../../../lib/datetime';
 import { ModelSelectModal } from './ModelSelectModal';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query GetLlmSettingOnLlmSettingFormSection {
     llmSetting {
@@ -37,7 +36,6 @@ gql`
   }
 `;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation UpdateLlmSettingOnLlmSettingFormSection(
     $endpoint: String

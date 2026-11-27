@@ -38,12 +38,12 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - name: Lint
-        run: pnpm --filter tier-web run lint
+      - name: Lint and format check
+        run: pnpm exec oxlint apps/tier-web && pnpm exec oxfmt --check apps/tier-web
+        env:
+          OXLINT_TSGOLINT_PATH: node_modules/.bin/tsrs-lint
       - name: Typecheck
         run: pnpm --filter tier-web run typecheck
-      - name: Typecheck (tsrs)
-        run: pnpm --filter tier-web run typecheck:tsrs
       - name: Test
         run: pnpm --filter tier-web run test
       - name: Create isolated Tier PostgreSQL database

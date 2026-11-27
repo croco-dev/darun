@@ -27,7 +27,8 @@ export class LlmEndpointKeyError extends Error {
 }
 
 export type LlmEndpointKeyDecision =
-  { allowed: true; apiKey: string | null } | { allowed: false; reason: 'default-key-not-allowed-for-custom-endpoint' };
+  | { allowed: true; apiKey: string | null }
+  | { allowed: false; reason: 'default-key-not-allowed-for-custom-endpoint' };
 
 /**
  * 엔드포인트 입력을 정확한 base URL로 정규화한다.

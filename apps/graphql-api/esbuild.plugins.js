@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { sentryEsbuildPlugin } = require('@sentry/esbuild-plugin');
 const ts = require('typescript');
 const fs = require('fs');

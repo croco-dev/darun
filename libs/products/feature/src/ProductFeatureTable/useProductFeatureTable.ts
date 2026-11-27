@@ -3,7 +3,6 @@ import { useQuery } from '@apollo/client/react';
 import { TempProductBySlugOnProductFeatureTableDocument } from '@darun/provider-graphql';
 import type { ReactNode } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductBySlugOnProductFeatureTable($slug: String!) {
     tempProductBySlug(slug: $slug) {

@@ -29,7 +29,6 @@ import {
 import { NonEmptyArray } from 'type-graphql';
 import { HealthResolver } from './graphql/Health.resolver';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 export const resolvers: NonEmptyArray<Function> = [
   HealthResolver,
   AdminProductCategoriesResolver,

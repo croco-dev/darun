@@ -383,7 +383,7 @@ describe.each(['form', 'submit'] as const)('스크린샷 alt %s 사전 검증', 
   async function send(result: ReturnType<typeof altFixture>['result'], imageAlt: string) {
     act(() => result.current.form.setValues({ ...metadata, imageAlt }));
     await act(async () => {
-      if (entry === 'form') await result.current.form.onSubmit(result.current.submit)();
+      if (entry === 'form') result.current.form.onSubmit(result.current.submit)();
       else await result.current.submit(result.current.form.getValues());
     });
   }
@@ -442,7 +442,7 @@ it('alt가 유효해도 제목과 분류의 기존 필드 검증을 유지한다
     })
   );
   await act(async () => {
-    await result.current.form.onSubmit(result.current.submit)();
+    result.current.form.onSubmit(result.current.submit)();
   });
   expect(result.current.form.errors.title).toBeTruthy();
   expect(upload).not.toHaveBeenCalled();
@@ -452,7 +452,7 @@ it('alt가 유효해도 제목과 분류의 기존 필드 검증을 유지한다
     result.current.form.getInputProps('screenType').onChange('invalid');
   });
   await act(async () => {
-    await result.current.form.onSubmit(result.current.submit)();
+    result.current.form.onSubmit(result.current.submit)();
   });
   expect(result.current.form.errors.platform).toBeTruthy();
   expect(result.current.form.errors.screenType).toBeTruthy();

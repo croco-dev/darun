@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS build script, like dev.cjs. */
 const { build } = require('esbuild');
 const { rm, mkdir } = require('fs/promises');
 

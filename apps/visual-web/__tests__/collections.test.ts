@@ -67,8 +67,12 @@ function installWindow(
         if (opts.setItem) opts.setItem(k, v);
         else backing[k] = v;
       },
-      removeItem: (k: string) => void delete backing[k],
-      clear: () => void Object.keys(backing).forEach(k => delete backing[k]),
+      removeItem: (k: string) => {
+        delete backing[k];
+      },
+      clear: () => {
+        for (const k of Object.keys(backing)) delete backing[k];
+      },
       key: () => null,
       length: 0,
     };

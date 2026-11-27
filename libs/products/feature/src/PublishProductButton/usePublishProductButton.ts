@@ -6,7 +6,6 @@ import {
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductOnPublishProductButton($slug: String!) {
     tempProductBySlug(slug: $slug) {

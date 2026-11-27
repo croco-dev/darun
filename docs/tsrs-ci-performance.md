@@ -2,17 +2,17 @@
 
 2026-10-23 GitHub Actions에서 측정했다. [실행 기록](https://github.com/croco-dev/darun/actions/runs/39896478587)의 `tsrs-workspace`, `tsrs-standalone` artifact에 로그와 전체 결과가 있으며, artifact 보관 기간 이후에도 확인할 수 있도록 [개별 측정값](benchmarks/tsrs-ci-2026-10-23.json)을 저장했다.
 
-측정 커밋은 `d23d7669d9158331fcb5364b8307810a892a3704`이다. 모든 측정은 TypeScript 6.0.3을 유지한 상태에서 `tsrs@0.18.0-ts7.1.0-dev.20260929`로 수행했다.
+측정 커밋은 `d23d7669d9158331fcb5364b8307810a892a3704`이다. 모든 측정은 TypeScript 6.0.3을 유지한 상태에서 `tsrs@0.18.0-ts7.1.0-dev.20260929`로 수행했다. 현재 고정 버전은 `tsrs@7.1.0-beta.tsrs5`이며 아래 수치는 이 버전으로 다시 측정하지 않았다.
 
 ## 적용 설정
 
 PR CI의 전체 패키지 검사는 다음 명령을 사용한다. 측정 당시에는 68개였으며, 최신 `trunk`에서 사용하지 않는 `products/ui` 패키지를 삭제해 현재 검사 대상은 67개다. 아래 수치는 측정 커밋의 결과이며 최신 소스의 실행 시간으로 간주하지 않는다.
 
 ```bash
-pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1
+pnpm run typecheck --concurrency=4 -- --checkers 1
 ```
 
-기존 TypeScript 검사와 tsrs 검사는 모두 필수다. 로컬 `pnpm typecheck:tsrs`와 GraphQL·tier-web 단독 CI 검사는 tsrs 기본 옵션을 유지한다. 성능 비교 워크플로는 수동 실행 전용이며 일반 PR마다 반복 측정하지 않는다.
+타입 검사는 tsrs만 실행하며 `tsc` 검사는 없다. 로컬 `pnpm typecheck`와 tier-web 단독 CI 검사는 tsrs 기본 옵션을 유지한다. 성능 비교 워크플로는 수동 실행 전용이며 일반 PR마다 반복 측정하지 않는다.
 
 | 68개 패키지 검사             | 시간 중앙값 |     시간 범위 | 최대 메모리 | CPU 시간 중앙값 |
 | ---------------------------- | ----------: | ------------: | ----------: | --------------: |

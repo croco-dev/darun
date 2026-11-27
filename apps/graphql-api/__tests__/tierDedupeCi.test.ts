@@ -31,10 +31,12 @@ function workflow(name: string): Workflow {
   return parse(readFileSync(join(root, '.github/workflows', name), 'utf8'));
 }
 
+// PR CI runs the database gates in their own job; Tier deploys only after the job that builds it.
+const gateJobs: Record<string, string> = { 'PullRequest.yaml': 'integration', 'TierWeb.yaml': 'build' };
+
 describe('Tier database CI prerequisites', () => {
   it.each(['PullRequest.yaml', 'TierWeb.yaml'])('%s runs a mandatory isolated database gate', name => {
-    const config = workflow(name);
-    const build = config.jobs.build;
+    const build = workflow(name).jobs[gateJobs[name]!]!;
     const gate = build.steps.find(step => step.env?.REQUIRED_POSTGRES_GROUP === 'tier');
     expect(gate).toBeDefined();
     expect(gate?.if).toBeUndefined();
@@ -58,16 +60,20 @@ describe('Tier database CI prerequisites', () => {
     ['PullRequest.yaml', 'content-sync-postgres'],
     ['TierWeb.yaml', 'tier-postgres'],
   ])('%s requires the shared PostgREST gate against its disposable PostgreSQL service', (name, service) => {
-    const build = workflow(name).jobs.build;
+    const build = workflow(name).jobs[gateJobs[name]!]!;
     const serviceId = `\${{ job.services.${service}.id }}`;
     const gate = build.steps.find(step => step.run === `bash scripts/test-tier-postgrest-ci.sh "${serviceId}"`);
     expect(gate).toBeDefined();
     expect(gate?.if).toBeUndefined();
     expect(gate?.['continue-on-error']).not.toBe(true);
     expect(build.services?.[service]?.image).toBe('postgres:17');
-    const buildStep = build.steps.find(step =>
-      /pnpm (run build|--filter tier-web run cloudflare:build)/.test(step.run ?? '')
-    );
+  });
+
+  it('builds Tier for deployment only after the PostgREST gate passes', () => {
+    const build = workflow('TierWeb.yaml').jobs.build;
+    const gate = build.steps.find(step => step.run?.startsWith('bash scripts/test-tier-postgrest-ci.sh'));
+    const buildStep = build.steps.find(step => step.run === 'pnpm --filter tier-web run cloudflare:build');
+    expect(gate).toBeDefined();
     expect(buildStep).toBeDefined();
     expect(build.steps.indexOf(gate!)).toBeLessThan(build.steps.indexOf(buildStep!));
   });

@@ -76,7 +76,7 @@ Apps (라우팅 + Provider)
 - **Admin은 도메인이 아니라 앱이다**. admin 전용 조합 로직은 `apps/admin-web` 내부에 두고, 재사용 가능한 admin UI만 `libs/shared/ui-admin`에 둔다.
 - 앱 전용 조합을 위해 별도 shell 패키지를 만드는 것은 기본값이 아니다. route-local composition 또는 `apps/*/features`를 우선한다.
 
-## 아키텍처 ESLint 룰 (자동 검증)
+## 아키텍처 lint 룰 (oxlint의 eslint-plugin-boundaries로 자동 검증)
 
 ### `no-cross-domain-import` - 크로스 도메인 참조 금지
 - 다른 도메인의 패키지를 직접 import 금지

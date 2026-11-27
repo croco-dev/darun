@@ -52,9 +52,8 @@ ICU MessageFormat에서 **ASCII 작은따옴표(`'`)는 중괄호(`{}`)와 같�
 작업 완료 전 다음 명령어를 실행하여 검증을 통과해야 합니다.
 
 ```bash
-pnpm lint           # ESLint + Prettier 검사
-pnpm typecheck      # TypeScript 타입 검사
-pnpm typecheck:tsrs # tsrs 추가 타입 검사
+pnpm lint           # oxlint(type-aware 포함) + oxfmt 포맷 검사
+pnpm typecheck      # tsrs 타입 검사
 pnpm test           # 단위 테스트 실행
 ```
 

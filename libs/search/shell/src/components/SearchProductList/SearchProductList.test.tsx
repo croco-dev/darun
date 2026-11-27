@@ -36,7 +36,7 @@ vi.mock('next/navigation', () => ({
     push: mockPush,
   }),
   useSearchParams: () => ({
-    get: (key: string) => 'notion',
+    get: (_key: string) => 'notion',
   }),
 }));
 

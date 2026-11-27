@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET as getPartition } from '../app/sitemap/[id]/route';
 import { discoverSitemapPartitions, getSitemapPartition } from '../app/sitemap-data';
 import type { SitemapProduct } from '../app/sitemap-entries';
 import { partitionSitemapEntries, serializeSitemap } from '../app/sitemap-entries';
 import { GET } from '../app/sitemap.xml/route';
+import { GET as getPartition } from '../app/sitemap/[id]/route';
 
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
 vi.mock('../app/getServerClient', () => ({ getClient: () => ({ query }) }));

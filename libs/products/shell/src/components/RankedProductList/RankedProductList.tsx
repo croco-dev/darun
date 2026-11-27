@@ -9,7 +9,7 @@ import { ProductItem } from '../../uis';
 import { ProductVoteCount } from '../ProductVoteCount';
 import { useRankedProductList } from './useRankedProductList';
 
-export const RankedProductList = bind(useRankedProductList, ({ products, locale = 'ko' }) => {
+export const RankedProductList = bind(useRankedProductList, ({ products, locale }) => {
   const t = useTranslations('Ranking');
 
   if (products.length === 0) {

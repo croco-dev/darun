@@ -13,10 +13,8 @@
     "./structure-react": "./src/structure-react.ts"
   },
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@croco/framework-context": "0.0.2",
@@ -29,7 +27,6 @@
     "react": "catalog:"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "catalog:"
   }

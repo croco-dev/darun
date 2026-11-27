@@ -13,7 +13,8 @@ export type UpstreamFetchFailure =
   | { kind: 'timeout' | 'redirect' | 'body-too-large' | 'encoding' | 'dns-not-public' | 'dns-failed' | 'network' }
   | { kind: 'status'; status: number };
 export type UpstreamFetchResult =
-  { ok: true; status: number; body: string } | { ok: false; failure: UpstreamFetchFailure };
+  | { ok: true; status: number; body: string }
+  | { ok: false; failure: UpstreamFetchFailure };
 
 const BLOCKED_HOSTNAME_SUFFIXES = ['.localhost', '.local', '.internal', '.lan', '.home', '.corp', '.localdomain'];
 

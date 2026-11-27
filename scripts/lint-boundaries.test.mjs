@@ -13,22 +13,15 @@ const write = (fixture, relative, content) => {
   writeFileSync(target, content);
 };
 
-test('실제 ESLint가 import 표기와 cwd에 무관하게 내부 계층 경계를 검사한다', () => {
+test('실제 oxlint 설정이 import 표기와 cwd에 무관하게 내부 계층 경계를 검사한다', () => {
   const fixture = realpathSync(mkdtempSync(path.join(tmpdir(), 'darun-lint-boundaries-')));
   try {
-    // Copy the production config so its root is this isolated workspace. The only
-    // rewritten import locates the unchanged shared base config and its plugins.
-    const config = readFileSync(path.join(root, 'eslint.config.mjs'), 'utf8')
-      .replaceAll('"./libs/shared/utils-eslint-config/', `"${root}/libs/shared/utils-eslint-config/`)
-      .replaceAll("'./libs/shared/utils-eslint-config/", `'${root}/libs/shared/utils-eslint-config/`);
-    write(fixture, 'eslint.config.mjs', config);
+    // Copy the production config unchanged so its root is this isolated workspace.
+    const config = path.join(fixture, 'oxlint.config.mts');
+    write(fixture, 'oxlint.config.mts', readFileSync(path.join(root, 'oxlint.config.mts'), 'utf8'));
     write(fixture, 'package.json', JSON.stringify({ private: true, type: 'module' }));
     write(fixture, 'pnpm-workspace.yaml', 'packages:\n  - apps/*\n  - libs/*/*\n');
-    for (const tool of [
-      'eslint-plugin-boundaries',
-      'eslint-plugin-react-compiler',
-      'eslint-import-resolver-typescript',
-    ]) {
+    for (const tool of ['oxlint', 'eslint-plugin-boundaries', 'eslint-import-resolver-typescript']) {
       const target = path.join(fixture, 'node_modules', tool);
       mkdirSync(path.dirname(target), { recursive: true });
       symlinkSync(path.join(root, 'node_modules', tool), target, 'dir');
@@ -111,26 +104,26 @@ test('실제 ESLint가 import 표기와 cwd에 무관하게 내부 계층 경계
 
     for (const cwd of [fixture, path.join(fixture, 'libs/alpha/feature')]) {
       const result = spawnSync(
-        process.execPath,
-        [path.join(root, 'node_modules/eslint/bin/eslint.js'), '--format', 'json', ...cases.map(item => item.file)],
+        path.join(root, 'node_modules/.bin/oxlint'),
+        ['-c', config, '--format', 'json', ...cases.map(item => item.file)],
         {
           cwd,
+          env: { ...process.env, OXLINT_TSGOLINT_PATH: path.join(root, 'node_modules/.bin/tsrs-lint') },
           encoding: 'utf8',
-          timeout: 60_000,
+          timeout: 120_000,
         }
       );
       assert.ifError(result.error);
       assert.equal(result.status, 1, result.stderr || result.stdout);
-      const results = JSON.parse(result.stdout);
-      assert.equal(results.length, cases.length);
+      const { diagnostics } = JSON.parse(result.stdout);
       for (const item of cases) {
-        const lint = results.find(entry => entry.filePath === item.file);
-        assert.ok(lint, item.file);
-        assert.equal(lint.fatalErrorCount, 0, JSON.stringify(lint.messages));
-        const errors = lint.messages.filter(
-          message => message.ruleId?.startsWith('boundaries/') && message.severity === 2
+        const messages = diagnostics.filter(diagnostic => path.resolve(cwd, diagnostic.filename) === item.file);
+        assert.equal(
+          messages.filter(message => message.severity === 'error' && message.code === 'boundaries(dependencies)')
+            .length,
+          item.allowed ? 0 : 1,
+          JSON.stringify({ cwd, ...item, messages })
         );
-        assert.equal(errors.length, item.allowed ? 0 : 1, JSON.stringify({ cwd, ...item, messages: lint.messages }));
       }
     }
   } finally {

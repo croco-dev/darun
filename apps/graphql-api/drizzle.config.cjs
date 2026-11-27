@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS config loaded by drizzle-kit. */
 const { defineConfig } = require('drizzle-kit');
 
 module.exports = defineConfig({

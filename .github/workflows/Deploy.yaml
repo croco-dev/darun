@@ -30,12 +30,10 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - name: Lint
+      - name: Lint and format check
         run: pnpm run lint
       - name: Typecheck
-        run: pnpm run typecheck
-      - name: Typecheck (tsrs)
-        run: pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1
+        run: pnpm run typecheck --concurrency=4 -- --checkers 1
       - name: Test
         run: pnpm run test
       - name: Check migration completeness

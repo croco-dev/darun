@@ -18,7 +18,7 @@ const httpErrorLink = new ErrorLink(({ error }) => {
     return;
   }
 
-  console.error(`[Network error]: ${error}`);
+  console.error(`[Network error]: ${String(error)}`);
 });
 
 const httpLink = new HttpLink({

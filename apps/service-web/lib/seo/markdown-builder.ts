@@ -451,7 +451,6 @@ export function buildCompareMarkdown(params: {
   product2: { name: string; slug: string; summary?: string | null; description?: string | null };
 }): string {
   const { locale, product1, product2 } = params;
-  const isKo = locale === 'ko';
   const canonicalUrl = absolutePublicUrl(locale, `/compare/${product1.slug}/${product2.slug}`);
 
   const lines: string[] = [

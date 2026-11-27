@@ -12,7 +12,7 @@ type ProductAlternativeListViewProps = ReturnType<typeof useProductAlternativeLi
 
 export const ProductAlternativeList = bind(
   useProductAlternativeList,
-  ({ products, locale = 'ko' }: ProductAlternativeListViewProps & { locale?: string }) => {
+  ({ products, locale }: ProductAlternativeListViewProps & { locale?: string }) => {
     const t = useTranslations('Alternative');
 
     if (!products) return <></>;

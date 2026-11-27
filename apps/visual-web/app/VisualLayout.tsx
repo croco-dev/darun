@@ -240,6 +240,7 @@ export function VisualLayout({ children }: { children: ReactNode }) {
       </main>
       <footer className="mt-8 border-t border-dark-100 py-5">
         <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 text-xs text-dark-600 md:px-8">
+          {/* eslint-disable-next-line react-hooks/purity -- 저작권 표기는 렌더 시점의 연도를 보여준다. */}
           <p>© {new Date().getFullYear()} 다른 Visual</p>
           <div className="flex flex-wrap items-center gap-5">
             <Link href="/saves" className="inline-flex min-h-11 items-center whitespace-nowrap hover:text-dark-900">

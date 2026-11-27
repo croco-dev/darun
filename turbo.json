@@ -16,9 +16,6 @@
       "dependsOn": ["prepare"],
       "persistent": true
     },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
     "test": {
       "dependsOn": ["^test"],
       "inputs": ["$TURBO_DEFAULT$", "__tests__/**", "src/**", "vitest.config.{ts,js}", "vitest.setup.{ts,js}"],
@@ -31,10 +28,6 @@
     "typecheck": {
       "cache": true,
       "dependsOn": ["^typecheck"]
-    },
-    "typecheck:tsrs": {
-      "cache": true,
-      "dependsOn": ["^typecheck:tsrs"]
     }
   }
 }

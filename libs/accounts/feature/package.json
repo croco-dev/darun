@@ -5,10 +5,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "echo 1",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/accounts-datasource": "workspace:*",
@@ -20,7 +18,6 @@
     "typedi": "catalog:"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*"
   }
 }

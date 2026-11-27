@@ -5,10 +5,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "peerDependencies": {
     "@apollo/server": "catalog:",
@@ -20,7 +18,6 @@
     "@darun/utils-error": "workspace:*"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@types/aws-lambda": "8.10.134"
   }

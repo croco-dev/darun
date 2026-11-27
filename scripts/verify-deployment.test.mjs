@@ -104,7 +104,7 @@ for (const [name, body, status, result] of [
   ],
   ['HTTP failure', { data: { categories: [] } }, 503, 'http_error'],
 ]) {
-  test(`initialization success and database failure remain distinct: ${name}`, async t => {
+  test(`initialization success and database failure remain distinct: ${String(name)}`, async t => {
     const { endpoint, requests } = await fixture(t, (query, res) => {
       if (query.includes('__typename')) return success(query, res);
       res.statusCode = status;

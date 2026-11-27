@@ -11,9 +11,7 @@
     }
   },
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "peerDependencies": {
     "@apollo/client": "catalog:",
@@ -21,7 +19,6 @@
     "next-client-cookies": "catalog:"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:"

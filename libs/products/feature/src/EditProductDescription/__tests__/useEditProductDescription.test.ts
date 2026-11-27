@@ -188,7 +188,7 @@ describe('description form synchronization', () => {
 
       expect(result.current.form.getValues().description).toBe(editedDescription);
       await act(async () => {
-        await result.current.form.onSubmit(result.current.submit)();
+        result.current.form.onSubmit(result.current.submit)();
       });
       await waitFor(() => expect(mutate).toHaveBeenCalledTimes(1));
       expect(mutate).toHaveBeenCalledWith(saveRequest(editedDescription, loadedDescription));

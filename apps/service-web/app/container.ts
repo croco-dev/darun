@@ -20,7 +20,7 @@ const httpErrorLink = new ErrorLink(({ error }) => {
     return;
   }
 
-  console.error(`[Network error]: ${error}`);
+  console.error(`[Network error]: ${String(error)}`);
 });
 
 const isLocalEnvironment = process.env['NEXT_PUBLIC_INFRA_ENV'] === 'local';

@@ -159,7 +159,12 @@ function assembleFixtureEvidence(fixture: DescriptionFixture): ProductDescriptio
 }
 
 type DescriptionResponseStatus =
-  'NOT_EXECUTED' | 'REQUEST_FAILED' | 'EMPTY_RESPONSE' | 'JSON_PARSE_FAILED' | 'DOCUMENT_VALIDATION_FAILED' | 'PASSED';
+  | 'NOT_EXECUTED'
+  | 'REQUEST_FAILED'
+  | 'EMPTY_RESPONSE'
+  | 'JSON_PARSE_FAILED'
+  | 'DOCUMENT_VALIDATION_FAILED'
+  | 'PASSED';
 
 interface DescriptionResponseReport {
   rawContent: string | null;

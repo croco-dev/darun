@@ -268,7 +268,7 @@ export class PostgresqlProductRepository implements ProductRepository {
     });
   }
 
-  async findAllByBeforeIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findAllByBeforeIdAndLimit(limit: number, id?: string): Promise<Product[]> {
     return (
       await this.db
         .select()
@@ -280,7 +280,7 @@ export class PostgresqlProductRepository implements ProductRepository {
     ).reverse();
   }
 
-  async findAllByAfterIdAndLimit(limit: number, id?: string | undefined): Promise<Product[]> {
+  async findAllByAfterIdAndLimit(limit: number, id?: string): Promise<Product[]> {
     return this.db
       .select()
       .from(products)

@@ -7,7 +7,6 @@ import {
 import { notifications } from '@mantine/notifications';
 import { useRef, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   mutation RequestProductTranslationOnTranslateButton($slug: String!) {
     requestProductTranslation(slug: $slug) {

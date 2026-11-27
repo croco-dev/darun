@@ -27,14 +27,6 @@ describe('PostgresqlProductFeatureRepository DataLoader cache invalidation', () 
     clearAllSpy.mockRestore();
   });
 
-  function createMockSelect(rows: Record<string, unknown>[]) {
-    return vi.fn().mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockResolvedValue(rows),
-      }),
-    });
-  }
-
   function createMockSelectWithLimit(rows: Record<string, unknown>[]) {
     return vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({

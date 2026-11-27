@@ -8,13 +8,11 @@
     "cloudflare:build": "opennextjs-cloudflare build",
     "deploy": "pnpm cloudflare:build && opennextjs-cloudflare deploy -- --keep-vars",
     "dev": "next dev --port 3003",
-    "lint": "eslint .",
     "preview": "pnpm cloudflare:build && opennextjs-cloudflare preview",
     "start": "next start --port 3003",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "next typegen && tsc --noEmit",
-    "typecheck:tsrs": "next typegen && tsrs --noEmit --incremental false",
+    "typecheck": "next typegen && tsrs --noEmit --incremental false",
     "upload": "pnpm cloudflare:build && opennextjs-cloudflare upload"
   },
   "dependencies": {
@@ -42,7 +40,6 @@
     "zod": "4.1.13"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@opennextjs/cloudflare": "1.20.12",
     "@tailwindcss/postcss": "catalog:",
@@ -53,8 +50,6 @@
     "dotenv": "17.2.3",
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "catalog:",
-    "eslint": "catalog:",
-    "eslint-plugin-react-compiler": "19.1.0-rc.2",
     "jsdom": "29.0.2",
     "postgres": "3.4.8",
     "rclone.js": "0.6.6",

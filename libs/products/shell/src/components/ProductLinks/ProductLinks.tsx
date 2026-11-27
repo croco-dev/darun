@@ -9,8 +9,8 @@ import {
 import { Button, ExternalLink, Globe, Link2 } from '@darun/ui';
 import { Link } from '@darun/utils-router';
 import { bind } from '@darun/utils-structure-react';
-import Image from 'next/image';
 import { useLocale } from 'next-intl';
+import Image from 'next/image';
 import { useState } from 'react';
 import { ProductSectionContent } from '../ProductSectionContent';
 import { useProductLinks } from './useProductLinks';

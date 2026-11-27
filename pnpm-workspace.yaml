@@ -49,11 +49,10 @@ catalog:
   vitest: 4.1.10
   '@vitest/coverage-v8': 4.1.10
   '@vitest/ui': 4.1.10
-  eslint: 10.8.0
-  prettier: 3.9.6
   turbo: 2.10.7
   lefthook: 1.12.3
-  typescript-eslint: 8.66.0
+  oxfmt: 0.80.0
+  oxlint: 1.95.0
 
   # React / Next
   react: 19.2.6
@@ -63,7 +62,6 @@ catalog:
   next: 16.4.1
   next-intl: 4.8.2
   next-client-cookies: 2.1.0
-  eslint-config-next: 16.4.1
 
   # Apollo / GraphQL
   '@apollo/client': 4.2.0

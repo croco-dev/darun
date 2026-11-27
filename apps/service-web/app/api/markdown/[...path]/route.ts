@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { graphql } from '../../../../../../libs/__generated__/gql';
 import { getClient } from '../../../../app/getServerClient';
 import { collectMagazinePages } from '../../../../lib/magazines/collect-pages';
@@ -199,7 +199,8 @@ function isNotFoundError(error: unknown): boolean {
     return true;
   }
   const graphQLErrors = (err['graphQLErrors'] ?? err['graphQlErrors']) as
-    Array<{ extensions?: { code?: unknown } }> | undefined;
+    | Array<{ extensions?: { code?: unknown } }>
+    | undefined;
   if (
     Array.isArray(graphQLErrors) &&
     graphQLErrors.some(e => e?.extensions?.code === 'NOT_FOUND' || e?.extensions?.code === 404)
