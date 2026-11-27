@@ -11,4 +11,7 @@ export class PublishProductPayload {
 export class PublishProductInput {
   @Field()
   slug: string;
+
+  @Field(() => String, { nullable: true })
+  reviewToken?: string | null;
 }

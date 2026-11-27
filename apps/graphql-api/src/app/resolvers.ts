@@ -27,12 +27,14 @@ import {
   TranslationQueryResolver,
 } from '@darun/translation-feature/server';
 import { NonEmptyArray } from 'type-graphql';
+import { AdminProductPublishReviewResolver } from './graphql/AdminProductPublishReview.resolver';
 import { HealthResolver } from './graphql/Health.resolver';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export const resolvers: NonEmptyArray<Function> = [
   HealthResolver,
   AdminProductCategoriesResolver,
+  AdminProductPublishReviewResolver,
   CategoryQueryResolver,
   ProductQueryResolver,
   ScreenshotFieldResolver,

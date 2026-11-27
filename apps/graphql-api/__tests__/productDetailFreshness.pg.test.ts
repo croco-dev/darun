@@ -9,6 +9,7 @@ import {
   PostgresqlProductDescriptionEvidenceAssembler,
   PostgresqlProductFlowRepository,
   PostgresqlProductLinkRepository,
+  PostgresqlProductPublishReview,
   PostgresqlProductRepository,
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
@@ -28,6 +29,7 @@ import {
   GetProductScreenshots,
   GetProductsByCategory,
   GetVisualScreenshots,
+  PublishProduct,
   UpdateProductCategories,
   UpdateProductLink,
   UpdateProductScreenshot,
@@ -63,11 +65,13 @@ import {
   type AllProductsOnProductListTableQuery,
   type AllProductsOnProductListTableQueryVariables,
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
+  AdminProductPublishReviewDocument,
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
   type GetProductDescriptionJobsOnAdminQuery,
+  PublishProductOnPublishProductButtonDocument,
 } from '../../../libs/__generated__/graphql';
 import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
 import { ProductCoreMutationResolver } from '../../../libs/products/feature/src/ProductCoreMutationResolver';
@@ -76,6 +80,7 @@ import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRan
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
 import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
 import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
+import { AdminProductPublishReviewResolver } from '../src/app/graphql/AdminProductPublishReview.resolver';
 import { createGraphQLDescriptionPrecondition } from '../src/app/graphqlDescriptionPrecondition';
 
 const { execute, graphql, print } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
@@ -212,6 +217,140 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   afterAll(async () => {
     if (reader) await reader.end({ timeout: 5 });
     if (writer) await writer.end({ timeout: 5 });
+  });
+
+  it('발행 검토가 저장 상태를 구분하고 검토 이후의 수정은 발행 전에 다시 확인하게 한다', async () => {
+    const id = randomUUID().replaceAll('-', '').slice(0, 26);
+    const slug = `publish-review-${id}`;
+    const repository = new PostgresqlProductRepository(db);
+    const translations = new PostgresqlTranslationRepository(db);
+    const reviewResolver = new AdminProductPublishReviewResolver(
+      new PostgresqlProductPublishReview(db),
+      db,
+      translations
+    );
+    const mutationResolver = Object.assign(Object.create(ProductMutationResolver.prototype), {
+      getProductUseCase: new GetProduct(repository),
+      publishProductUseCase: new PublishProduct(repository),
+    });
+    const server = new ApolloServer({
+      schema: buildSchemaSync({
+        resolvers: [AdminProductPublishReviewResolver, ProductMutationResolver],
+        authChecker: createAuthChecker(),
+        container: {
+          get: resolver => (resolver === AdminProductPublishReviewResolver ? reviewResolver : mutationResolver),
+        },
+      }),
+      formatError: (formatted, error) => formatServerError(formatted, error, false),
+    });
+    const run = async (
+      document: GraphQL.DocumentNode,
+      variables: Record<string, unknown>,
+      roles: string[] = ['admin']
+    ) => {
+      const result = await server.executeOperation(
+        { query: print(document), variables },
+        { contextValue: { getRoles: async () => roles } }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+      return result.body.singleResult;
+    };
+    const read = (roles?: string[]) => run(AdminProductPublishReviewDocument, { slug }, roles);
+    const publish = (reviewToken?: unknown, roles?: string[]) =>
+      run(PublishProductOnPublishProductButtonDocument, { input: { slug, reviewToken } }, roles);
+    const effects = async () => ({
+      intents: await writer`select kind from product_content_sync_intents where product_id = ${id} order by kind`,
+      jobs: await writer`select status from translation_jobs where entity_id = ${id}`,
+    });
+
+    await server.start();
+    Container.set(ProductContentSyncRegistrarToken, {
+      register: registerProductContentSync,
+    });
+    try {
+      await writer`insert into products (id, slug, name, summary, description, logo_url)
+        values (${id}, ${slug}, '검토 서비스', '원문 요약', '<p><br></p>', '')`;
+      await writer`insert into product_links (id, product_id, title, icon_url, link, display_link)
+        values (${id}, ${id}, '공식 사이트', '', 'https://example.com', 'example.com')`;
+      await translations.upsert({
+        entityType: 'Product',
+        entityId: id,
+        locale: 'en',
+        field: 'name',
+        value: 'Review App',
+        sourceHash: computeSourceHash('검토 서비스', 'name'),
+        model: 'fixture',
+        promptVersion: 'fixture',
+      });
+
+      expect((await read([])).errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+      const first = await read();
+      expect(first.errors).toBeUndefined();
+      expect(first.data?.adminProductPublishReview).toMatchObject({
+        publishedAt: null,
+        hasName: true,
+        hasSummary: true,
+        hasDescription: false,
+        hasCategory: false,
+        hasLogo: false,
+        hasScreenshot: false,
+        officialLinkStatus: 'UNCLASSIFIED',
+        translation: {
+          name: 'CURRENT',
+          summary: 'MISSING',
+          description: 'NOT_NEEDED',
+          latestJobFailed: false,
+        },
+      });
+      expect(await effects()).toEqual({ intents: [], jobs: [] });
+      const oldToken = (first.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
+      expect((await publish(oldToken, [])).errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+      await writer`update products set logo_url = 'https://example.com/review.png' where id = ${id}`;
+      const stale = await publish(oldToken);
+      expect(stale.errors?.[0]?.extensions?.code).toBe('product/publish-review-changed');
+      expect(await effects()).toEqual({ intents: [], jobs: [] });
+
+      const failure = vi.spyOn(translations, 'findMany').mockRejectedValueOnce(new Error('fixture unavailable'));
+      const partial = await read();
+      failure.mockRestore();
+      expect(partial.errors?.[0]?.path).toEqual(['adminProductPublishReview', 'translation']);
+      expect(partial.data?.adminProductPublishReview).toMatchObject({
+        hasLogo: true,
+        translation: null,
+      });
+
+      await new PostgresqlProductLinkRepository(db).updateById(id, id, link => {
+        link.update({ role: 'official' });
+        return link;
+      });
+      const fresh = await read();
+      expect(fresh.errors).toBeUndefined();
+      expect(fresh.data?.adminProductPublishReview).toMatchObject({
+        officialLinkStatus: 'READY',
+      });
+      const newToken = (fresh.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
+      expect(newToken).not.toBe(oldToken);
+      const result = await publish(newToken);
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.publishProduct).toEqual({
+        product: { id, publishedAt: expect.any(String) },
+      });
+      const retry = await publish(newToken);
+      expect(retry.errors).toBeUndefined();
+      expect(retry.data).toEqual(result.data);
+      expect(await effects()).toEqual({
+        intents: [{ kind: 'search' }, { kind: 'translation' }],
+        jobs: [{ status: 'pending' }],
+      });
+    } finally {
+      await server.stop();
+      Container.remove(ProductContentSyncRegistrarToken);
+      await writer`delete from product_content_sync_intents where product_id = ${id}`;
+      await writer`delete from translation_jobs where entity_id = ${id}`;
+      await writer`delete from translations where entity_id = ${id}`;
+      await writer`delete from product_links where product_id = ${id}`;
+      await writer`delete from products where id = ${id}`;
+    }
   });
 
   it('관리자 분류 변경을 공개 목록과 추천 후보에 반영하고 실패 시 원자적으로 되돌린다', async () => {
