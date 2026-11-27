@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { ProductTagsForm } from '@darun/products-feature';
+import { ProductContentReviewPanel, ProductTagsForm } from '@darun/products-feature';
 import { PageShell, AdminPanel, AdminSectionHeader, AdminSectionBody } from '@darun/ui-admin';
 import { getClient } from '@darun/utils-apollo-client/server';
 import {
@@ -61,6 +61,9 @@ export default async function ProductDetailPage({ params }: PageProps) {
     <PageShell title={title} backHref="/products">
       <ProductDetailInfoSection slug={slug} />
       <div className="flex flex-col gap-8 mt-6">
+        <div id="product-content-review" className="scroll-mt-20">
+          <ProductContentReviewPanel slug={slug} />
+        </div>
         <div id="product-edit-category" tabIndex={-1} className="scroll-mt-20">
           <ProductDetailCategorySection key={slug} slug={slug} />
         </div>

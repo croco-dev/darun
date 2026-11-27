@@ -11,6 +11,7 @@ import {
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
 import { llmJobHistoryCompatibility } from '../features/llm-jobs/llmJobHistoryCompatibility';
+import { productContentReviewRefreshLink } from '../features/products/productContentReviewRefreshLink';
 
 const httpErrorLink = new ErrorLink(({ error, operation }) => {
   const fetchOptions = operation.getContext().fetchOptions as RequestInit | undefined;
@@ -89,6 +90,7 @@ const apolloClient = new ApolloClient({
     productLinkSchemaCompatibility,
     productPublishReviewSchemaCompatibility,
     llmJobHistoryCompatibility,
+    productContentReviewRefreshLink,
     operationExtensionsLink,
     httpLink,
   ]),
