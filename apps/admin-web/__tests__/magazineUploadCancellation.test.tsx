@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { notifications } from '@mantine/notifications';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import React from 'react';
@@ -61,13 +62,13 @@ it('ignores a successful upload arriving after the magazine form unmounts', asyn
   });
   expect(result.current.isUploading).toBe(true);
   unmount();
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:replacement');
-  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledWith('blob:replacement');
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledTimes(1);
   await act(async () => {
     pending.resolve('https://images.example.test/late.png');
     await task;
   });
-  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledTimes(1);
   expect(notifications.show).not.toHaveBeenCalled();
   expect(write).not.toHaveBeenCalled();
   expect(navigate).not.toHaveBeenCalled();

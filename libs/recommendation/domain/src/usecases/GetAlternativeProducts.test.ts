@@ -1,4 +1,5 @@
 import { Product, ProductTag, Tag, TagType } from '@darun/products-domain';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { AlternativeProduct } from '../entities/AlternativeProduct';
 import type { AlternativeProductRepository } from '../repositories/AlternativeProductRepository';
@@ -110,7 +111,7 @@ describe('GetAlternativeProducts', () => {
       productId: 'source',
     });
     expect(result.map(alternative => alternative.alternativeProductId)).toEqual(ids);
-    expect(repository.deleteMany).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).deleteMany).not.toHaveBeenCalled();
   });
 
   it('ranks category matches before tag-only matches', async () => {

@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import { Category, GetCategories, GetCategoryBySlug, type CategoryRepository } from '@darun/products-domain';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { buildSchema } from 'type-graphql';
 import { Container } from 'typedi';
 import { describe, expect, it, vi } from 'vitest';
@@ -55,8 +56,10 @@ describe('CategoryQueryResolver', () => {
           labelEn: `Category ${index + 1}`,
         })
     );
-    vi.mocked(repository.findAll).mockResolvedValue(categories);
-    vi.mocked(repository.findOneBySlug).mockImplementation(async slug => categories.find(c => c.slug === slug) ?? null);
+    mockedMethods(repository).findAll.mockResolvedValue(categories);
+    mockedMethods(repository).findOneBySlug.mockImplementation(
+      async slug => categories.find(c => c.slug === slug) ?? null
+    );
     const resolver = new CategoryQueryResolver(new GetCategories(repository), new GetCategoryBySlug(repository));
     const schema = await buildSchema({
       resolvers: [CategoryQueryResolver],
@@ -75,19 +78,19 @@ describe('CategoryQueryResolver', () => {
         labelEn: 'Category 101',
       },
     });
-    expect(repository.findOneBySlug).toHaveBeenCalledExactlyOnceWith('category-101');
-    expect(repository.findAll).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findOneBySlug).toHaveBeenCalledExactlyOnceWith('category-101');
+    expect(mockedMethods(repository).findAll).not.toHaveBeenCalled();
 
     const missing = await graphql({ schema, source: '{ categoryBySlug(slug: "missing") { id } }' });
     expect(missing.errors).toBeUndefined();
     expect(missing.data).toEqual({ categoryBySlug: null });
-    vi.mocked(repository.findOneBySlug).mockRejectedValueOnce(new Error('fixture unavailable'));
+    mockedMethods(repository).findOneBySlug.mockRejectedValueOnce(new Error('fixture unavailable'));
     const failed = await graphql({ schema, source: '{ categoryBySlug(slug: "category-101") { id } }' });
     expect(failed.errors?.[0].message).toBe('fixture unavailable');
     expect(failed.errors?.[0].path).toEqual(['categoryBySlug']);
     const recovered = await graphql({ schema, source: '{ categoryBySlug(slug: "category-101") { id } }' });
     expect(recovered.errors).toBeUndefined();
     expect(recovered.data).toEqual({ categoryBySlug: { id: 'category-101' } });
-    expect(repository.findAll).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findAll).not.toHaveBeenCalled();
   });
 });

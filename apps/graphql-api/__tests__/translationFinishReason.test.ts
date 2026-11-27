@@ -11,6 +11,7 @@ import type {
 } from '@darun/translation-domain';
 import { TranslationJobService, TranslationQueueService } from '@darun/translation-service';
 import { LlmClient } from '@darun/utils-llm';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const job: TranslationJobEntity = {
@@ -104,12 +105,12 @@ describe('translation job completion reasons', () => {
 
       if (status === 'completed') {
         expect(fetch).toHaveBeenCalledTimes(2);
-        expect(sourceStore.commit).toHaveBeenCalledOnce();
-        expect(repository.completeJobLease).not.toHaveBeenCalled();
+        expect(mockedMethods(sourceStore).commit).toHaveBeenCalledOnce();
+        expect(mockedMethods(repository).completeJobLease).not.toHaveBeenCalled();
       } else {
         expect(fetch).toHaveBeenCalledOnce();
-        expect(sourceStore.commit).not.toHaveBeenCalled();
-        expect(repository.completeJobLease).toHaveBeenCalledWith(
+        expect(mockedMethods(sourceStore).commit).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).completeJobLease).toHaveBeenCalledWith(
           'job-1',
           'attempt-1',
           'failed',

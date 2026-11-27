@@ -32,6 +32,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@darun/utils-vitest-config": "workspace:*",
     "@types/react-dom": "catalog:",
     "graphql-tag-swc-plugin": "catalog:",
     "vitest": "catalog:"

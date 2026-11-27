@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { Product } from '../entities/Product';
 import type { ProductDescriptionJobEntity } from '../entities/ProductDescriptionJobEntity';
@@ -48,7 +49,10 @@ describe('atomic candidate application', () => {
   it.each(['v1', 'v2'])('preserves stored renderer %s HTML bytes', async rendererVersion => {
     const { usecase, session, job } = fixture({ rendererVersion });
     const result = await usecase.execute({ jobId: 'j' });
-    expect(session.applyLocked).toHaveBeenCalledWith({ productId: 'p', candidateHtml: job.candidateHtml });
+    expect(mockedMethods(session).applyLocked).toHaveBeenCalledWith({
+      productId: 'p',
+      candidateHtml: job.candidateHtml,
+    });
     expect(result.alreadyApplied).toBe(false);
     expect(result.job.appliedAt).toEqual(new Date('2026-10-12'));
   });
@@ -60,21 +64,21 @@ describe('atomic candidate application', () => {
       candidateHtml: null,
     });
     expect(await usecase.execute({ jobId: 'j' })).toMatchObject({ product, alreadyApplied: true });
-    expect(session.assembleLocked).not.toHaveBeenCalled();
-    expect(session.applyLocked).not.toHaveBeenCalled();
-    expect(session.markAppliedLocked).not.toHaveBeenCalled();
+    expect(mockedMethods(session).assembleLocked).not.toHaveBeenCalled();
+    expect(mockedMethods(session).applyLocked).not.toHaveBeenCalled();
+    expect(mockedMethods(session).markAppliedLocked).not.toHaveBeenCalled();
   });
 
   it('revalidates the job after acquiring its Product mutex', async () => {
     const { usecase, session, job } = fixture();
-    vi.mocked(session.findJob)
-      .mockResolvedValueOnce(job)
+    mockedMethods(session)
+      .findJob.mockResolvedValueOnce(job)
       .mockResolvedValueOnce({ ...job, appliedAt: new Date() });
     expect((await usecase.execute({ jobId: 'j' })).alreadyApplied).toBe(true);
-    expect(session.findJob).toHaveBeenNthCalledWith(1, 'j', false);
-    expect(session.findJob).toHaveBeenNthCalledWith(2, 'j', true);
-    expect(session.findLockedProduct).toHaveBeenCalledWith('p');
-    expect(session.applyLocked).not.toHaveBeenCalled();
+    expect(mockedMethods(session).findJob).toHaveBeenNthCalledWith(1, 'j', false);
+    expect(mockedMethods(session).findJob).toHaveBeenNthCalledWith(2, 'j', true);
+    expect(mockedMethods(session).findLockedProduct).toHaveBeenCalledWith('p');
+    expect(mockedMethods(session).applyLocked).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -91,7 +95,7 @@ describe('atomic candidate application', () => {
         evidenceHashVersion: version,
         evidenceHash: version === 'v2' ? 'v2-hash' : 'v1-hash',
       });
-      vi.mocked(session.assembleLocked).mockResolvedValue({
+      mockedMethods(session).assembleLocked.mockResolvedValue({
         evidence: {
           productId: 'p',
           productName: '제품',
@@ -107,7 +111,7 @@ describe('atomic candidate application', () => {
       if (accepted) expect((await usecase.execute({ jobId: 'j' })).alreadyApplied).toBe(false);
       else {
         await expect(usecase.execute({ jobId: 'j' })).rejects.toMatchObject({ code: 'STALE_CANDIDATE' });
-        expect(session.applyLocked).not.toHaveBeenCalled();
+        expect(mockedMethods(session).applyLocked).not.toHaveBeenCalled();
       }
     }
   );
@@ -115,13 +119,13 @@ describe('atomic candidate application', () => {
   it('rejects a changed canonical description without writing candidate or marker', async () => {
     const { usecase, session } = fixture({ baseDescriptionHash: 'old-body' });
     await expect(usecase.execute({ jobId: 'j' })).rejects.toMatchObject({ code: 'STALE_CANDIDATE' });
-    expect(session.applyLocked).not.toHaveBeenCalled();
-    expect(session.markAppliedLocked).not.toHaveBeenCalled();
+    expect(mockedMethods(session).applyLocked).not.toHaveBeenCalled();
+    expect(mockedMethods(session).markAppliedLocked).not.toHaveBeenCalled();
   });
 
   it('does not convert marker failure into a fabricated alreadyApplied response', async () => {
     const { usecase, session } = fixture();
-    vi.mocked(session.markAppliedLocked).mockRejectedValue(new Error('marker failure'));
+    mockedMethods(session).markAppliedLocked.mockRejectedValue(new Error('marker failure'));
     await expect(usecase.execute({ jobId: 'j' })).rejects.toThrow('marker failure');
   });
 });

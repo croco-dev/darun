@@ -1,4 +1,5 @@
 import { AuthService, AuthStorage } from '@darun/utils-auth-service-core';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { Cookies } from 'next-client-cookies';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authChecker } from './AuthChecker';
@@ -32,7 +33,7 @@ describe('AuthChecker', () => {
     const result = await authChecker.getUser(cookies);
 
     expect(result).toEqual({ id: 'user1', isAdmin: true });
-    expect(mockService.setAuthStorage).toHaveBeenCalled();
+    expect(mockedMethods(mockService).setAuthStorage).toHaveBeenCalled();
   });
 
   it('should create fresh authService instance for each call when factory is used', async () => {
@@ -50,8 +51,8 @@ describe('AuthChecker', () => {
     expect(factory).toHaveBeenCalledTimes(2);
     expect(result1).toEqual({ id: 'user1', isAdmin: true });
     expect(result2).toEqual({ id: 'user2', isAdmin: false });
-    expect(mockService1.setAuthStorage).toHaveBeenCalled();
-    expect(mockService2.setAuthStorage).toHaveBeenCalled();
+    expect(mockedMethods(mockService1).setAuthStorage).toHaveBeenCalled();
+    expect(mockedMethods(mockService2).setAuthStorage).toHaveBeenCalled();
   });
 
   it('should not cross-contaminate cookies between concurrent requests', async () => {

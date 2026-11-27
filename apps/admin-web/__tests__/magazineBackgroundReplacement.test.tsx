@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -91,7 +92,7 @@ it.each(['rejection', 'empty response'])(
     });
     expect(result.current.isUploading).toBe(true);
     expect(result.current.previewUrl).toBe('blob:replacement.png');
-    expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:first.png');
+    expect(mockedMethods(URL).revokeObjectURL).not.toHaveBeenCalledWith('blob:first.png');
     await act(async () => {
       if (failure === 'rejection') fail(new Error('synthetic failure'));
       else finish(undefined);
@@ -104,8 +105,8 @@ it.each(['rejection', 'empty response'])(
       summary: '보존할 요약',
       backgroundImageUrl: firstUrl,
     });
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:replacement.png');
-    expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:first.png');
+    expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledWith('blob:replacement.png');
+    expect(mockedMethods(URL).revokeObjectURL).not.toHaveBeenCalledWith('blob:first.png');
     await act(async () => {
       await result.current.handleSubmit(result.current.form.getValues());
     });
@@ -124,18 +125,18 @@ it('commits a successful replacement and only explicit removal submits an empty 
   });
   expect(result.current.file).toBe(replacement);
   expect(result.current.form.getValues().backgroundImageUrl).toBe(replacementUrl);
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:first.png');
-  expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:replacement.png');
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledWith('blob:first.png');
+  expect(mockedMethods(URL).revokeObjectURL).not.toHaveBeenCalledWith('blob:replacement.png');
   act(() => result.current.handleFileRemove());
   expect(result.current.file).toBeNull();
   expect(result.current.previewUrl).toBeNull();
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:replacement.png');
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledWith('blob:replacement.png');
   await act(async () => {
     await result.current.handleSubmit(result.current.form.getValues());
   });
   expect(writes).toEqual([expect.objectContaining({ backgroundImageUrl: '' })]);
   unmount();
-  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledTimes(2);
 });
 
 it('keeps no accepted selection after the first failure and can retry the selected file', async () => {
@@ -158,8 +159,8 @@ it('keeps no accepted selection after the first failure and can retry the select
 });
 
 it('restores the accepted preview on cancellation and ignores a late result after a new upload', async () => {
-  vi.mocked(URL.createObjectURL)
-    .mockReturnValueOnce('blob:accepted-A')
+  mockedMethods(URL)
+    .createObjectURL.mockReturnValueOnce('blob:accepted-A')
     .mockReturnValueOnce('blob:cancelled-B')
     .mockReturnValueOnce('blob:accepted-B');
   const { result, unmount } = setup();
@@ -179,8 +180,8 @@ it('restores the accepted preview on cancellation and ignores a late result afte
   });
   act(() => result.current.handleUploadCancel());
   expect(result.current.previewUrl).toBe('blob:accepted-A');
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:cancelled-B');
-  expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:accepted-A');
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledWith('blob:cancelled-B');
+  expect(mockedMethods(URL).revokeObjectURL).not.toHaveBeenCalledWith('blob:accepted-A');
   expect(result.current.file).toBe(first);
   upload.mockResolvedValueOnce(replacementUrl);
   await act(async () => {
@@ -193,9 +194,9 @@ it('restores the accepted preview on cancellation and ignores a late result afte
   expect(result.current.form.getValues().backgroundImageUrl).toBe(replacementUrl);
   expect(result.current.file).toBe(replacement);
   expect(result.current.previewUrl).toBe('blob:accepted-B');
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:accepted-A');
-  expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:accepted-B');
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledWith('blob:accepted-A');
+  expect(mockedMethods(URL).revokeObjectURL).not.toHaveBeenCalledWith('blob:accepted-B');
   unmount();
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:accepted-B');
-  expect(URL.revokeObjectURL).toHaveBeenCalledTimes(3);
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledWith('blob:accepted-B');
+  expect(mockedMethods(URL).revokeObjectURL).toHaveBeenCalledTimes(3);
 });

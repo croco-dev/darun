@@ -5,6 +5,7 @@ import { LlmSettingService } from '@darun/translation-service';
 import { createServer as createApolloServer } from '@darun/utils-apollo-server';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { createSentryApolloLogPlugin, sentryRequestRedaction } from '@darun/utils-sentry';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import * as Sentry from '@sentry/node';
 import bodyParser from 'body-parser';
 import type * as GraphQL from 'graphql';
@@ -258,9 +259,9 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     collectSettingConsole = undefined;
     cancelSettingConsole = undefined;
     diagnosticResolver.settingConsoleCollected = undefined;
-    vi.mocked(settingResolver.updateLlmSetting).mockClear();
+    mockedMethods(settingResolver).updateLlmSetting.mockClear();
     vi.stubEnv('OPEN_ROUTER_API_KEY', environmentKey);
-    vi.mocked(repository.findSetting).mockClear();
+    mockedMethods(repository).findSetting.mockClear();
     vi.mocked(writeSetting).mockClear();
   });
 
@@ -576,8 +577,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       ]);
       expect(response[0].errors?.[0].message).toContain(property);
       expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
-      expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-      expect(repository.findSetting).not.toHaveBeenCalled();
+      expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
       expect(writeSetting).not.toHaveBeenCalled();
       expectLateDiagnosticEvent('BAD_USER_INPUT', [property]);
       expectNoCredentials(envelopes, [property]);
@@ -592,7 +593,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     operation.variables = { [variable]: secret, searchCredential: { type: false, id: false } };
     const response = await send(operation, true, 400, 1, '', { 'x-credential-echo': secret });
     expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_USER_INPUT' } }] });
-    expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
     expect(writeSetting).not.toHaveBeenCalled();
     expectNoCredentials(envelopes, [secret]);
     expect(events[0].extra?.variables).toEqual({
@@ -634,8 +635,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           );
           expect(response[0].errors?.[0].message).toContain(property);
           expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
-          expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-          expect(repository.findSetting).not.toHaveBeenCalled();
+          expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+          expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
           expect(writeSetting).not.toHaveBeenCalled();
           expectProtectedEvent('HttpDiagnostics', 'unrelated');
           expectNoCredentials(envelopes, [secret, property]);
@@ -677,8 +678,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         );
         expect(response[0].errors?.[0].message).toContain(duplicateFieldSecret);
         expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
-        expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-        expect(repository.findSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
         expect(writeSetting).not.toHaveBeenCalled();
         expectProtectedEvent('HttpDiagnostics', 'unrelated');
         expectNoCredentials(envelopes, [duplicateFieldSecret, nestedVariableSecret]);
@@ -736,8 +737,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
             message: 'Synthetic HTTP search failure: index unavailable',
             extensions: { code: 'HTTP_SEARCH_FIXTURE_FAILED' },
           });
-          expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-          expect(repository.findSetting).not.toHaveBeenCalled();
+          expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+          expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
           expect(writeSetting).not.toHaveBeenCalled();
           expectProtectedEvent('HttpDiagnostics', 'unrelated');
           expectNoCredentials(envelopes, [secret]);
@@ -798,8 +799,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       'x-property-lower': encodeURIComponent(uriProperty).replace(/%[\dA-Fa-f]{2}/g, octet => octet.toLowerCase()),
     });
     expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_USER_INPUT' } }] });
-    expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
     expect(writeSetting).not.toHaveBeenCalled();
     expectNoCredentials(envelopes, [uriProperty, braveApiKey, environmentKey]);
     expect(events[0].extra?.variables).toEqual({
@@ -907,8 +908,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
             },
           ],
         });
-        expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-        expect(repository.findSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
         expect(writeSetting).not.toHaveBeenCalled();
         expect(events[0].request).toMatchObject({ method: 'GET', url: `http://127.0.0.1:${port}/graphql` });
         expect(events[0].request?.query_string).toBeUndefined();
@@ -935,8 +936,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         });
         const response = await send(undefined, true, 405, 1, `?${search}`);
         expect(response).toMatchObject({ errors: [{ extensions: { code: 'BAD_REQUEST' } }] });
-        expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-        expect(repository.findSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
         expect(writeSetting).not.toHaveBeenCalled();
         expectNoCredentials(envelopes, fixture.secrets);
         expectNoCredentials(consoleDiagnostics, fixture.secrets);
@@ -999,8 +1000,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       expect(response[0].errors?.[0].message).toContain('graphql');
       expect(response[0].errors?.[0].message).toContain(property);
       expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
-      expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-      expect(repository.findSetting).not.toHaveBeenCalled();
+      expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
       expect(writeSetting).not.toHaveBeenCalled();
       for (const event of events) {
         expect(event.transaction).toBe('fixture [REDACTED] /[REDACTED] [REDACTED]');
@@ -1047,8 +1048,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
       ]);
       expect(response[0].errors?.[0].message).toContain(property);
       expect(response[1].errors?.[0].extensions.code).toBe('HTTP_SEARCH_FIXTURE_FAILED');
-      expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-      expect(repository.findSetting).not.toHaveBeenCalled();
+      expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
       expect(writeSetting).not.toHaveBeenCalled();
       // Error events are named from the header copy: input redaction applies.
       for (const event of events) {
@@ -1075,8 +1076,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     expect(events[0].transaction).toBe(transactionName);
     expect(events[0].request?.headers?.['x-transaction-id']).toBe(transactionName);
     expectProtectedEvent('HttpDiagnostics', 'unrelated');
-    expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
     expect(writeSetting).not.toHaveBeenCalled();
   });
 
@@ -1112,8 +1113,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
           }),
         ]);
         expect(rejected.errors?.[0].message).toContain(property);
-        expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-        expect(repository.findSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
         expect(writeSetting).not.toHaveBeenCalled();
         expectNoCredentials(envelopes, [property]);
         expectNoCredentials(consoleDiagnostics, [property]);
@@ -1176,7 +1177,7 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
     });
     expectProtectedEvent('HttpSave', 'saved');
     expect(events[0].extra?.query).toContain('[REDACTED]');
-    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
     expect(writeSetting).not.toHaveBeenCalled();
   });
 
@@ -1190,7 +1191,9 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
         it(`${encoding}: ${failure.kind}, ${order} retains explicit errors and safe tracing`, async () => {
           if (failure.kind === 'policy') vi.stubEnv('OPEN_ROUTER_API_KEY', apiKey);
           if (failure.kind === 'read')
-            vi.mocked(repository.findSetting).mockRejectedValueOnce(new Error(`read failed ${apiKey},${braveApiKey}`));
+            mockedMethods(repository).findSetting.mockRejectedValueOnce(
+              new Error(`read failed ${apiKey},${braveApiKey}`)
+            );
           if (failure.kind === 'write')
             vi.mocked(writeSetting).mockRejectedValueOnce(
               new Error(`Failed query: insert llm_settings params ${apiKey},${braveApiKey}`)
@@ -1214,8 +1217,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
               expect.objectContaining({ extensions: expect.objectContaining({ code: 'HTTP_SEARCH_FIXTURE_FAILED' }) }),
             ]);
           }
-          expect(settingResolver.updateLlmSetting).toHaveBeenCalledOnce();
-          expect(repository.findSetting).toHaveBeenCalledOnce();
+          expect(mockedMethods(settingResolver).updateLlmSetting).toHaveBeenCalledOnce();
+          expect(mockedMethods(repository).findSetting).toHaveBeenCalledOnce();
           if (failure.kind === 'write') expect(writeSetting).toHaveBeenCalledOnce();
           else expect(writeSetting).not.toHaveBeenCalled();
           const settingEvent = events.find(event => String(event.extra?.query).includes('HttpSave'));
@@ -1254,8 +1257,8 @@ describe('HTTP batches through the registered Apollo Sentry boundary', () => {
             }),
           ]);
           for (const echo of fixture.echoed) expect(rejected.errors?.[0].message).toContain(echo);
-          expect(settingResolver.updateLlmSetting).not.toHaveBeenCalled();
-          expect(repository.findSetting).not.toHaveBeenCalled();
+          expect(mockedMethods(settingResolver).updateLlmSetting).not.toHaveBeenCalled();
+          expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
           expect(writeSetting).not.toHaveBeenCalled();
           expect(consoleDiagnostics).toContainEqual([
             '[GraphQL Error]',

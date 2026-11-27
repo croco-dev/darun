@@ -715,7 +715,7 @@ PR CI와 GraphQL 배포 전 quality 검사의 전체 패키지 검사는 `pnpm r
 
 `tsrs`는 버전을 고정하고 `--noEmit --incremental false`로 실행해 JavaScript를 출력하지 않습니다. `typescript` 의존성은 Next.js 빌드, Lambda의 decorator metadata 변환과 테스트에서 사용하는 TypeScript API를 위해 유지합니다. 새 패키지의 `typecheck` 스크립트도 `tsrs --noEmit --incremental false`로 정의합니다.
 
-`pnpm lint`는 저장소 루트에서 한 번 실행하며 모든 패키지의 JS/TS 소스를 검사합니다. 패키지별 `lint` 스크립트는 두지 않습니다. 규칙은 `oxlint.config.mts`, 포맷은 `.oxfmtrc.json`에 있고, type-aware 규칙은 `tsrs-lint`(`OXLINT_TSGOLINT_PATH`)로 실행합니다. 기존 위반이 남은 type-aware 규칙은 warning으로 두며, 정리한 규칙부터 error로 올립니다.
+`pnpm lint`는 저장소 루트에서 한 번 실행하며 모든 패키지의 JS/TS 소스를 검사합니다. 패키지별 `lint` 스크립트는 두지 않습니다. 규칙은 `oxlint.config.mts`, 포맷은 `.oxfmtrc.json`에 있고, type-aware 규칙은 `tsrs-lint`(`OXLINT_TSGOLINT_PATH`)로 실행하며 모두 error입니다. 테스트에서 mock 메서드를 `expect()`나 `vi.mocked()`에 넘길 때는 `@darun/utils-vitest-config/testing`의 `mockedMethods(obj).method`로 참조해 `unbound-method`를 지킵니다.
 
 `tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
 

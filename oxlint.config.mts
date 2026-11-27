@@ -148,7 +148,7 @@ export default defineConfig({
         ],
       },
     ],
-    'typescript/unbound-method': 'warn',
+    'typescript/unbound-method': 'error',
 
     'boundaries/dependencies': [
       'error',

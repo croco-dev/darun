@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { Product } from '../entities/Product';
 import type { ProductRepository } from '../repositories/ProductRepository';
@@ -107,7 +108,7 @@ describe('GetRankedProducts', () => {
     expect(result).toEqual([p1, p2]);
     expect(productRepository.findPublishedByIds).toHaveBeenCalledTimes(1);
     expect(productRepository.findPublishedByIds).toHaveBeenCalledWith(['p1', 'p2', 'p3']);
-    expect(productRepository.findPublishedOneById).not.toHaveBeenCalled();
+    expect(mockedMethods(productRepository).findPublishedOneById).not.toHaveBeenCalled();
   });
 
   it('returns an empty array when there are no ranked votes', async () => {

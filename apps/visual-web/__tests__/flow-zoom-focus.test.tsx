@@ -93,7 +93,7 @@ function openZoom(activation: 'keyboard' | 'pointer' = 'keyboard') {
     opener,
     dialog,
     commitStep,
-    nextStep() {
+    nextStep: () => {
       fireEvent.click(within(dialog).getByRole('button', { name: '다음 단계' }));
       commitStep();
       expect(within(dialog).getByRole('heading').textContent).toContain('2 / 2');

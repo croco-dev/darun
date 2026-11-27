@@ -13,6 +13,7 @@
     "typedi": "catalog:"
   },
   "devDependencies": {
-    "@darun/utils-tsconfig": "workspace:*"
+    "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*"
   }
 }

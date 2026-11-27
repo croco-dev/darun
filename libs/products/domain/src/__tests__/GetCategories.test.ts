@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { Category } from '../entities/Category';
 import type { CategoryRepository } from '../repositories/CategoryRepository';
@@ -21,13 +22,13 @@ describe('GetCategoryBySlug', () => {
   it('uses the exact repository slug lookup and preserves missing/error results', async () => {
     const repository = createRepository();
     const useCase = new GetCategoryBySlug(repository);
-    vi.mocked(repository.findOneBySlug).mockResolvedValueOnce(categories[1]);
+    mockedMethods(repository).findOneBySlug.mockResolvedValueOnce(categories[1]);
     await expect(useCase.execute('design')).resolves.toBe(categories[1]);
-    expect(repository.findOneBySlug).toHaveBeenCalledExactlyOnceWith('design');
+    expect(mockedMethods(repository).findOneBySlug).toHaveBeenCalledExactlyOnceWith('design');
     await expect(useCase.execute('missing')).resolves.toBeNull();
-    vi.mocked(repository.findOneBySlug).mockRejectedValueOnce(new Error('unavailable'));
+    mockedMethods(repository).findOneBySlug.mockRejectedValueOnce(new Error('unavailable'));
     await expect(useCase.execute('design')).rejects.toThrow('unavailable');
-    expect(repository.findAll).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findAll).not.toHaveBeenCalled();
   });
 });
 
@@ -36,7 +37,7 @@ describe('GetCategories', () => {
     const repository = createRepository();
 
     await expect(new GetCategories(repository).execute({ first: 1 })).resolves.toEqual([categories[0]]);
-    expect(repository.findAll).toHaveBeenCalledOnce();
+    expect(mockedMethods(repository).findAll).toHaveBeenCalledOnce();
   });
 
   it('returns no categories when first is negative', async () => {

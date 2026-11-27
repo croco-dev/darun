@@ -371,6 +371,9 @@ importers:
         specifier: 'catalog:'
         version: 19.2.6(react@19.2.6)
     devDependencies:
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-vitest-config
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -737,6 +740,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../libs/shared/utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-vitest-config
       '@opennextjs/cloudflare':
         specifier: 1.20.12
         version: 1.20.12(encoding@0.1.13)(next@16.4.1(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(@types/node@25.2.3)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.97.3))(rclone.js@0.6.6)(wrangler@4.148.0(@types/node@25.2.3))
@@ -855,6 +861,9 @@ importers:
         specifier: 'catalog:'
         version: 19.2.6(react@19.2.6)
     devDependencies:
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../libs/shared/utils-vitest-config
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.2.4(@types/react@19.2.14)
@@ -1114,6 +1123,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-vitest-config
 
   libs/images/feature:
     dependencies:
@@ -1803,6 +1815,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-vitest-config
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
@@ -2494,6 +2509,9 @@ importers:
       '@darun/utils-tsconfig':
         specifier: workspace:*
         version: link:../../shared/utils-tsconfig
+      '@darun/utils-vitest-config':
+        specifier: workspace:*
+        version: link:../../shared/utils-vitest-config
 
   libs/voting/feature:
     dependencies:
@@ -18553,7 +18571,7 @@ snapshots:
   eslint-scope@9.1.2:
     dependencies:
       '@types/esrecurse': 4.3.1
-      '@types/estree': 1.0.8
+      '@types/estree': 1.0.9
       esrecurse: 4.3.0
       estraverse: 5.3.0
 
@@ -18572,7 +18590,7 @@ snapshots:
       '@humanfs/node': 0.16.7
       '@humanwhocodes/module-importer': 1.0.1
       '@humanwhocodes/retry': 0.4.3
-      '@types/estree': 1.0.8
+      '@types/estree': 1.0.9
       ajv: 6.15.0
       cross-spawn: 7.0.6
       debug: 4.4.3

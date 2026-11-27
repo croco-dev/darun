@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@darun/utils-tsconfig": "workspace:*",
+    "@darun/utils-vitest-config": "workspace:*",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "posthog-js": "1.370.1",

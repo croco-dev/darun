@@ -8,6 +8,7 @@ import {
   type ProductDescriptionJobEntity,
 } from '@darun/products-domain';
 import { LlmClient } from '@darun/utils-llm';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import {
   PRODUCT_DESCRIPTION_REVIEWER_PROMPT_VERSION,
@@ -137,7 +138,10 @@ describe('ProductDescriptionGeneratorImpl', () => {
     await new ApplyProductDescriptionCandidate({ transaction: { run: async work => work(session) } }).execute({
       jobId: job.id,
     });
-    expect(session.applyLocked).toHaveBeenCalledWith({ productId: product.id, candidateHtml: generated.candidateHtml });
+    expect(mockedMethods(session).applyLocked).toHaveBeenCalledWith({
+      productId: product.id,
+      candidateHtml: generated.candidateHtml,
+    });
   });
 
   it('runs 2-pass writer and reviewer with pinned model and returns validated result', async () => {

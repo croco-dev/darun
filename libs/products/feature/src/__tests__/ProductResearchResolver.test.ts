@@ -342,8 +342,7 @@ describe('ProductResearchGraphSchema', () => {
     expect(new RequestProductResearchInput()).toBeTruthy();
     expect(new RetryProductResearchInput()).toBeTruthy();
     expect('RequestProductResearchPayload' in ProductResearchGraphs).toBe(false);
-    const mutationSource = ProductResearchMutationResolver.prototype.requestProductResearch as never as object;
-    expect(mutationSource).toBeTruthy();
+    expect(ProductResearchMutationResolver.prototype).toHaveProperty('requestProductResearch');
     expect(ProductResearchQueryResolver).toBeTruthy();
   });
 

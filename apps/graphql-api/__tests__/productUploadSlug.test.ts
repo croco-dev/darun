@@ -3,6 +3,7 @@ import { ImageRepositoryToken, SignImageUpload, ScreenshotUploadProductReaderTok
 import { ImageMutationResolver } from '@darun/images-feature/server';
 import { CreateProduct, ProductRepositoryToken } from '@darun/products-domain';
 import { createServer } from '@darun/utils-apollo-server';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { Container } from 'typedi';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMockRepository } from '../../../libs/products/domain/src/__tests__/productRepositoryMock';
@@ -73,13 +74,13 @@ describe('상품 slug와 업로드의 운영 GraphQL 경로', () => {
         }
       );
       expect(result.errors?.[0].extensions).toEqual({ code: 'product/invalid-args' });
-      expect(repository.insert).not.toHaveBeenCalled();
-      expect(repository.findOneBySlug).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).insert).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findOneBySlug).not.toHaveBeenCalled();
     }
   );
 
   it('기존 slug를 실제 reader alias로 확인하고 ID 폴더를 반환한다', async () => {
-    vi.mocked(repository.findOneBySlug).mockResolvedValue({ id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' } as never);
+    mockedMethods(repository).findOneBySlug.mockResolvedValue({ id: '01ARZ3NDEKTSV4RRFFQ69G5FAV' } as never);
     const result = await request(signQuery, { folder: 'images/screenshots/My_Product', displayName: 'shot.png' });
     expect(result.errors).toBeUndefined();
     expect(result.data?.signImageUpload).toEqual({
@@ -87,7 +88,7 @@ describe('상품 slug와 업로드의 운영 GraphQL 경로', () => {
       signature: 'fixture-signature',
       timestamp: 1700000000,
     });
-    expect(repository.findOneBySlug).toHaveBeenCalledWith('My_Product');
+    expect(mockedMethods(repository).findOneBySlug).toHaveBeenCalledWith('My_Product');
     expect(sign).toHaveBeenCalledOnce();
   });
 
@@ -95,7 +96,7 @@ describe('상품 slug와 업로드의 운영 GraphQL 경로', () => {
     const result = await request(signQuery, { folder: 'images/screenshots/example-app', displayName: 'shot.png' });
     expect(result.errors).toBeUndefined();
     expect(result.data?.signImageUpload).toMatchObject({ folder: 'images/screenshots/example-app' });
-    expect(repository.findOneBySlug).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findOneBySlug).not.toHaveBeenCalled();
   });
 
   it.each([false, undefined])('관리자 아닌 요청 %s는 상품 조회·서명 전에 거절한다', async admin => {
@@ -105,7 +106,7 @@ describe('상품 slug와 업로드의 운영 GraphQL 경로', () => {
       admin === true
     );
     expect(result.errors?.[0].extensions?.code).toBe('UNAUTHORIZED');
-    expect(repository.findOneBySlug).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findOneBySlug).not.toHaveBeenCalled();
     expect(sign).not.toHaveBeenCalled();
   });
 });

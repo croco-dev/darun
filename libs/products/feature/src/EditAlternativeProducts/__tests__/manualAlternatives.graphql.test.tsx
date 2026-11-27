@@ -10,6 +10,7 @@ import {
 } from '@darun/recommendation-domain';
 import { AutoRecommender } from '@darun/recommendation-domain/src/services/AutoRecommender';
 import { AuthRole, createAuthChecker } from '@darun/utils-apollo-server';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type * as GraphQL from 'graphql';
 import { buildSchemaSync } from 'type-graphql';
@@ -190,7 +191,7 @@ describe('수동 대안 저장소 → 실제 GraphQL·Apollo → 편집 폼', ()
     });
     await waitFor(() => expect(fixture.save().disabled).toBe(false));
     fixture.submit();
-    await waitFor(() => expect(fixture.alternativeRepository.replaceByProductId).toHaveBeenCalled());
+    await waitFor(() => expect(mockedMethods(fixture.alternativeRepository).replaceByProductId).toHaveBeenCalled());
     expect(fixture.stored()).toEqual([]);
     await waitFor(() => expect(fixture.save().disabled).toBe(false));
     expect(fixture.selected()).toEqual([]);
@@ -227,7 +228,7 @@ describe('수동 대안 저장소 → 실제 GraphQL·Apollo → 편집 폼', ()
     await waitFor(() => expect(fixture.save().disabled).toBe(false));
     expect(fixture.selected()).toEqual(ids);
     fixture.submit();
-    await waitFor(() => expect(fixture.alternativeRepository.replaceByProductId).toHaveBeenCalled());
+    await waitFor(() => expect(mockedMethods(fixture.alternativeRepository).replaceByProductId).toHaveBeenCalled());
     expect(fixture.stored()).toEqual(ids);
     const result = await fixture.readPublic();
     expect(result.data?.productBySlug).toEqual({ alternatives: ids.slice(0, 5).map(id => ({ id })) });
@@ -253,7 +254,7 @@ describe('수동 대안 저장소 → 실제 GraphQL·Apollo → 편집 폼', ()
     await fixture.reopen();
     await screen.findByRole('button', { name: '다시 시도' });
     fixture.submit();
-    expect(fixture.alternativeRepository.replaceByProductId).not.toHaveBeenCalled();
+    expect(mockedMethods(fixture.alternativeRepository).replaceByProductId).not.toHaveBeenCalled();
     expect(fixture.stored()).toEqual(['alternative-2']);
     fixture.failReads(false);
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));

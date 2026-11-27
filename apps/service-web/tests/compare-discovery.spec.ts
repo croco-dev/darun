@@ -97,6 +97,7 @@ test.describe('Compare discovery journey', () => {
         });
 
         await page.evaluate(() => {
+          // eslint-disable-next-line @typescript-eslint/unbound-method -- the original is called with call(this) below.
           const setItem = Storage.prototype.setItem;
           Storage.prototype.setItem = function (key, value) {
             if (key === 'compare-products' && sessionStorage.getItem('block-compare-write') === '1') {

@@ -1,4 +1,5 @@
 import { createTierPostgrestFixture } from '@/test-utils/postgrest-fixture';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { fetchAppsPage } from './app-list';
 
@@ -11,8 +12,8 @@ describe.skipIf(!databaseUrl)('public app lists through PostgREST and PostgreSQL
     if (method === 'HEAD' && countUnavailable) throw new DOMException('Count request unavailable', 'AbortError');
   });
   const { sql, client } = database;
-  beforeAll(database.prepare);
-  afterAll(database.close);
+  beforeAll(mockedMethods(database).prepare);
+  afterAll(mockedMethods(database).close);
   beforeEach(async () => {
     await sql`delete from tiers`;
     await sql`delete from apps`;

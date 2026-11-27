@@ -47,6 +47,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@darun/utils-vitest-config": "workspace:*",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "postcss": "8.5.6",

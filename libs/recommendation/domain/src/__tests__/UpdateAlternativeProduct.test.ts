@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import type { AlternativeProductRepository } from '../repositories/AlternativeProductRepository';
 import { UpdateAlternativeProduct } from '../usecases/UpdateAlternativeProduct';
@@ -21,7 +22,7 @@ describe('UpdateAlternativeProduct', () => {
         alternativeProductIds: ['keep', 'source', 'new'],
       })
     ).rejects.toMatchObject({ code: 'alternative-product/invalid-args' });
-    expect(repository.replaceByProductId).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).replaceByProductId).not.toHaveBeenCalled();
   });
 
   it('전체 목록을 원자적 교체 경계에 전달하고 실패를 전파한다', async () => {

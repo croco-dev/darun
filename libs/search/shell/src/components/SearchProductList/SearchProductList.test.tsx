@@ -7,6 +7,7 @@ import {
   CompactCategoriesForSearchProductListDocument,
   CompactTrendingPreviewForSearchProductListDocument,
 } from '@darun/provider-graphql';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import posthog from 'posthog-js';
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -114,7 +115,7 @@ describe('SearchProductList', () => {
     countState.value = 10;
     navigation.locale = 'ko';
     navigation.searchParams = new URLSearchParams();
-    vi.mocked(posthog.capture).mockClear();
+    mockedMethods(posthog).capture.mockClear();
     client = new ApolloClient({ cache: new InMemoryCache(), link: ApolloLink.empty() });
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -233,31 +234,33 @@ describe('SearchProductList', () => {
         ['click', 0],
         ['auxclick', 1],
       ] as const) {
-        vi.mocked(posthog.capture).mockClear();
+        mockedMethods(posthog).capture.mockClear();
         link.addEventListener(type, click => click.preventDefault(), { once: true });
         act(() => link.dispatchEvent(new MouseEvent(type, { button, bubbles: true, cancelable: true })));
-        expect.soft(posthog.capture, `${selector} ${type}`).toHaveBeenCalledExactlyOnceWith(event, properties);
+        expect
+          .soft(mockedMethods(posthog).capture, `${selector} ${type}`)
+          .toHaveBeenCalledExactlyOnceWith(event, properties);
       }
-      vi.mocked(posthog.capture).mockClear();
+      mockedMethods(posthog).capture.mockClear();
       act(() => link.dispatchEvent(new MouseEvent('auxclick', { button: 2, bubbles: true })));
-      expect(posthog.capture).not.toHaveBeenCalled();
+      expect(mockedMethods(posthog).capture).not.toHaveBeenCalled();
     }
 
     const productLink = container.querySelector<HTMLAnchorElement>('a[data-source="search-empty"]')!;
     const href = new URL(productLink.href);
     expect(href.pathname).toBe(`/${locale}/products/product-a`);
     navigation.searchParams = href.searchParams;
-    vi.mocked(posthog.capture).mockClear();
+    mockedMethods(posthog).capture.mockClear();
     act(() => root?.render(<ProductDetailViewTracker key="recommended" productSlug="product-a" />));
-    expect.soft(posthog.capture).toHaveBeenCalledExactlyOnceWith('product_detail_viewed', {
+    expect.soft(mockedMethods(posthog).capture).toHaveBeenCalledExactlyOnceWith('product_detail_viewed', {
       productSlug: 'product-a',
       source: 'empty-stripe',
     });
 
     navigation.searchParams = new URLSearchParams();
-    vi.mocked(posthog.capture).mockClear();
+    mockedMethods(posthog).capture.mockClear();
     act(() => root?.render(<ProductDetailViewTracker key="direct" productSlug="product-a" />));
-    expect(posthog.capture).toHaveBeenCalledExactlyOnceWith('product_detail_viewed', {
+    expect(mockedMethods(posthog).capture).toHaveBeenCalledExactlyOnceWith('product_detail_viewed', {
       productSlug: 'product-a',
       source: 'direct',
     });
@@ -278,6 +281,6 @@ describe('SearchProductList', () => {
     );
     expect(retry).toBeDefined();
     await act(async () => retry!.click());
-    expect(posthog.capture).not.toHaveBeenCalled();
+    expect(mockedMethods(posthog).capture).not.toHaveBeenCalled();
   });
 });

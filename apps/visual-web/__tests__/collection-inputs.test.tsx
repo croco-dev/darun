@@ -164,6 +164,7 @@ it('컬렉션과 첫 항목을 한 번에 확정해 두 번째 쓰기가 필요�
   });
   fireEvent.click(screen.getByRole('button', { name: '컬렉션에 저장' }));
   const input = screen.getByRole('textbox', { name: '새 컬렉션 이름' });
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- the original is called with call(this) below.
   const setItem = Storage.prototype.setItem;
   const writes = vi
     .spyOn(Storage.prototype, 'setItem')

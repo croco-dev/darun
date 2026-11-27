@@ -124,6 +124,7 @@ suite('플로 상세의 PostgreSQL 스냅샷', () => {
   });
 
   async function commitAfterFirstRead<T>(read: () => Promise<T>, commit: () => Promise<unknown>): Promise<T> {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- the original is called with the query as this below.
     const execute = PostgresJsPreparedQuery.prototype.execute;
     // Let PostgreSQL return the first result before the other connection commits.
     const barrier = vi.spyOn(PostgresJsPreparedQuery.prototype, 'execute').mockImplementationOnce(async function (

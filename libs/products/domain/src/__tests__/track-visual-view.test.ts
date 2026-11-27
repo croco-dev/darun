@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import type { ProductFlowRepository } from '../repositories/ProductFlowRepository';
 import type { ProductScreenshotRepository } from '../repositories/ProductScreenshotRepository';
@@ -50,7 +51,7 @@ describe('TrackVisualScreenshotView (M2)', () => {
     const useCase = new TrackVisualScreenshotView(repo);
     const result = await useCase.execute({ id: SCREENSHOT_ID, viewerIp: '1.2.3.4' });
     expect(result).toEqual({ tracked: true });
-    expect(repo.insertVisualViewEvent).toHaveBeenCalled();
+    expect(mockedMethods(repo).insertVisualViewEvent).toHaveBeenCalled();
   });
 
   it('24시간 내 중복이면 tracked: false를 반환한다', async () => {

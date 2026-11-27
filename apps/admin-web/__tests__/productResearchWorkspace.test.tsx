@@ -37,6 +37,7 @@ vi.mock('@mantine/notifications', () => ({
   notifications: { show: vi.fn() },
 }));
 
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { ProductResearchSection } from '../features/products/ProductResearchSection/ProductResearchSection';
 import {
   listWorkspaceDrafts,
@@ -982,7 +983,7 @@ it('초안 저장 실패를 알리고 입력을 유지한 채 같은 화면에�
     })
   );
   testGlobal().researchSearchParams = { researchJobId: 'job-1' };
-  const setItem = Storage.prototype.setItem;
+  const setItem = mockedMethods(Storage.prototype).setItem;
   const storageFailure = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
     this: Storage,
     key,
