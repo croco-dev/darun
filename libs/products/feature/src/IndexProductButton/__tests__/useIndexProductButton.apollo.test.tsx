@@ -157,7 +157,9 @@ async function setupFailed() {
 }
 const successes = () => vi.mocked(notifications.show).mock.calls.filter(([notice]) => notice.color === 'teal');
 const supersessions = () =>
-  vi.mocked(notifications.show).mock.calls.filter(([notice]) => String(notice.message).includes('대체'));
+  vi
+    .mocked(notifications.show)
+    .mock.calls.filter(([notice]) => typeof notice.message === 'string' && notice.message.includes('대체'));
 const newerIdentity = { ...identity, intentId: 'intent-2', sourceRevision: '9007199254740994' };
 async function tick(milliseconds = 1000) {
   await act(async () => {

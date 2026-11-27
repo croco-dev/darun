@@ -146,4 +146,4 @@ async function bootstrap() {
   console.log('🚀 Server ready at http://localhost:4000/');
 }
 
-bootstrap();
+void bootstrap();

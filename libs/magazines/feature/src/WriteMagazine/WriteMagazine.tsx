@@ -73,7 +73,7 @@ export const WriteMagazine = bind(
               onChange={e => {
                 const target = e.target;
                 if (target.files && target.files[0]) {
-                  handleFileDrop([target.files[0]]);
+                  void handleFileDrop([target.files[0]]);
                 }
                 target.value = '';
               }}
@@ -90,7 +90,7 @@ export const WriteMagazine = bind(
                   if (isSubmitting) return;
                   const droppedFile = e.dataTransfer.files[0];
                   if (droppedFile) {
-                    handleFileDrop([droppedFile]);
+                    void handleFileDrop([droppedFile]);
                   }
                 }}
                 onClick={() => {

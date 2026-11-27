@@ -54,7 +54,7 @@ describe('admin page range recovery through the Supabase client', () => {
       global: {
         fetch: async (input, init) => {
           requests.push({
-            url: new URL(String(input)),
+            url: new URL(input instanceof Request ? input.url : input),
             method: init?.method ?? 'GET',
           });
           const response = responses.shift();

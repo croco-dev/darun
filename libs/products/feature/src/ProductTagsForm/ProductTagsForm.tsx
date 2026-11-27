@@ -16,7 +16,7 @@ export const ProductTagsForm = bind(
       <form
         onSubmit={e => {
           e.preventDefault();
-          applyTags();
+          void applyTags();
         }}
         className="flex flex-col gap-3"
       >

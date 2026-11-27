@@ -72,9 +72,9 @@ beforeEach(() => {
   signupHasSession = false;
   signupUser = user;
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = new URL(String(input));
+    const url = new URL(input instanceof Request ? input.url : input);
     if (url.origin !== 'http://127.0.0.1:4475') throw new Error('Unexpected external request');
-    const body = init?.body ? JSON.parse(String(init.body)) : {};
+    const body = init?.body ? JSON.parse(init.body as string) : {};
     const headers = new Headers(init?.headers);
     requests.push({ path: url.pathname, method: init?.method ?? 'GET', body, headers });
     const json = (value: unknown, status = 200) => Response.json(value, { status });

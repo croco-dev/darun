@@ -51,7 +51,12 @@ for (const event of ['push', 'repository_dispatch', 'workflow_dispatch']) {
   }
 }
 
-for (const [name, overrides, response, code] of [
+for (const [
+  name,
+  overrides,
+  response,
+  code,
+] of /** @type {Array<[string, Record<string, string>, string, number]>} */ ([
   ['API failure', {}, head, 503],
   ['invalid API response', {}, 'null', 200],
   ['missing revision', { GITHUB_SHA: '' }, head, 200],
@@ -62,8 +67,8 @@ for (const [name, overrides, response, code] of [
     head,
     403,
   ],
-]) {
-  test(`${String(name)} fails closed without enabling production steps`, () => {
+])) {
+  test(`${name} fails closed without enabling production steps`, () => {
     const result = runGuard(overrides, response, code);
     assert.notEqual(result.status, 0);
     assert.equal(result.output, '');

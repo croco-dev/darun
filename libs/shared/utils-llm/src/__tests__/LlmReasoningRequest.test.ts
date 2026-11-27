@@ -58,7 +58,7 @@ describe('provider reasoning request JSON through the installed OpenAI SDK', () 
 
   function requestBody() {
     expect(transport).toHaveBeenCalledTimes(1);
-    return JSON.parse(String(transport.mock.calls[0]![1]?.body));
+    return JSON.parse(transport.mock.calls[0]![1]?.body as string);
   }
 
   describe.each(endpoints)('%s', endpoint => {
@@ -69,7 +69,10 @@ describe('provider reasoning request JSON through the installed OpenAI SDK', () 
       expect(body.model).toBe('synthetic-model');
       expect(body.messages).toEqual(messages);
       expect(body.response_format).toEqual(responseFormat);
-      expect(String(transport.mock.calls[0]![0])).toBe(`${endpoint}/chat/completions`);
+      const [requestUrl] = transport.mock.calls[0]!;
+      expect(requestUrl instanceof Request ? requestUrl.url : requestUrl.toString()).toBe(
+        `${endpoint}/chat/completions`
+      );
       expect(new Headers(transport.mock.calls[0]![1]?.headers).get('authorization')).toBe(
         'Bearer synthetic-provider-key'
       );

@@ -87,6 +87,7 @@ describe('PostgresqlProductFeatureRepository DataLoader cache invalidation', () 
       mockDb.select = mockSelect;
       mockDb.insert = mockInsert;
       mockDb.transaction.mockImplementation(async (cb: (tx: typeof mockDb) => Promise<unknown>) =>
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread -- mockDb is a plain object typed as the Drizzle client.
         cb({ ...mockDb, select: createMockSelectWithLimit([insertedRow]) } as unknown as typeof mockDb)
       );
 
@@ -157,6 +158,7 @@ describe('PostgresqlProductFeatureRepository DataLoader cache invalidation', () 
       mockDb.select = mockSelect;
       mockDb.update = mockUpdate;
       mockDb.transaction.mockImplementation(async (cb: (tx: typeof mockDb) => Promise<unknown>) => {
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread -- mockDb is a plain object typed as the Drizzle client.
         const tx = { ...mockDb, select: mockTxSelect } as unknown as typeof mockDb;
         return cb(tx);
       });

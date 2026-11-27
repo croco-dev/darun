@@ -105,10 +105,49 @@ export default defineConfig({
     'typescript/no-useless-default-assignment': 'error',
     'typescript/require-array-sort-compare': 'error',
     'typescript/restrict-template-expressions': 'error',
-    // Existing violations are tracked as warnings until each rule is cleaned up.
-    'typescript/no-base-to-string': 'warn',
-    'typescript/no-floating-promises': 'warn',
-    'typescript/no-misused-spread': 'warn',
+    'typescript/no-base-to-string': 'error',
+    'typescript/no-floating-promises': [
+      'error',
+      {
+        // node:test registration and React act() return promises that callers are not expected to await.
+        allowForKnownSafeCalls: [
+          { from: 'package', package: 'node:test', name: ['test', 'describe', 'it'] },
+          { from: 'package', package: '@testing-library/react', name: 'act' },
+          { from: 'package', package: 'react', name: 'act' },
+        ],
+      },
+    ],
+    'typescript/no-misused-spread': [
+      'error',
+      {
+        // Data-only entities and GraphQL inputs: no getters, and spreads only copy their fields into rows or plain inputs.
+        allow: [
+          // Name-only specifiers: entities reach other packages through workspace links, which file and package specifiers miss.
+          'AlternativeProduct',
+          'Category',
+          'Magazine',
+          'Product',
+          'ProductFeature',
+          'ProductFlow',
+          'ProductLink',
+          'ProductScreenshot',
+          'SearchableProduct',
+          'SearchableProductSchema',
+          {
+            from: 'file',
+            name: [
+              'AddProductLinkInput',
+              'CreateMagazineInput',
+              'EditMagazineInput',
+              'EditProductInput',
+              'SetVisualSaveInput',
+              'UpdateProductFeatureInput',
+              'UpdateProductLinkInput',
+            ],
+          },
+        ],
+      },
+    ],
     'typescript/unbound-method': 'warn',
 
     'boundaries/dependencies': [

@@ -36,7 +36,7 @@ describe.skipIf(!databaseUrl)('profile creation through PostgREST and PostgreSQL
       auth: { persistSession: false, autoRefreshToken: false },
       global: {
         fetch: (input, init) => {
-          const url = new URL(String(input));
+          const url = new URL(input instanceof Request ? input.url : input);
           url.pathname = url.pathname.replace(/^\/rest\/v1/, '');
           const headers = new Headers(init?.headers);
           headers.delete('authorization');

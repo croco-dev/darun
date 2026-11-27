@@ -72,8 +72,8 @@ describe('저장한 추론 강도와 실제 completion 요청', () => {
   function expectRequestLevel(level: string | null) {
     expect(transport).toHaveBeenCalledTimes(1);
     const [url, init] = transport.mock.calls[0]!;
-    expect(String(url)).toBe('https://openrouter.ai/api/v1/chat/completions');
-    const body = JSON.parse(String(init?.body));
+    expect(url instanceof Request ? url.url : url.toString()).toBe('https://openrouter.ai/api/v1/chat/completions');
+    const body = JSON.parse(init?.body as string);
     expect(body.model).toBe('synthetic-model');
     expect(body.messages).toEqual(messages);
     if (level === null) {
@@ -133,8 +133,8 @@ describe('저장한 추론 강도와 실제 completion 요청', () => {
 
       expect(transport).toHaveBeenCalledTimes(1);
       const [url, init] = transport.mock.calls[0]!;
-      expect(String(url)).toBe('https://api.openai.com/v1/chat/completions');
-      const body = JSON.parse(String(init?.body));
+      expect(url instanceof Request ? url.url : url.toString()).toBe('https://api.openai.com/v1/chat/completions');
+      const body = JSON.parse(init?.body as string);
       expect(body.reasoning_effort).toBe(thinkingLevel);
       expect(body).not.toHaveProperty('reasoning');
       expect(new Headers(init?.headers).get('authorization')).toBe('Bearer synthetic-stored-key');

@@ -2,12 +2,11 @@
 const { context } = require('esbuild');
 const { spawn } = require('child_process');
 const { existsSync } = require('node:fs');
-const { loadEnvFile } = require('node:process');
 
 // loadEnvFile preserves existing values, including empty strings.
 // Load local overrides first so shell > .env.local > .env.
 for (const file of ['.env.local', '.env']) {
-  if (existsSync(file)) loadEnvFile(file);
+  if (existsSync(file)) process.loadEnvFile(file);
 }
 
 process.env.INFRA_ENV ??= 'local';

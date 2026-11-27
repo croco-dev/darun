@@ -74,7 +74,7 @@ export class PostgresqlProductTagRepository implements ProductTagRepository {
       await finishContentWrite();
       return new ProductTag({
         productId: productTag.productId,
-        tags: totalTags.map(this.toTag),
+        tags: totalTags.map(tag => this.toTag(tag)),
       });
     });
   }

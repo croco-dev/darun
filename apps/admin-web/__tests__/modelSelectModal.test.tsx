@@ -157,7 +157,7 @@ describe('ModelSelectModal', () => {
     await act(() => vi.runOnlyPendingTimersAsync());
     rerender(modal({ apiKey: 'fixture-key-b' }));
     await act(() => vi.runOnlyPendingTimersAsync());
-    expect(JSON.parse(String(requests[1].options?.body)).apiKey).toBe('fixture-key-b');
+    expect(JSON.parse(requests[1].options?.body as string).apiKey).toBe('fixture-key-b');
     await act(async () => requests[1].resolve(modelResponse('new-key/current')));
     await act(async () => requests[0].resolve(modelResponse('old-key/stale')));
     expect(screen.getByRole('button', { name: /new-key\/current/ })).toBeDefined();
