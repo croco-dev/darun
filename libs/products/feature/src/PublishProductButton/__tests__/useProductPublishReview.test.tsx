@@ -195,4 +195,39 @@ describe('발행 준비 상태 API 배포 호환성', () => {
       expect(publishProduct).not.toHaveBeenCalled();
     }
   );
+
+  it.each([
+    { reviewToken: reviewData.adminProductPublishReview.reviewToken },
+    { ...reviewData.adminProductPublishReview, hasScreenshot: undefined },
+    { ...reviewData.adminProductPublishReview, publishedAt: undefined },
+  ])('검토 토큰이 있어도 필수 준비 상태가 누락되면 발행을 막는다', async adminProductPublishReview => {
+    const { result, publishProduct } = mountReview(200, { data: { adminProductPublishReview } });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.review).toBeUndefined();
+    expect(result.current.canPublish).toBe(false);
+
+    await act(() => result.current.publish());
+
+    expect(publishProduct).not.toHaveBeenCalled();
+  });
+
+  it('원문 준비 상태와 번역 관찰값이 모두 있으면 발행할 수 있다', async () => {
+    const data = {
+      adminProductPublishReview: {
+        ...reviewData.adminProductPublishReview,
+        translation: {
+          name: { status: 'CURRENT', sourceHash: 'source-name-hash' },
+          summary: { status: 'NOT_NEEDED', sourceHash: null },
+          description: { status: 'NOT_NEEDED', sourceHash: null },
+          observedAt: '2026-11-27T03:00:00.000Z',
+          latestJobFailed: false,
+        },
+      },
+    };
+    const { result } = mountReview(200, { data });
+
+    await waitFor(() => expect(result.current.canPublish).toBe(true));
+
+    expect(result.current.review?.translation).toMatchObject(data.adminProductPublishReview.translation);
+  });
 });

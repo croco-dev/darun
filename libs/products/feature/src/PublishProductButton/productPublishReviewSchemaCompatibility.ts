@@ -29,19 +29,68 @@ function isLegacyJsonError(error: unknown) {
   }
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isTimestamp(value: unknown) {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value));
+}
+
+function isPublishReview(value: unknown) {
+  if (!isObject(value)) return false;
+  const { id, reviewToken, publishedAt, officialLinkStatus, translation } = value;
+  const presence = [
+    value.hasName,
+    value.hasSummary,
+    value.hasDescription,
+    value.hasCategory,
+    value.hasLogo,
+    value.hasScreenshot,
+  ];
+  if (
+    typeof id !== 'string' ||
+    !id.trim() ||
+    typeof reviewToken !== 'string' ||
+    !reviewToken.trim() ||
+    (publishedAt !== null && !isTimestamp(publishedAt)) ||
+    typeof officialLinkStatus !== 'string' ||
+    !presence.every(flag => typeof flag === 'boolean')
+  ) {
+    return false;
+  }
+
+  if (translation === null) return true;
+  if (
+    !isObject(translation) ||
+    !isTimestamp(translation.observedAt) ||
+    typeof translation.latestJobFailed !== 'boolean'
+  ) {
+    return false;
+  }
+
+  return [translation.name, translation.summary, translation.description].every(
+    field =>
+      isObject(field) &&
+      typeof field.status === 'string' &&
+      (field.sourceHash === null || typeof field.sourceHash === 'string')
+  );
+}
+
 function isUsableReviewResult(result: ApolloLink.Result) {
   const { data, errors } = result;
-  const review = data?.adminProductPublishReview;
-  if (review != null && (typeof review.reviewToken !== 'string' || !review.reviewToken.trim())) return false;
+  if (errors != null && (!Array.isArray(errors) || errors.some(error => typeof error?.message !== 'string'))) {
+    return false;
+  }
 
+  if (data == null) return Boolean(errors?.length);
+  if (!isObject(data)) return false;
+
+  const review = data.adminProductPublishReview;
   return (
-    errors == null ||
-    (Array.isArray(errors) &&
-      errors.every(
-        error =>
-          typeof error?.message === 'string' &&
-          (data == null || (error.path?.[0] === 'adminProductPublishReview' && error.path?.[1] === 'translation'))
-      ))
+    review === null ||
+    (isPublishReview(review) &&
+      !errors?.some(error => error.path?.[0] !== 'adminProductPublishReview' || error.path?.[1] !== 'translation'))
   );
 }
 
