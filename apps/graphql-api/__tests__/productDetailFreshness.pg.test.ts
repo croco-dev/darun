@@ -410,6 +410,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         hasDescription: false,
         hasLogo: false,
         hasScreenshot: false,
+        officialLinkStatus: 'MISSING',
       });
       const token = (review.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
       const result = await publish(token);
@@ -476,12 +477,12 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           })
           .toBe(true);
         await tx`update products set summary = '새 요약', content_revision = content_revision + 1 where id = ${id}`;
-        await tx`update product_links set role = 'official' where id = ${id}`;
+        await tx`update product_links set role = 'official', link = 'invalid-url' where id = ${id}`;
       });
 
       expect(await pending).toEqual(before);
       const after = await read();
-      expect(after).toMatchObject({ hasSummary: true, officialLinkStatus: 'READY' });
+      expect(after).toMatchObject({ hasSummary: true, officialLinkStatus: 'INVALID' });
       expect(after.reviewToken).not.toBe(before.reviewToken);
     } finally {
       await Promise.allSettled([pending]);
