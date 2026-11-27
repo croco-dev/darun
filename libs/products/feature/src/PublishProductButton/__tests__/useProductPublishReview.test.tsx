@@ -28,6 +28,14 @@ const reviewData = {
   },
 };
 
+const translationObservation = {
+  name: { status: 'CURRENT', sourceHash: 'source-name-hash' },
+  summary: { status: 'NOT_NEEDED', sourceHash: null },
+  description: { status: 'NOT_NEEDED', sourceHash: null },
+  observedAt: '2026-11-27T03:00:00.000Z',
+  latestJobFailed: false,
+};
+
 function mountReview(
   status: number,
   response: unknown,
@@ -215,13 +223,7 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     const data = {
       adminProductPublishReview: {
         ...reviewData.adminProductPublishReview,
-        translation: {
-          name: { status: 'CURRENT', sourceHash: 'source-name-hash' },
-          summary: { status: 'NOT_NEEDED', sourceHash: null },
-          description: { status: 'NOT_NEEDED', sourceHash: null },
-          observedAt: '2026-11-27T03:00:00.000Z',
-          latestJobFailed: false,
-        },
+        translation: translationObservation,
       },
     };
     const { result } = mountReview(200, { data });
@@ -229,5 +231,24 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     await waitFor(() => expect(result.current.canPublish).toBe(true));
 
     expect(result.current.review?.translation).toMatchObject(data.adminProductPublishReview.translation);
+  });
+
+  it('실패한 번역 필드에 성공 데이터도 있으면 발행을 막는다', async () => {
+    const { result, publishProduct } = mountReview(200, {
+      data: {
+        adminProductPublishReview: {
+          ...reviewData.adminProductPublishReview,
+          translation: translationObservation,
+        },
+      },
+      errors: [{ message: 'Translation unavailable', path: ['adminProductPublishReview', 'translation'] }],
+    });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.review).toBeUndefined();
+    expect(result.current.canPublish).toBe(false);
+
+    await act(() => result.current.publish());
+
+    expect(publishProduct).not.toHaveBeenCalled();
   });
 });

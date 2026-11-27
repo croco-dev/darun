@@ -37,7 +37,7 @@ function isTimestamp(value: unknown) {
   return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }
 
-function isPublishReview(value: unknown) {
+function isPublishReview(value: unknown): value is Record<string, unknown> {
   if (!isObject(value)) return false;
   const { id, reviewToken, publishedAt, officialLinkStatus, translation } = value;
   const presence = [
@@ -87,10 +87,13 @@ function isUsableReviewResult(result: ApolloLink.Result) {
   if (!isObject(data)) return false;
 
   const review = data.adminProductPublishReview;
+  if (review === null) return true;
+  if (!isPublishReview(review)) return false;
+
   return (
-    review === null ||
-    (isPublishReview(review) &&
-      !errors?.some(error => error.path?.[0] !== 'adminProductPublishReview' || error.path?.[1] !== 'translation'))
+    !errors?.length ||
+    (review.translation === null &&
+      errors.every(error => error.path?.[0] === 'adminProductPublishReview' && error.path?.[1] === 'translation'))
   );
 }
 
