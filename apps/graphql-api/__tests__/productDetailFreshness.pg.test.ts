@@ -349,33 +349,6 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       expect(draft.published_at).toBeNull();
       expect(await effects()).toEqual({ intents: [], jobs: [] });
 
-      const [{ pid }] = await reader`select pg_backend_pid() as pid`;
-      const concurrentSummary = '다른 관리자가 저장한 요약';
-      const updatedLogoUrl = 'https://example.com/updated.png';
-      let logoEdit: ReturnType<typeof run> | undefined;
-      try {
-        await writer.begin(async tx => {
-          await tx`update products set summary = ${concurrentSummary}, content_revision = content_revision + 1
-            where id = ${id}`;
-          logoEdit = run(EditProductOnEditProductInfoDocument, { slug, input: { logoUrl: updatedLogoUrl } });
-          void logoEdit.catch(() => undefined);
-          await expect
-            .poll(async () => {
-              await tx`select pg_stat_clear_snapshot()`;
-              const [connection] = await tx`select wait_event_type from pg_stat_activity where pid = ${pid}`;
-              return connection?.wait_event_type;
-            })
-            .toBe('Lock');
-        });
-        const savedLogo = await logoEdit;
-        expect(savedLogo?.errors).toBeUndefined();
-        expect(savedLogo?.data?.editProduct).toMatchObject({
-          product: { id, summary: concurrentSummary, logoUrl: updatedLogoUrl },
-        });
-      } finally {
-        await Promise.allSettled([logoEdit]);
-      }
-
       await repository.replaceCategoryIds(id, [categoryId]);
       await writer`insert into product_screenshots (id, product_id, image_url, image_alt)
         values (${id}, ${id}, '/review.png', '검토 서비스 화면')`;
@@ -422,6 +395,38 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       await writer`delete from product_screenshots where product_id in (${id}, ${otherId})`;
       await writer`delete from products where id in (${id}, ${otherId})`;
       await writer`delete from categories where id = ${categoryId}`;
+    }
+  });
+
+  it('로고를 저장하기 전에 다른 연결에서 수정한 요약을 보존한다', async () => {
+    const id = randomUUID().replaceAll('-', '').slice(0, 26);
+    const [{ pid }] = await reader`select pg_backend_pid() as pid`;
+    const edit = new EditProduct(new PostgresqlProductRepository(db));
+    const summary = '다른 관리자가 저장한 요약';
+    const logoUrl = 'https://example.com/updated.png';
+    let logoEdit: ReturnType<typeof edit.execute> | undefined;
+
+    await writer`insert into products (id, slug, name, summary, logo_url)
+      values (${id}, ${id}, '검토 서비스', '기존 요약', '')`;
+    try {
+      await writer.begin(async tx => {
+        await tx`update products set summary = ${summary}, content_revision = content_revision + 1 where id = ${id}`;
+        logoEdit = edit.execute({ id, logoUrl });
+        void logoEdit.catch(() => undefined);
+        await expect
+          .poll(async () => {
+            await tx`select pg_stat_clear_snapshot()`;
+            const [connection] = await tx`select wait_event_type from pg_stat_activity where pid = ${pid}`;
+            return connection?.wait_event_type;
+          })
+          .toBe('Lock');
+      });
+      expect(await logoEdit).toMatchObject({ id, summary, logoUrl });
+      const [saved] = await writer`select summary, logo_url from products where id = ${id}`;
+      expect(saved).toEqual({ summary, logo_url: logoUrl });
+    } finally {
+      await Promise.allSettled([logoEdit]);
+      await writer`delete from products where id = ${id}`;
     }
   });
 
