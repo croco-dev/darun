@@ -5,6 +5,7 @@ import {
   ProductScreenshot,
   ProductRepositoryToken,
   productCategoryNotFound,
+  productNotFound,
   productPublishReviewChanged,
   productUpdateFailed,
   productSlugAlreadyExists,
@@ -221,11 +222,21 @@ export class PostgresqlProductRepository implements ProductRepository {
 
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product> {
     return this.db.transaction(async tx => {
-      const row = await lockProductSource(tx, id);
       const finishContentWrite = await beginProductContentWrite(tx, id);
+      const prevProduct = await tx
+        .select()
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1)
+        .then(rows => (rows[0] ? this.mapper(rows[0]) : null));
+
+      if (!prevProduct) {
+        throw productNotFound();
+      }
+
       const updated = await tx
         .update(products)
-        .set({ ...modifier(this.mapper(row)), updatedAt: new Date() })
+        .set({ ...modifier(prevProduct), updatedAt: new Date() })
         .where(eq(products.id, id))
         .returning();
       if (!updated[0]) {
