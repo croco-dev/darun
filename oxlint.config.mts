@@ -109,7 +109,8 @@ export default defineConfig({
     'typescript/no-floating-promises': [
       'error',
       {
-        // node:test registration and React act() return promises that callers are not expected to await.
+        // node:test registration and synchronous React act() return promises callers need not await.
+        // An act() with an async callback must still be awaited; this exemption does not check that.
         allowForKnownSafeCalls: [
           { from: 'package', package: 'node:test', name: ['test', 'describe', 'it'] },
           { from: 'package', package: '@testing-library/react', name: 'act' },
@@ -140,6 +141,7 @@ export default defineConfig({
               'CreateMagazineInput',
               'EditMagazineInput',
               'EditProductInput',
+              'ProductDescriptionJob',
               'SetVisualSaveInput',
               'UpdateProductFeatureInput',
               'UpdateProductLinkInput',

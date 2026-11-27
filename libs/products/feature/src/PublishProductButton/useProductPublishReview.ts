@@ -4,7 +4,6 @@ import { AdminProductPublishReviewOnProductPublishReviewDocument } from '@darun/
 import { ProductPublishReviewUnavailableError } from './productPublishReviewSchemaCompatibility';
 import type { usePublishProductButton } from './usePublishProductButton';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query AdminProductPublishReviewOnProductPublishReview($slug: String!) {
     adminProductPublishReview(slug: $slug) {
