@@ -102,8 +102,23 @@ function nodeCells(row: Node) {
   return cells;
 }
 
-function documentTableError(document: Node, replacement?: { table: Node; size: TableSize }) {
-  let totalGridCells = 0;
+export function getEditorDocumentTableError(document: Node, projection?: { table?: Node; size: TableSize }) {
+  const projectedSize = projection?.size;
+  if (projectedSize) {
+    const { width, height } = projectedSize;
+    if (
+      !Number.isSafeInteger(width) ||
+      width < 1 ||
+      width > MAX_TABLE_COLUMNS ||
+      !Number.isSafeInteger(height) ||
+      height < 1 ||
+      height > MAX_TABLE_ROWS ||
+      width * height > MAX_TABLE_GRID_CELLS
+    ) {
+      return TABLE_SIZE_ERROR;
+    }
+  }
+  let totalGridCells = projectedSize && !projection?.table ? projectedSize.width * projectedSize.height : 0;
   let error: string | null = null;
   document.descendants(node => {
     if (error) return false;
@@ -114,7 +129,7 @@ function documentTableError(document: Node, replacement?: { table: Node; size: T
       return false;
     }
     node.forEach(row => rows.push(nodeCells(row)));
-    const size = replacement?.table === node ? replacement.size : tableSize(rows);
+    const size = projection?.table === node ? projection.size : tableSize(rows);
     if (!size || size.width > MAX_TABLE_COLUMNS || size.height > MAX_TABLE_ROWS) {
       error = TABLE_SIZE_ERROR;
       return false;
@@ -128,12 +143,8 @@ function documentTableError(document: Node, replacement?: { table: Node; size: T
   return error;
 }
 
-export function getEditorDocumentTableError(document: Node) {
-  return documentTableError(document);
-}
-
 export function getEditorTablePasteError(state: EditorState, slice: Slice) {
-  const error = documentTableError(state.schema.topNodeType.create(null, slice.content));
+  const error = getEditorDocumentTableError(state.schema.topNodeType.create(null, slice.content));
   if (error || !slice.size) return error;
   // Inspect the same row/cell fragment the native handler will make rectangular,
   // before ensureRectangular/growTable can allocate an expanded grid.
@@ -160,7 +171,7 @@ export function getEditorTablePasteError(state: EditorState, slice: Slice) {
   if (!incoming.width) return EMPTY_TABLE_PASTE_ERROR;
   if (!isInTable(state) || state.selection instanceof CellSelection) return null;
   const rect = selectedRect(state);
-  return documentTableError(state.doc, {
+  return getEditorDocumentTableError(state.doc, {
     table: rect.table,
     size: {
       width: Math.max(rect.map.width, rect.left + incoming.width),
