@@ -5,7 +5,7 @@ import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
 import { computeSourceHash } from '@darun/translation-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { and, desc, eq } from 'drizzle-orm';
-import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
+import { parse, type DefaultTreeAdapterMap } from 'parse5';
 import { Arg, Authorized, Field, FieldResolver, ObjectType, Query, Resolver, Root } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { translationJobs } from '../../../../../libs/translation/datasource/src/entities/TranslationJobSchema';
@@ -71,7 +71,11 @@ type ReviewSnapshot = NonNullable<Awaited<ReturnType<PostgresqlProductPublishRev
 type ReviewSource = ReviewSnapshot & { hasDescription: boolean };
 
 function hasDescription(description: string): boolean {
-  const pending: DefaultTreeAdapterMap['node'][] = [parseFragment(description)];
+  const document = parse(description, { scriptingEnabled: false });
+  const html = document.childNodes.find(node => 'tagName' in node && node.tagName === 'html');
+  const body =
+    html && 'childNodes' in html && html.childNodes.find(node => 'tagName' in node && node.tagName === 'body');
+  const pending: DefaultTreeAdapterMap['node'][] = body ? [body] : [];
   while (pending.length > 0) {
     const node = pending.pop()!;
     if ('value' in node && node.value.trim()) return true;

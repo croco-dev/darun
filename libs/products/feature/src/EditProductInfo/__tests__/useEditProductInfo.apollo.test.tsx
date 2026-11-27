@@ -129,7 +129,7 @@ it('initializes from the retried read and allows intentionally clearing the summ
   await act(async () => {
     void result.current.submit({ name: product.name, summary: '' });
   });
-  expect(writes).toEqual([{ slug: 'sample', input: { name: product.name, summary: '' } }]);
+  expect(writes).toEqual([{ slug: 'sample', input: { summary: '' } }]);
 });
 
 it('requires the selected product to load before submitting after a slug change', async () => {
@@ -158,14 +158,14 @@ it('requires the selected product to load before submitting after a slug change'
 it.each([
   [' https://example.com/new.png ', 'https://example.com/new.png'],
   ['', ''],
-] as const)('sends the changed logo %j with the existing basic info', async (input, logoUrl) => {
+] as const)('sends the changed logo %j without resubmitting text from the earlier read', async (input, logoUrl) => {
   const { result, reads, writes } = mount();
   await waitFor(() => expect(reads).toHaveLength(1));
   await act(async () => reads[0](product));
   await act(async () => {
     void result.current.submit({ ...result.current.form.getValues(), logoUrl: input });
   });
-  expect(writes).toEqual([{ slug: 'sample', input: { name: product.name, summary: product.summary, logoUrl } }]);
+  expect(writes).toEqual([{ slug: 'sample', input: { logoUrl } }]);
 });
 
 it('returns focus to retry after another error and to the name input after recovery', async () => {

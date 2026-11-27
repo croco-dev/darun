@@ -144,16 +144,18 @@ export function useEditProductInfo({ slug, onSaved, onSubmit, onCancel }: UseEdi
       notifications.show({ message: '서비스 이름을 입력해주세요.', color: 'red' });
       return;
     }
+    const input = {
+      ...(values.name !== originalName && name !== originalName && { name }),
+      ...(summary !== undefined && values.summary !== originalSummary && summary !== originalSummary && { summary }),
+      ...(logoUrl !== undefined && logoUrl !== originalLogoUrl && { logoUrl }),
+    };
+    if (Object.keys(input).length === 0) {
+      onSubmit?.();
+      return;
+    }
     try {
       await editInformation({
-        variables: {
-          slug,
-          input: {
-            name,
-            summary: summary ?? '',
-            ...(logoUrl !== undefined && { logoUrl }),
-          },
-        },
+        variables: { slug, input },
       });
     } catch {
       // Handled by onError
