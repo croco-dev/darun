@@ -13,7 +13,7 @@ export class PostgresqlProductTranslationObservation {
       async tx => {
         const observedAt = new Date();
         const rows = await tx
-          .select({ field: translations.field, value: translations.value, sourceHash: translations.sourceHash })
+          .select({ field: translations.field, sourceHash: translations.sourceHash })
           .from(translations)
           .where(
             and(

@@ -22,11 +22,11 @@ export class AdminProductPublishReviewFieldResolver {
     const fields = ['name', 'summary', 'description'] as const;
     const { translations, latestJobFailed, observedAt } = await this.observations.read(productId, [...fields]);
     const observe = (field: (typeof fields)[number]): AdminProductPublishTranslationField => {
-      if (!(field === 'description' ? snapshot.hasDescription : source[field].trim()))
-        return { status: 'NOT_NEEDED', sourceHash: null };
-      const sourceHash = computeSourceHash(source[field], field);
+      const value = source[field];
+      if (!value.trim() && field !== 'name') return { status: 'NOT_NEEDED', sourceHash: null };
+      const sourceHash = computeSourceHash(value, field);
       const row = translations.find(row => row.field === field);
-      if (!row?.value.trim()) return { status: 'MISSING', sourceHash };
+      if (!row) return { status: 'MISSING', sourceHash };
       return { status: row.sourceHash === sourceHash ? 'CURRENT' : 'STALE', sourceHash };
     };
     return {

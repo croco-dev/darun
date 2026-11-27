@@ -65,8 +65,7 @@ export class AdminProductPublishReview {
   officialLinkStatus: string;
 }
 
-type ReviewSnapshot = NonNullable<Awaited<ReturnType<PostgresqlProductPublishReview['read']>>>;
-export type ReviewSource = ReviewSnapshot & { hasDescription: boolean };
+export type ReviewSource = NonNullable<Awaited<ReturnType<PostgresqlProductPublishReview['read']>>>;
 
 const nonContentDescriptionTags = new Set(['iframe', 'noscript', 'script', 'style', 'template', 'title']);
 
