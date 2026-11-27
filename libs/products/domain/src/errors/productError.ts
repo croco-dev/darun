@@ -5,6 +5,7 @@ export enum ProductError {
   SlugAlreadyExists = 'product/slug-already-exists',
   CreateFailed = 'product/create-failed',
   UpdateFailed = 'product/update-failed',
+  PublishReviewChanged = 'product/publish-review-changed',
   DeleteFailed = 'product/delete-failed',
   ScreenshotNotFound = 'product-screenshot/not-found',
   InvalidArgs = 'product/invalid-args',
@@ -20,6 +21,8 @@ export const productNotFound = () => createDomainError(ProductError.NotFound);
 export const productSlugAlreadyExists = () => createDomainError(ProductError.SlugAlreadyExists);
 export const productCreateFailed = () => createDomainError(ProductError.CreateFailed);
 export const productUpdateFailed = () => createDomainError(ProductError.UpdateFailed);
+export const productPublishReviewChanged = () =>
+  createDomainError(ProductError.PublishReviewChanged, '검토 이후 서비스 정보가 바뀌었습니다. 다시 확인해 주세요.');
 export const productDeleteFailed = () => createDomainError(ProductError.DeleteFailed);
 export const productScreenshotNotFound = () => createDomainError(ProductError.ScreenshotNotFound);
 export const productInvalidArgs = (message?: string) => createDomainError(ProductError.InvalidArgs, message);

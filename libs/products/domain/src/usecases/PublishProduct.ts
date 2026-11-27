@@ -10,7 +10,9 @@ export class PublishProduct {
     private readonly productRepository: ProductRepository
   ) {}
 
-  async execute({ id }: { id: string }): Promise<Product> {
-    return this.productRepository.publishById(id);
+  async execute({ id, reviewToken }: { id: string; reviewToken?: string }): Promise<Product> {
+    return reviewToken === undefined
+      ? this.productRepository.publishById(id)
+      : this.productRepository.publishById(id, reviewToken);
   }
 }

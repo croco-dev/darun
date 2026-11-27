@@ -61,12 +61,20 @@ export default async function ProductDetailPage({ params }: PageProps) {
     <PageShell title={title} backHref="/products">
       <ProductDetailInfoSection slug={slug} />
       <div className="flex flex-col gap-8 mt-6">
-        <ProductDetailCategorySection key={slug} slug={slug} />
-        <ProductDetailDescriptionSection slug={slug} />
+        <div id="product-edit-category" tabIndex={-1} className="scroll-mt-20">
+          <ProductDetailCategorySection key={slug} slug={slug} />
+        </div>
+        <div id="product-edit-description" tabIndex={-1} className="scroll-mt-20">
+          <ProductDetailDescriptionSection slug={slug} />
+        </div>
         <ProductDetailFeatureSection slug={slug} />
-        <ProductDetailLinkSection slug={slug} />
+        <div id="product-edit-links" tabIndex={-1} className="scroll-mt-20">
+          <ProductDetailLinkSection slug={slug} />
+        </div>
         <ProductDetailFlowSection slug={slug} />
-        <ProductDetailScreenshotSection slug={slug} />
+        <div id="product-edit-screenshots" tabIndex={-1} className="scroll-mt-20">
+          <ProductDetailScreenshotSection slug={slug} />
+        </div>
         <ProductDetailAlternativeSection slug={slug} />
         <AdminPanel>
           <AdminSectionHeader title="태그 관리" />

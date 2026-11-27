@@ -38,6 +38,7 @@ export {
   productLinkInsertFailed,
   productLinkNotFound,
   productNotFound,
+  productPublishReviewChanged,
   productScreenshotInsertFailed,
   productScreenshotNotFound,
   productSlugAlreadyExists,

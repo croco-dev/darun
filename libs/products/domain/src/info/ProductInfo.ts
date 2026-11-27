@@ -1,4 +1,5 @@
 const PRODUCT_INFO_MAX_LENGTH = 255;
+export const PRODUCT_DESCRIPTION_MEDIA_ELEMENTS = ['img', 'video', 'iframe', 'table', 'hr'] as const;
 
 export function getProductInfoLengthError(field: 'name' | 'summary', value: string | undefined): string | null {
   // PostgreSQL varchar(n) counts Unicode code points, rather than UTF-16 code units.

@@ -16,6 +16,10 @@ export { NewProductScreenForm } from './NewProductScreenshotForm';
 export { ProductListRefreshButton } from './ProductListRefreshButton';
 export { ProductTagsForm } from './ProductTagsForm';
 export { PublishProductButton } from './PublishProductButton';
+export {
+  ProductPublishReviewUnavailableError,
+  productPublishReviewSchemaCompatibility,
+} from './PublishProductButton/productPublishReviewSchemaCompatibility';
 export { SearchProductField } from './SearchProductField';
 export { ProductLinkTable } from './ProductLinkTable';
 export {
