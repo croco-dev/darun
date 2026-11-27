@@ -6,6 +6,7 @@ import {
   TempProductOnPublishProductButtonDocument,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
+import { useState } from 'react';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
@@ -30,6 +31,7 @@ type PublishProductButtonProps = {
 };
 
 export function usePublishProductButton({ slug }: PublishProductButtonProps) {
+  const [reviewChanged, setReviewChanged] = useState(false);
   const { data, loading: isQueryLoading } = useQuery(TempProductOnPublishProductButtonDocument, {
     variables: {
       slug,
@@ -56,7 +58,7 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
       return;
     }
     try {
-      const result = await publishProductMutation({
+      await publishProductMutation({
         variables: {
           input: {
             slug,
@@ -64,13 +66,14 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
           },
         },
       });
-      if (result.data?.publishProduct?.product.publishedAt) return 'published';
     } catch (error) {
       if (
         CombinedGraphQLErrors.is(error) &&
         error.errors.some(({ extensions }) => extensions?.code === 'product/publish-review-changed')
-      )
-        return 'review-changed';
+      ) {
+        setReviewChanged(true);
+        return;
+      }
       notifications.show({
         message: error instanceof Error ? error.message : '서비스를 발행하지 못했습니다.',
         color: 'red',
@@ -82,5 +85,7 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     loading: isQueryLoading || isPublishing,
     isPublished: Boolean(data?.tempProductBySlug?.publishedAt),
     publishProduct,
+    reviewChanged,
+    clearReviewChanged: () => setReviewChanged(false),
   };
 }

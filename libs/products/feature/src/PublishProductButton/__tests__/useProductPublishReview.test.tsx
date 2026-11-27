@@ -14,8 +14,9 @@ const missingReview = {
 
 function mountReview(
   status: number,
-  errors: Array<{ message: string; extensions: { code: string } }>,
-  contentType = 'application/graphql-response+json'
+  response: ApolloLink.Result,
+  contentType = 'application/graphql-response+json',
+  reviewChanged = false
 ) {
   const client = new ApolloClient({
     cache: new InMemoryCache(),
@@ -23,14 +24,24 @@ function mountReview(
       productPublishReviewSchemaCompatibility,
       new HttpLink({
         uri: '/graphql',
-        fetch: async () =>
-          new Response(JSON.stringify({ errors }), { status, headers: { 'content-type': contentType } }),
+        fetch: async () => new Response(JSON.stringify(response), { status, headers: { 'content-type': contentType } }),
       }),
     ]),
   });
   const publishProduct = vi.fn();
   const { result } = renderHook(
-    () => useProductPublishReview({ id: 'review', slug: 'test', publishing: false, publishProduct }),
+    () =>
+      useProductPublishReview({
+        id: 'review',
+        slug: 'test',
+        publication: {
+          isPublished: false,
+          loading: false,
+          publishProduct,
+          reviewChanged,
+          clearReviewChanged: vi.fn(),
+        },
+      }),
     {
       wrapper: ({ children }: { children: ReactNode }) => <ApolloProvider client={client}>{children}</ApolloProvider>,
     }
@@ -44,7 +55,7 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     [400, 'application/json'],
     [200, 'application/graphql-response+json'],
   ])('HTTP %s (%s)에서 구버전 스키마가 확인되면 관리자가 기존 발행을 선택할 수 있다', async (status, contentType) => {
-    const { result, publishProduct } = mountReview(status, [missingReview], contentType);
+    const { result, publishProduct } = mountReview(status, { errors: [missingReview] }, contentType);
     await waitFor(() => expect(result.current.legacyApi).toBe(true));
     expect(result.current.canPublish).toBe(true);
     expect(publishProduct).not.toHaveBeenCalled();
@@ -62,7 +73,7 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     ['서버 오류', 500, [missingReview]],
     ['여러 오류', 400, [missingReview, missingReview]],
   ] as const)('%s일 때 기존 발행을 허용하지 않는다', async (_label, status, errors) => {
-    const { result, publishProduct } = mountReview(status, [...errors]);
+    const { result, publishProduct } = mountReview(status, { errors });
     await waitFor(() => expect(result.current.error).toBeDefined());
     expect(result.current.legacyApi).toBe(false);
     expect(result.current.canPublish).toBe(false);
@@ -70,5 +81,57 @@ describe('발행 준비 상태 API 배포 호환성', () => {
     await act(() => result.current.publish());
 
     expect(publishProduct).not.toHaveBeenCalled();
+  });
+
+  it('원문 변경으로 발행이 거절된 뒤에는 구버전 응답이 와도 다시 확인해야 한다', async () => {
+    const { result, publishProduct } = mountReview(
+      400,
+      { errors: [missingReview] },
+      'application/graphql-response+json',
+      true
+    );
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.legacyApi).toBe(false);
+    expect(result.current.canPublish).toBe(false);
+
+    await act(() => result.current.publish());
+
+    expect(publishProduct).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [200, true],
+    [401, false],
+    [403, false],
+    [500, false],
+  ])('HTTP %s의 검토 데이터가 발행을 허용하는지 확인한다', async (status, canPublish) => {
+    const { result, publishProduct } = mountReview(status, {
+      data: {
+        adminProductPublishReview: {
+          id: 'test',
+          publishedAt: null,
+          reviewToken: 'fixture-review-token',
+          hasName: true,
+          hasSummary: false,
+          hasDescription: false,
+          hasCategory: false,
+          hasLogo: false,
+          hasScreenshot: false,
+          officialLinkStatus: 'MISSING',
+          translation: null,
+        },
+      },
+      errors: [{ message: 'Translation unavailable', path: ['adminProductPublishReview', 'translation'] }],
+    });
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.canPublish).toBe(canPublish);
+
+    await act(() => result.current.publish());
+
+    if (canPublish) {
+      expect(publishProduct).toHaveBeenCalledExactlyOnceWith('fixture-review-token');
+    } else {
+      expect(publishProduct).not.toHaveBeenCalled();
+    }
   });
 });

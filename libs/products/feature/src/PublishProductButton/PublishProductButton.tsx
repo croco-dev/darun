@@ -30,14 +30,7 @@ function ProductPublishControl({ slug }: { slug: string }) {
       >
         {publish.isPublished ? '노출 중' : '발행 전 확인'}
       </Button>
-      {showReview && (
-        <ProductPublishReview
-          id={reviewId}
-          slug={slug}
-          publishing={publish.loading}
-          publishProduct={publish.publishProduct}
-        />
-      )}
+      {showReview && <ProductPublishReview id={reviewId} slug={slug} publication={publish} />}
     </>
   );
 }

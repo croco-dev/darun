@@ -1,7 +1,6 @@
 import { gql } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 import { AdminProductPublishReviewOnProductPublishReviewDocument } from '@darun/provider-graphql';
-import { useState } from 'react';
 import { ProductPublishReviewUnavailableError } from './productPublishReviewSchemaCompatibility';
 import type { usePublishProductButton } from './usePublishProductButton';
 
@@ -42,12 +41,11 @@ gql`
 type ProductPublishReviewProps = {
   id: string;
   slug: string;
-  publishing: boolean;
-  publishProduct: ReturnType<typeof usePublishProductButton>['publishProduct'];
+  publication: ReturnType<typeof usePublishProductButton>;
 };
 
-export function useProductPublishReview({ id, slug, publishing, publishProduct }: ProductPublishReviewProps) {
-  const [reviewChanged, setReviewChanged] = useState(false);
+export function useProductPublishReview({ id, slug, publication }: ProductPublishReviewProps) {
+  const { loading: publishing, publishProduct, reviewChanged, clearReviewChanged } = publication;
   const { data, loading, error, refetch } = useQuery(AdminProductPublishReviewOnProductPublishReviewDocument, {
     variables: { slug },
     fetchPolicy: 'no-cache',
@@ -60,12 +58,12 @@ export function useProductPublishReview({ id, slug, publishing, publishProduct }
 
   async function refresh() {
     const result = await refetch().catch(() => undefined);
-    if (result?.data?.adminProductPublishReview) setReviewChanged(false);
+    if (result?.data?.adminProductPublishReview) clearReviewChanged();
   }
 
   async function publish() {
     if (!canPublish) return;
-    if ((await publishProduct(review?.reviewToken)) === 'review-changed') setReviewChanged(true);
+    await publishProduct(review?.reviewToken);
   }
 
   return { id, publishing, loading, error, review, reviewChanged, legacyApi, canPublish, refresh, publish };
