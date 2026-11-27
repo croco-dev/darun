@@ -330,7 +330,7 @@ Mongo fixture도 Compose처럼 `admin`에 인증 사용자를 생성하고 URI�
 2. **자동 품질 검사 (품질 게이트)**:
    `trunk` 브랜치에 병합되거나 코드가 푸시되면 GitHub Actions가 품질 검사를 실행합니다.
    검사 순서: `lint` → `typecheck` → `test`
-   Production Deploy는 push·workflow_dispatch·repository_dispatch 모두 해당 실행의 `github.sha`를 quality와 deploy에서 동일하게 checkout합니다. quality는 저장소 루트의 세 검사를 실행하며, Turbo 로그의 패키지·작업 목록으로 공유 라이브러리의 수집 범위를 확인합니다. quality가 실패하거나 취소되면 `needs: quality`에 의해 migration과 SST 배포 job은 실행되지 않습니다. 별도 PR workflow나 과거 revision의 성공으로 이 검사를 대체하지 않습니다.
+   Production Deploy는 push·workflow_dispatch·repository_dispatch 모두 해당 실행의 `github.sha`를 quality와 deploy에서 동일하게 checkout합니다. quality는 저장소 루트의 세 검사를 실행합니다. typecheck와 test는 Turbo 로그의 패키지·작업 목록으로 공유 라이브러리의 수집 범위를 확인하고, lint는 루트에서 한 번 실행하는 oxlint 출력의 검사 파일 수로 확인합니다. quality가 실패하거나 취소되면 `needs: quality`에 의해 migration과 SST 배포 job은 실행되지 않습니다. 별도 PR workflow나 과거 revision의 성공으로 이 검사를 대체하지 않습니다.
    GraphQL 변경은 TypeGraphQL 선언에 canonical 공개 타입 이름을 명시해 번들러의 클래스명 변경이 API 이름에 반영되지 않게 합니다. Node.js 22에서 `pnpm --filter graphql-api build:lambda` 다음 `pnpm --filter graphql-api verify:lambda`를 실행합니다. 검증은 임시 RSA·검증 전용 환경과 네트워크 연결 차단 아래 7개 배포 handler를 초기화하고, 배포와 같은 decorator metadata·minify 설정의 전체 resolver schema와 저장 SDL이 일치하는지 확인합니다. codegen 설정이 수집하는 libs 및 admin/service/visual 앱의 모든 operation·fragment를 두 schema에 검증한 뒤 health query만 실행하며, DB 연결·업무 mutation·worker 실행은 하지 않습니다. 문서는 앱 모듈을 실행하지 않고 정적으로 추출하며, 일치하는 파일의 문서 파싱 오류도 생략하지 않고 실패로 처리합니다. SDL 갱신이 필요하면 `pnpm --filter graphql-api verify:lambda -- --emit-schema`로 생성하고 `pnpm --filter @darun/provider-graphql codegen`으로 저장 SDL의 실제 문서 검증과 생성 타입 갱신을 완료합니다.
 
 3. **배포 실행**:
@@ -717,7 +717,7 @@ PR CI와 GraphQL 배포 전 quality 검사의 전체 패키지 검사는 `pnpm r
 
 `pnpm lint`는 저장소 루트에서 한 번 실행하며 모든 패키지의 JS/TS 소스를 검사합니다. 패키지별 `lint` 스크립트는 두지 않습니다. 규칙은 `oxlint.config.mts`, 포맷은 `.oxfmtrc.json`에 있고, type-aware 규칙은 `tsrs-lint`(`OXLINT_TSGOLINT_PATH`)로 실행합니다. 기존 위반이 남은 type-aware 규칙은 warning으로 두며, 정리한 규칙부터 error로 올립니다.
 
-`tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, PR CI와 같은 Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
+`tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
 
 oxlint와 oxfmt 설정은 `__generated__`, `dist`, `build`, `coverage` 생성물과 Next.js가 생성하는 `.next/`, `next-env.d.ts`를 제외합니다. oxlint는 `.gitignore`를 따라 `node_modules`를 탐색하지 않습니다.
 

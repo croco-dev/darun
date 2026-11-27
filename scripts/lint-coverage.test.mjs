@@ -42,8 +42,11 @@ test('root lint rejects errors in nested sources of every package and skips gene
     writeFileSync(path.join(fixture, '.gitignore'), 'node_modules\n');
     symlinkSync(path.join(root, 'node_modules'), path.join(fixture, 'node_modules'), 'dir');
 
+    // `await 1` is reported only when the type-aware rules actually run through tsrs-lint.
     writeProbes(extension =>
-      extension.startsWith('t') ? 'export const value: any = 1;\n' : `const unused = 1;\n${valid(extension)}`
+      extension.startsWith('t')
+        ? 'export const value: any = 1;\nexport async function settle() {\n  await 1;\n}\n'
+        : `const unused = 1;\n${valid(extension)}`
     );
     const failed = lint();
     assert.equal(failed.status, 1, failed.output);
@@ -54,6 +57,7 @@ test('root lint rejects errors in nested sources of every package and skips gene
     }
     assert.match(failed.output, /no-explicit-any/);
     assert.match(failed.output, /no-unused-vars/);
+    assert.match(failed.output, /await-thenable/);
 
     writeProbes(valid);
     for (const relative of packages) {

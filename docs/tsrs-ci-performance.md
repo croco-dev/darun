@@ -2,7 +2,7 @@
 
 2026-10-23 GitHub Actions에서 측정했다. [실행 기록](https://github.com/croco-dev/darun/actions/runs/39896478587)의 `tsrs-workspace`, `tsrs-standalone` artifact에 로그와 전체 결과가 있으며, artifact 보관 기간 이후에도 확인할 수 있도록 [개별 측정값](benchmarks/tsrs-ci-2026-10-23.json)을 저장했다.
 
-측정 커밋은 `d23d7669d9158331fcb5364b8307810a892a3704`이다. 모든 측정은 TypeScript 6.0.3을 유지한 상태에서 `tsrs@0.18.0-ts7.1.0-dev.20260929`로 수행했다. 현재 고정 버전은 `tsrs@7.1.0-beta.tsrs5`이며 아래 수치는 이 버전으로 다시 측정하지 않았다.
+측정 커밋은 `d23d7669d9158331fcb5364b8307810a892a3704`이다. 모든 측정은 TypeScript 6.0.3을 유지한 상태에서 `tsrs@0.18.0-ts7.1.0-dev.20260929`로 수행했다. 현재 고정 버전은 `tsrs@7.1.0-beta.tsrs5`이며 아래 수치는 이 버전으로 다시 측정하지 않았다. tsrs 0.20.0부터 기본 검사 방식이 TypeScript checker 기본값으로 바뀌어 이전 기본이던 최적화는 `--fast`로만 켜지므로, 같은 명령이라도 측정 당시와 검사 방식이 다르다.
 
 ## 적용 설정
 
@@ -34,7 +34,7 @@ pnpm run typecheck --concurrency=4 -- --checkers 1
 | 전체 패키지           | `ubuntu22 20261012.322.1` | 4 vCPU, AMD EPYC 7763 64-Core Processor | 15.61GiB | v22.23.3 / 11.2.2 |
 | GraphQL·tier-web 단독 | `ubuntu24 20261012.334.1` | 4 vCPU, AMD EPYC 9V45 96-Core Processor | 15.61GiB | v22.23.3 / 11.2.2 |
 
-- 전체 검사는 PR CI와 동일한 Ubuntu 22.04 및 PostgreSQL 17·MongoDB 8 서비스 조건에서 실행했다. 단독 검사는 기존 배포 전 검사와 tier-web CI가 사용하는 Ubuntu 최신 실행기에서 진행했다. 각 범위 내의 모든 설정은 같은 실행기에서 측정했다.
+- 전체 검사는 측정 당시 PR CI와 같은 Ubuntu 22.04 및 PostgreSQL 17·MongoDB 8 서비스 조건에서 실행했다. 지금 PR CI의 타입 검사는 DB 서비스가 없는 `checks` job에서 실행한다. 단독 검사는 기존 배포 전 검사와 tier-web CI가 사용하는 Ubuntu 최신 실행기에서 진행했다. 각 범위 내의 모든 설정은 같은 실행기에서 측정했다.
 - 전체 16개 구성, 앱별 10개 구성에 대해 순서를 섞어 각 3회 실행했다. 108개 측정 모두 종료 코드 0, 기대한 검사 범위 완료, OOM 0건, 안전 메모리 한도 도달 0건을 확인했다. 초기 워밍업과 캐시 준비 실행은 측정 횟수에서 제외했다.
 - Turbo 결과 캐시는 `--force`로 우회하고 모든 패키지는 `--noEmit --incremental false`를 유지했다. 기본 설정으로 워밍업한 뒤 OS 페이지 캐시는 비우지 않았다. `cost-cold`는 매번 검사 시간 캐시를 지우며, `cost-warm`은 같은 옵션으로 캐시를 한 번 준비한 다음 측정한다. 캐시 준비 시간과 향후 Actions 캐시 복원 비용은 warm 측정값에 포함하지 않는다.
 - 매번 새 cgroup v2를 만들고 pnpm을 그 안에서 시작하므로 Turbo, tsrs, Next typegen 등 모든 하위 프로세스가 같은 계측 범위에 들어간다. 시간은 명령 실행부터 종료까지의 wall time, CPU 시간은 `cpu.stat`의 누적 사용량이다. tier-web은 기존 `next typegen`도 포함한다.

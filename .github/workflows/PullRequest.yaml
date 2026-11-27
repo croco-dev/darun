@@ -31,11 +31,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Restore Turbo cache
-        uses: actions/cache@v4
+        # Pull requests reuse the latest trunk results; only trunk saves, starting from an empty cache, so each entry stays one revision's size.
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
         with:
           path: .turbo/cache
-          key: turbo-checks-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', '**/turbo.json', 'tsconfig.json') }}-${{ github.sha }}
-          restore-keys: turbo-checks-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', '**/turbo.json', 'tsconfig.json') }}-
+          key: turbo-checks-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json') }}-${{ github.sha }}
+          restore-keys: turbo-checks-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json') }}-
       - name: Audit dependencies
         run: pnpm audit --audit-level=critical
       - name: Verify check-only GraphQL generation contracts
@@ -73,6 +75,12 @@ jobs:
           INFRA_ENV: prod
       - name: Verify Lambda initialization and GraphQL schema
         run: pnpm --filter graphql-api run verify:lambda
+      - name: Save Turbo cache
+        if: github.event_name == 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-checks-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json') }}-${{ github.sha }}
 
   integration:
     # MongoDB 8은 Linux 6.19에서 기동하지 않아 호환 실행기를 고정합니다.
@@ -187,12 +195,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Restore Turbo cache
-        uses: actions/cache@v4
+        # Pull requests reuse the latest trunk results; only trunk saves, starting from an empty cache, so each entry stays one revision's size.
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
         with:
           path: .turbo/cache
-          key: turbo-unit-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', '**/turbo.json', 'tsconfig.json', 'vitest.config.ts', 'vitest.workspace.ts') }}-${{ github.sha }}
-          restore-keys: turbo-unit-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', '**/turbo.json', 'tsconfig.json', 'vitest.config.ts', 'vitest.workspace.ts') }}-
+          key: turbo-unit-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json', 'vitest.config.ts', 'vitest.workspace.ts') }}-${{ github.sha }}
+          restore-keys: turbo-unit-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json', 'vitest.config.ts', 'vitest.workspace.ts') }}-
       - run: pnpm run test:coverage
+      - name: Save Turbo cache
+        if: github.event_name == 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-unit-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json', 'vitest.config.ts', 'vitest.workspace.ts') }}-${{ github.sha }}
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         if: always()
@@ -217,11 +233,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Restore Turbo cache
-        uses: actions/cache@v4
+        # Pull requests reuse the latest trunk results; only trunk saves, starting from an empty cache, so each entry stays one revision's size.
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
         with:
           path: .turbo/cache
-          key: turbo-build-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', '**/turbo.json', 'tsconfig.json') }}-${{ github.sha }}
-          restore-keys: turbo-build-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', '**/turbo.json', 'tsconfig.json') }}-
+          key: turbo-build-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json') }}-${{ github.sha }}
+          restore-keys: turbo-build-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json') }}-
       - name: Build
         run: pnpm run build --filter='!tier-web'
       - name: Build Tier Cloudflare Worker
@@ -231,6 +249,12 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://supabase.invalid
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_build_only
           NEXT_PUBLIC_SITE_URL: https://tier.darun.io
+      - name: Save Turbo cache
+        if: github.event_name == 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: .turbo/cache
+          key: turbo-build-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'apps/*/turbo.json', 'libs/*/*/turbo.json', 'libs/shared/*/*/turbo.json', 'tsconfig.json') }}-${{ github.sha }}
 
   smoke:
     runs-on: ubuntu-22.04
