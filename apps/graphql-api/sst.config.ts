@@ -259,7 +259,7 @@ export default $config({
       },
     });
 
-    new sst.aws.Function('GraphqlHandler', {
+    const _graphqlHandler = new sst.aws.Function('GraphqlHandler', {
       handler: 'graphql.handler',
       bundle: '.build/lambda',
       runtime: 'nodejs22.x',
