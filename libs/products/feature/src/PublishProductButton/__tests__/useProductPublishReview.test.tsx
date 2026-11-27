@@ -1,8 +1,9 @@
-import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client';
+import { ApolloClient, ApolloLink, HttpLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { productPublishReviewSchemaCompatibility } from '../productPublishReviewSchemaCompatibility';
 import { useProductPublishReview } from '../useProductPublishReview';
 
 const missingReview = {
@@ -11,13 +12,21 @@ const missingReview = {
   extensions: { code: 'GRAPHQL_VALIDATION_FAILED' },
 };
 
-function mountReview(status: number, errors: Array<{ message: string; extensions: { code: string } }>) {
+function mountReview(
+  status: number,
+  errors: Array<{ message: string; extensions: { code: string } }>,
+  contentType = 'application/graphql-response+json'
+) {
   const client = new ApolloClient({
     cache: new InMemoryCache(),
-    link: new HttpLink({
-      uri: '/graphql',
-      fetch: async () => new Response(JSON.stringify({ errors }), { status }),
-    }),
+    link: ApolloLink.from([
+      productPublishReviewSchemaCompatibility,
+      new HttpLink({
+        uri: '/graphql',
+        fetch: async () =>
+          new Response(JSON.stringify({ errors }), { status, headers: { 'content-type': contentType } }),
+      }),
+    ]),
   });
   const publishProduct = vi.fn();
   const { result } = renderHook(
@@ -30,8 +39,12 @@ function mountReview(status: number, errors: Array<{ message: string; extensions
 }
 
 describe('발행 준비 상태 API 배포 호환성', () => {
-  it.each([400, 200])('HTTP %s에서 구버전 스키마가 확인되면 관리자가 기존 발행을 선택할 수 있다', async status => {
-    const { result, publishProduct } = mountReview(status, [missingReview]);
+  it.each([
+    [400, 'application/graphql-response+json'],
+    [400, 'application/json'],
+    [200, 'application/graphql-response+json'],
+  ])('HTTP %s (%s)에서 구버전 스키마가 확인되면 관리자가 기존 발행을 선택할 수 있다', async (status, contentType) => {
+    const { result, publishProduct } = mountReview(status, [missingReview], contentType);
     await waitFor(() => expect(result.current.legacyApi).toBe(true));
     expect(result.current.canPublish).toBe(true);
     expect(publishProduct).not.toHaveBeenCalled();
@@ -44,6 +57,8 @@ describe('발행 준비 상태 API 배포 호환성', () => {
   it.each([
     ['권한 오류', 200, [{ ...missingReview, extensions: { code: 'FORBIDDEN' } }]],
     ['다른 필드의 스키마 오류', 400, [{ ...missingReview, message: 'Cannot query field "id" on type "Review".' }]],
+    ['HTTP 인증 실패', 401, [missingReview]],
+    ['HTTP 권한 오류', 403, [missingReview]],
     ['서버 오류', 500, [missingReview]],
     ['여러 오류', 400, [missingReview, missingReview]],
   ] as const)('%s일 때 기존 발행을 허용하지 않는다', async (_label, status, errors) => {

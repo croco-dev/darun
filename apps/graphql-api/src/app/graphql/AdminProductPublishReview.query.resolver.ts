@@ -68,6 +68,8 @@ export class AdminProductPublishReview {
 type ReviewSnapshot = NonNullable<Awaited<ReturnType<PostgresqlProductPublishReview['read']>>>;
 export type ReviewSource = ReviewSnapshot & { hasDescription: boolean };
 
+const nonContentDescriptionTags = new Set(['iframe', 'noscript', 'script', 'style', 'template', 'title']);
+
 function hasDescription(description: string): boolean {
   const document = parse(description, { scriptingEnabled: false });
   const html = document.childNodes.find(node => 'tagName' in node && node.tagName === 'html');
@@ -77,7 +79,10 @@ function hasDescription(description: string): boolean {
   while (pending.length > 0) {
     const node = pending.pop()!;
     if ('value' in node && node.value.trim()) return true;
-    if ('tagName' in node && PRODUCT_DESCRIPTION_MEDIA_ELEMENTS.some(tag => tag === node.tagName)) return true;
+    if ('tagName' in node) {
+      if (nonContentDescriptionTags.has(node.tagName) || node.attrs.some(attr => attr.name === 'hidden')) continue;
+      if (PRODUCT_DESCRIPTION_MEDIA_ELEMENTS.some(tag => tag === node.tagName)) return true;
+    }
     if ('childNodes' in node) {
       for (const child of node.childNodes) pending.push(child);
     }

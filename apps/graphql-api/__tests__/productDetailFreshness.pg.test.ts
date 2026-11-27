@@ -288,7 +288,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     try {
       await writer.begin(async tx => {
         await tx`insert into products (id, slug, name, summary, description, logo_url)
-          values (${id}, ${slug}, '검토 서비스', '원문 요약', '<style>p { color: red }</style><h2></h2><blockquote><p>&#x2002;</p></blockquote>', ''),
+          values (${id}, ${slug}, '검토 서비스', '원문 요약', '<h2></h2><p><style>p { color: red }</style><script>1+1</script></p><blockquote hidden><p>숨긴 본문</p></blockquote><iframe src="/fixture"></iframe><p>&#x2002;</p>', ''),
                  (${otherId}, ${otherId}, '다른 서비스', '', null, '')`;
         await tx`insert into categories (id, slug, label_ko, label_en)
           values (${categoryId}, ${categoryId}, '검토 분류', 'Review category')`;
