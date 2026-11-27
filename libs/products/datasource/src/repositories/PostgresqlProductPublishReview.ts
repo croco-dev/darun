@@ -15,7 +15,19 @@ export class PostgresqlProductPublishReview {
   read(slug: string) {
     return this.db.transaction(
       async tx => {
-        const [product] = await tx.select().from(products).where(eq(products.slug, slug));
+        const [product] = await tx
+          .select({
+            id: products.id,
+            name: products.name,
+            summary: products.summary,
+            description: products.description,
+            categoryIds: products.categoryIds,
+            logoUrl: products.logoUrl,
+            contentRevision: products.contentRevision,
+            publishedAt: products.publishedAt,
+          })
+          .from(products)
+          .where(eq(products.slug, slug));
         if (!product) return null;
 
         const category = product.categoryIds.length

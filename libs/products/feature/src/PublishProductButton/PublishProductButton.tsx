@@ -1,43 +1,10 @@
 'use client';
 
-import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
-import { AdminProductPublishReviewDocument } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
+import { bind } from '@darun/utils-structure-react';
 import { type ReactNode, useId, useState } from 'react';
+import { useProductPublishReview } from './useProductPublishReview';
 import { usePublishProductButton } from './usePublishProductButton';
-
-gql`
-  query AdminProductPublishReview($slug: String!) {
-    adminProductPublishReview(slug: $slug) {
-      publishedAt
-      reviewToken
-      hasName
-      hasSummary
-      hasDescription
-      hasCategory
-      hasLogo
-      hasScreenshot
-      officialLinkStatus
-      translation {
-        name {
-          status
-          sourceHash
-        }
-        summary {
-          status
-          sourceHash
-        }
-        description {
-          status
-          sourceHash
-        }
-        observedAt
-        latestJobFailed
-      }
-    }
-  }
-`;
 
 export function PublishProductButton({ slug }: { slug: string }) {
   return <ProductPublishControl key={slug} slug={slug} />;
@@ -113,25 +80,22 @@ function ReviewRow({ label, edit, children }: { label: string; edit: string; chi
   );
 }
 
-function ProductPublishReview({
+const ProductPublishReview = bind(useProductPublishReview, ProductPublishReviewView, {
+  displayName: 'ProductPublishReview',
+});
+
+function ProductPublishReviewView({
   id,
-  slug,
   publishing,
-  publishProduct,
-}: {
-  id: string;
-  slug: string;
-  publishing: boolean;
-  publishProduct: ReturnType<typeof usePublishProductButton>['publishProduct'];
-}) {
-  const [reviewChanged, setReviewChanged] = useState(false);
-  const { data, loading, error, refetch } = useQuery(AdminProductPublishReviewDocument, {
-    variables: { slug },
-    fetchPolicy: 'no-cache',
-    errorPolicy: 'all',
-    context: { queryDeduplication: false },
-  });
-  const review = data?.adminProductPublishReview;
+  loading,
+  error,
+  review,
+  reviewChanged,
+  legacyApi,
+  canPublish,
+  refresh,
+  publish,
+}: ReturnType<typeof useProductPublishReview>) {
   const translation = review?.translation;
   const rows = review
     ? [
@@ -173,16 +137,6 @@ function ProductPublishReview({
       ]
     : [];
 
-  async function refresh() {
-    const result = await refetch().catch(() => undefined);
-    if (result?.data?.adminProductPublishReview) setReviewChanged(false);
-  }
-
-  async function publish() {
-    if (!review || reviewChanged || loading || publishing || review.publishedAt) return;
-    if ((await publishProduct(review.reviewToken)) === 'review-changed') setReviewChanged(true);
-  }
-
   return (
     <section
       id={id}
@@ -200,7 +154,11 @@ function ProductPublishReview({
       )}
       {!loading && !review && (
         <p role="alert" className="mt-3 text-sm">
-          {error ? '준비 상태를 불러오지 못했습니다.' : '서비스 정보를 찾지 못했습니다.'}
+          {legacyApi
+            ? '현재 API에서는 준비 상태를 확인할 수 없습니다. 기존 방식으로 서비스를 발행할 수 있습니다.'
+            : error
+              ? '준비 상태를 불러오지 못했습니다.'
+              : '서비스 정보를 찾지 못했습니다.'}
         </p>
       )}
       {!loading && review && (
@@ -262,7 +220,7 @@ function ProductPublishReview({
           size="sm"
           variant="contained"
           color="secondary"
-          disabled={!review || Boolean(review.publishedAt) || reviewChanged || loading || publishing}
+          disabled={!canPublish}
           onClick={() => void publish()}
         >
           {publishing ? '발행 중…' : '서비스 발행'}

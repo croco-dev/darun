@@ -65,7 +65,7 @@ import {
   type AllProductsOnProductListTableQuery,
   type AllProductsOnProductListTableQueryVariables,
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
-  AdminProductPublishReviewDocument,
+  AdminProductPublishReviewOnProductPublishReviewDocument,
   EditProductOnEditProductInfoDocument,
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
@@ -80,8 +80,10 @@ import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/
 import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRanker';
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
 import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
+import { PostgresqlProductTranslationObservation } from '../../../libs/translation/datasource/src/repositories/PostgresqlProductTranslationObservation';
 import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
-import { AdminProductPublishReviewResolver } from '../src/app/graphql/AdminProductPublishReview.resolver';
+import { AdminProductPublishReviewFieldResolver } from '../src/app/graphql/AdminProductPublishReview.field.resolver';
+import { AdminProductPublishReviewQueryResolver } from '../src/app/graphql/AdminProductPublishReview.query.resolver';
 import { createGraphQLDescriptionPrecondition } from '../src/app/graphqlDescriptionPrecondition';
 
 const { execute, graphql, print } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
@@ -222,9 +224,11 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
   function publishReviewFixture(slug: string, database = db, translationDb = database) {
     const repository = new PostgresqlProductRepository(database);
-    const reviewResolver = new AdminProductPublishReviewResolver(
-      new PostgresqlProductPublishReview(database),
-      translationDb
+    const reviewQueryResolver = new AdminProductPublishReviewQueryResolver(
+      new PostgresqlProductPublishReview(database)
+    );
+    const reviewFieldResolver = new AdminProductPublishReviewFieldResolver(
+      new PostgresqlProductTranslationObservation(translationDb)
     );
     const mutationResolver = Object.assign(Object.create(ProductMutationResolver.prototype), {
       getProductUseCase: new GetProduct(repository),
@@ -233,10 +237,18 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     });
     const server = new ApolloServer({
       schema: buildSchemaSync({
-        resolvers: [AdminProductPublishReviewResolver, ProductMutationResolver],
+        resolvers: [
+          AdminProductPublishReviewQueryResolver,
+          AdminProductPublishReviewFieldResolver,
+          ProductMutationResolver,
+        ],
         authChecker: createAuthChecker(),
         container: {
-          get: resolver => (resolver === AdminProductPublishReviewResolver ? reviewResolver : mutationResolver),
+          get: resolver => {
+            if (resolver === AdminProductPublishReviewQueryResolver) return reviewQueryResolver;
+            if (resolver === AdminProductPublishReviewFieldResolver) return reviewFieldResolver;
+            return mutationResolver;
+          },
         },
       }),
       formatError: (formatted, error) => formatServerError(formatted, error, false),
@@ -253,7 +265,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
       return result.body.singleResult;
     };
-    const read = (roles?: string[]) => run(AdminProductPublishReviewDocument, { slug }, roles);
+    const read = (roles?: string[]) => run(AdminProductPublishReviewOnProductPublishReviewDocument, { slug }, roles);
     const publish = (reviewToken?: unknown, roles?: string[]) =>
       run(PublishProductOnPublishProductButtonDocument, { input: { slug, reviewToken } }, roles);
     return { server, run, read, publish };
@@ -313,6 +325,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       const first = await read();
       expect(first.errors).toBeUndefined();
       expect(first.data?.adminProductPublishReview).toMatchObject({
+        id,
         publishedAt: null,
         hasName: true,
         hasSummary: true,
@@ -440,7 +453,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     const database = drizzle(connection);
     const { server, run } = publishReviewFixture(id, database);
     const read = async () => {
-      const result = await run(AdminProductPublishReviewDocument, { slug: id });
+      const result = await run(AdminProductPublishReviewOnProductPublishReviewDocument, { slug: id });
       expect(result.errors).toBeUndefined();
       const review = result.data?.adminProductPublishReview as {
         reviewToken: string;

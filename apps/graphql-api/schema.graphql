@@ -60,6 +60,7 @@ type AdminProductPublishReview {
   hasName: Boolean!
   hasScreenshot: Boolean!
   hasSummary: Boolean!
+  id: ID!
   officialLinkStatus: String!
   publishedAt: DateTimeISO
   reviewToken: String!
