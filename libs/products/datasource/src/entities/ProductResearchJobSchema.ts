@@ -39,6 +39,7 @@ export const productResearchJobs = pgTable(
   },
   table => ({
     requestKeyIdx: index('product_research_jobs_request_key_idx').on(table.requestKey),
+    createdAtIdIdx: index('product_research_jobs_created_at_id_idx').on(table.createdAt, table.id),
   })
 );
 

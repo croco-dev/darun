@@ -53,6 +53,45 @@ type AdminProductFlowSummary {
   title: String!
 }
 
+type AdminProductPublishReview {
+  hasCategory: Boolean!
+  hasDescription: Boolean!
+  hasLogo: Boolean!
+  hasName: Boolean!
+  hasScreenshot: Boolean!
+  hasSummary: Boolean!
+  id: ID!
+  officialLinkStatus: String!
+  publishedAt: DateTimeISO
+  reviewToken: String!
+  translation: AdminProductPublishTranslation
+}
+
+type AdminProductPublishTranslation {
+  description: AdminProductPublishTranslationField!
+  latestJobFailed: Boolean!
+  name: AdminProductPublishTranslationField!
+  observedAt: DateTimeISO!
+  summary: AdminProductPublishTranslationField!
+}
+
+type AdminProductPublishTranslationField {
+  sourceHash: String
+  status: String!
+}
+
+type AdminProductResearchJobPage {
+  jobs: [AdminProductResearchJobSummary!]!
+  nextCursor: String
+}
+
+type AdminProductResearchJobSummary {
+  createdAt: DateTimeISO!
+  id: ID!
+  officialUrl: String!
+  status: String!
+}
+
 type ApplyProductDescriptionCandidatePayload {
   alreadyApplied: Boolean!
   job: ProductDescriptionJob!
@@ -438,6 +477,11 @@ type ProductDescriptionJob {
   writerModel: String
 }
 
+type ProductDescriptionJobPage {
+  jobs: [ProductDescriptionJob!]!
+  nextCursor: String
+}
+
 type ProductEdge {
   cursor: String!
   node: Product!
@@ -502,6 +546,7 @@ type PublishMagazinePayload {
 }
 
 input PublishProductInput {
+  reviewToken: String
   slug: String!
 }
 
@@ -524,6 +569,8 @@ type Query {
   adminProductFlow(id: String!): VisualFlow
   adminProductFlowSummaries(after: String, first: Int! = 24, productSlug: String!): AdminProductFlowConnection!
   adminProductFlows(productSlug: String!): [VisualFlow!]!
+  adminProductPublishReview(slug: String!): AdminProductPublishReview
+  adminProductResearchJobs(after: String, first: Int! = 20): AdminProductResearchJobPage!
   allCompanies(page: Int!): CompanyPagination!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   categories(first: Int!, locale: String! = "ko"): [Category!]!
@@ -545,6 +592,7 @@ type Query {
   """
   productContentSyncStatus(slug: String!): ProductContentSyncOverview!
   productDescriptionJob(id: String!): ProductDescriptionJob
+  productDescriptionJobPage(after: String, first: Int, status: String): ProductDescriptionJobPage!
   productDescriptionJobs(limit: Int, offset: Int, status: String): [ProductDescriptionJob!]!
   productResearchJob(id: String!): ProductResearchJob
   productsByCategory(after: String, first: Int! = 24, locale: String! = "ko", slug: String!): ProductConnection!
@@ -564,6 +612,7 @@ type Query {
   """
   translationFreshness(entityId: String!, entityType: String!, fields: [String!]!): [TranslationFreshness!]!
   translationJob(id: String!): TranslationJob
+  translationJobPage(after: String, first: Int, status: String): TranslationJobPage!
   translationJobs(limit: Int, offset: Int, status: String): [TranslationJob!]!
   visualAppSuggestions(first: Int! = 8, query: String!): [Product!]!
   visualApps(after: String, first: Int! = 24, productSlug: String, query: String): ProductConnection!
@@ -724,6 +773,11 @@ type TranslationJob {
   runNotBefore: DateTimeISO
   status: String!
   updatedAt: DateTimeISO
+}
+
+type TranslationJobPage {
+  jobs: [TranslationJob!]!
+  nextCursor: String
 }
 
 input UpdateAlternativeProductInput {

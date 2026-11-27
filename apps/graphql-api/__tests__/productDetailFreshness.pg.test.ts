@@ -9,6 +9,7 @@ import {
   PostgresqlProductDescriptionEvidenceAssembler,
   PostgresqlProductFlowRepository,
   PostgresqlProductLinkRepository,
+  PostgresqlProductPublishReview,
   PostgresqlProductRepository,
   PostgresqlProductScreenshotRepository,
 } from '@darun/products-datasource';
@@ -28,6 +29,7 @@ import {
   GetProductScreenshots,
   GetProductsByCategory,
   GetVisualScreenshots,
+  PublishProduct,
   UpdateProductCategories,
   UpdateProductLink,
   UpdateProductScreenshot,
@@ -63,10 +65,14 @@ import {
   type AllProductsOnProductListTableQuery,
   type AllProductsOnProductListTableQueryVariables,
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
+  AdminProductPublishReviewOnProductPublishReviewDocument,
+  EditProductOnEditProductInfoDocument,
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
   GetProductDescriptionJobsOnAdminDocument,
+  type GetProductDescriptionJobsOnAdminQuery,
+  PublishProductOnPublishProductButtonDocument,
 } from '../../../libs/__generated__/graphql';
 import { ProductContentSyncRegistrarToken } from '../../../libs/products/datasource/src/repositories/productContentSync';
 import { ProductCoreMutationResolver } from '../../../libs/products/feature/src/ProductCoreMutationResolver';
@@ -74,7 +80,10 @@ import { ProductDescriptionQueryResolver } from '../../../libs/products/feature/
 import { SearchRanker } from '../../../libs/search/domain/src/services/SearchRanker';
 import { SynonymExpander } from '../../../libs/search/domain/src/services/SynonymExpander';
 import { formatServerError } from '../../../libs/shared/utils-apollo-server/src/libs/createServer/formatError';
+import { PostgresqlProductTranslationObservation } from '../../../libs/translation/datasource/src/repositories/PostgresqlProductTranslationObservation';
 import { registerProductContentSync } from '../src/adapters/PostgresqlProductContentSync';
+import { AdminProductPublishReviewFieldResolver } from '../src/app/graphql/AdminProductPublishReview.field.resolver';
+import { AdminProductPublishReviewQueryResolver } from '../src/app/graphql/AdminProductPublishReview.query.resolver';
 import { createGraphQLDescriptionPrecondition } from '../src/app/graphqlDescriptionPrecondition';
 
 const { execute, graphql, print } = createRequire(`${process.cwd()}/package.json`)('graphql') as typeof GraphQL;
@@ -211,6 +220,328 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
   afterAll(async () => {
     if (reader) await reader.end({ timeout: 5 });
     if (writer) await writer.end({ timeout: 5 });
+  });
+
+  function publishReviewFixture(slug: string, database = db, translationDb = database) {
+    const repository = new PostgresqlProductRepository(database);
+    const reviewQueryResolver = new AdminProductPublishReviewQueryResolver(
+      new PostgresqlProductPublishReview(database)
+    );
+    const reviewFieldResolver = new AdminProductPublishReviewFieldResolver(
+      new PostgresqlProductTranslationObservation(translationDb)
+    );
+    const mutationResolver = Object.assign(Object.create(ProductMutationResolver.prototype), {
+      getProductUseCase: new GetProduct(repository),
+      editProductUseCase: new EditProduct(repository),
+      publishProductUseCase: new PublishProduct(repository),
+    });
+    const server = new ApolloServer({
+      schema: buildSchemaSync({
+        resolvers: [
+          AdminProductPublishReviewQueryResolver,
+          AdminProductPublishReviewFieldResolver,
+          ProductMutationResolver,
+        ],
+        authChecker: createAuthChecker(),
+        container: {
+          get: resolver => {
+            if (resolver === AdminProductPublishReviewQueryResolver) return reviewQueryResolver;
+            if (resolver === AdminProductPublishReviewFieldResolver) return reviewFieldResolver;
+            return mutationResolver;
+          },
+        },
+      }),
+      formatError: (formatted, error) => formatServerError(formatted, error, false),
+    });
+    const run = async (
+      document: GraphQL.DocumentNode,
+      variables: Record<string, unknown>,
+      roles: string[] = ['admin']
+    ) => {
+      const result = await server.executeOperation(
+        { query: print(document), variables },
+        { contextValue: { getRoles: async () => roles } }
+      );
+      if (result.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+      return result.body.singleResult;
+    };
+    const read = (roles?: string[]) => run(AdminProductPublishReviewOnProductPublishReviewDocument, { slug }, roles);
+    const publish = (reviewToken?: unknown, roles?: string[]) =>
+      run(PublishProductOnPublishProductButtonDocument, { input: { slug, reviewToken } }, roles);
+    return { server, run, read, publish };
+  }
+
+  it('발행 검토가 저장 상태를 구분하고 검토 이후의 수정은 발행 전에 다시 확인하게 한다', async () => {
+    const id = randomUUID().replaceAll('-', '').slice(0, 26);
+    const slug = `publish-review-${id}`;
+    const categoryId = `cat-${id.slice(4)}`;
+    const otherId = `other-${id.slice(6)}`;
+    const descriptionWithoutVisibleContent =
+      '<h2></h2><p><style>p { color: red }</style><script>1+1</script></p><blockquote hidden><p>숨긴 본문</p></blockquote><iframe src="/fixture"></iframe><p>&#x2002;</p>';
+    const translations = new PostgresqlTranslationRepository(db);
+    const translationDb = drizzle(reader);
+    const { server, run, read, publish } = publishReviewFixture(slug, db, translationDb);
+    const effects = async () => ({
+      intents: await writer`select kind from product_content_sync_intents where product_id = ${id} order by kind`,
+      jobs: await writer`select status from translation_jobs where entity_id = ${id}`,
+    });
+
+    await server.start();
+    try {
+      await writer.begin(async tx => {
+        await tx`insert into products (id, slug, name, summary, description, logo_url)
+          values (${id}, ${slug}, '검토 서비스', '원문 요약', ${descriptionWithoutVisibleContent}, ''),
+                 (${otherId}, ${otherId}, '다른 서비스', '', null, '')`;
+        await tx`insert into categories (id, slug, label_ko, label_en)
+          values (${categoryId}, ${categoryId}, '검토 분류', 'Review category')`;
+        await tx`insert into product_screenshots (id, product_id, image_url, image_alt)
+          values (${otherId}, ${otherId}, '/other.png', '다른 서비스 화면'),
+                 (${id}, ${id}, ${' \t '}, '이미지 주소 없음')`;
+        await tx`insert into product_links (id, product_id, title, icon_url, link, display_link)
+          values (${id}, ${id}, '공식 사이트', '', 'https://example.com', 'example.com')`;
+      });
+      const nameHash = createHash('sha256').update('검토 서비스').digest('hex');
+      await translations.upsertMany([
+        {
+          entityType: 'Product',
+          entityId: id,
+          locale: 'en',
+          field: 'name',
+          value: 'Review App',
+          sourceHash: nameHash,
+          model: 'fixture',
+          promptVersion: 'fixture',
+        },
+        {
+          entityType: 'Product',
+          entityId: id,
+          locale: 'en',
+          field: 'summary',
+          value: 'Old summary',
+          sourceHash: createHash('sha256').update('다른 요약').digest('hex'),
+          model: 'fixture',
+          promptVersion: 'fixture',
+        },
+      ]);
+
+      expect((await read([])).errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+      const first = await read();
+      expect(first.errors).toBeUndefined();
+      expect(first.data?.adminProductPublishReview).toMatchObject({
+        id,
+        publishedAt: null,
+        hasName: true,
+        hasSummary: true,
+        hasDescription: false,
+        hasCategory: false,
+        hasLogo: false,
+        hasScreenshot: false,
+        officialLinkStatus: 'UNCLASSIFIED',
+        translation: {
+          name: { status: 'CURRENT', sourceHash: nameHash },
+          summary: { status: 'STALE', sourceHash: createHash('sha256').update('원문 요약').digest('hex') },
+          description: {
+            status: 'MISSING',
+            sourceHash: `document:v1:${createHash('sha256').update(descriptionWithoutVisibleContent).digest('hex')}`,
+          },
+          latestJobFailed: false,
+        },
+      });
+      expect(await effects()).toEqual({ intents: [], jobs: [] });
+      const oldToken = (first.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
+      expect((await publish(oldToken, [])).errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+      const logoUrl = 'https://example.com/review.png';
+      const edited = await run(EditProductOnEditProductInfoDocument, { slug, input: { logoUrl } });
+      expect(edited.errors).toBeUndefined();
+      expect(edited.data?.editProduct).toMatchObject({ product: { id, logoUrl } });
+      const stale = await publish(oldToken);
+      expect(stale.errors?.[0]?.extensions?.code).toBe('product/publish-review-changed');
+      expect(await effects()).toEqual({ intents: [], jobs: [] });
+
+      const failure = vi.spyOn(translationDb, 'transaction').mockRejectedValueOnce(new Error('fixture unavailable'));
+      const partial = await read();
+      failure.mockRestore();
+      expect(partial.errors?.[0]?.path).toEqual(['adminProductPublishReview', 'translation']);
+      expect(partial.data?.adminProductPublishReview).toMatchObject({
+        hasLogo: true,
+        translation: null,
+      });
+      const logoToken = (partial.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
+
+      await new PostgresqlProductLinkRepository(db).updateById(id, id, link => {
+        link.update({ role: 'official' });
+        return link;
+      });
+      expect((await publish(logoToken)).errors?.[0]?.extensions?.code).toBe('product/publish-review-changed');
+      const [draft] = await writer`select published_at from products where id = ${id}`;
+      expect(draft.published_at).toBeNull();
+      expect(await effects()).toEqual({ intents: [], jobs: [] });
+
+      const description = '<p><img src="/fixture.png" alt=""></p>';
+      await writer.begin(async tx => {
+        await tx`update products set category_ids = ${JSON.stringify([categoryId])}::json,
+          description = ${description}, content_revision = content_revision + 1 where id = ${id}`;
+        await tx`update product_screenshots set image_url = '/review.png', image_alt = '검토 서비스 화면'
+          where id = ${id}`;
+        await tx`insert into translation_jobs (id, entity_type, entity_id, locale, status)
+          values (${id}, 'Product', ${id}, 'en', 'failed')`;
+      });
+      const fresh = await read();
+      expect(fresh.errors).toBeUndefined();
+      expect(fresh.data?.adminProductPublishReview).toMatchObject({
+        officialLinkStatus: 'READY',
+        hasDescription: true,
+        hasCategory: true,
+        hasScreenshot: true,
+        translation: {
+          description: {
+            status: 'MISSING',
+            sourceHash: `document:v1:${createHash('sha256').update(description).digest('hex')}`,
+          },
+          latestJobFailed: true,
+        },
+      });
+    } finally {
+      await server.stop();
+      await writer.begin(async tx => {
+        await tx`delete from product_content_sync_intents where product_id = ${id}`;
+        await tx`delete from translation_jobs where entity_id = ${id}`;
+        await tx`delete from translations where entity_id = ${id}`;
+        await tx`delete from product_links where product_id = ${id}`;
+        await tx`delete from product_screenshots where product_id in (${id}, ${otherId})`;
+        await tx`delete from products where id in (${id}, ${otherId})`;
+        await tx`delete from categories where id = ${categoryId}`;
+      });
+    }
+  });
+
+  it('본문과 이미지가 비어 있어도 검토 후 한 번만 발행한다', async () => {
+    const id = randomUUID().replaceAll('-', '').slice(0, 26);
+    const { server, read, publish } = publishReviewFixture(id);
+    await server.start();
+    Container.set(ProductContentSyncRegistrarToken, { register: registerProductContentSync });
+    try {
+      await writer`insert into products (id, slug, name, summary, logo_url)
+        values (${id}, ${id}, '검토 서비스', '요약', '')`;
+      const review = await read();
+      expect(review.errors).toBeUndefined();
+      expect(review.data?.adminProductPublishReview).toMatchObject({
+        hasDescription: false,
+        hasLogo: false,
+        hasScreenshot: false,
+        officialLinkStatus: 'MISSING',
+      });
+      const token = (review.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
+      const result = await publish(token);
+      expect(result.errors).toBeUndefined();
+      expect(result.data?.publishProduct).toEqual({ product: { id, publishedAt: expect.any(String) } });
+      const retry = await publish(token);
+      expect(retry.errors).toBeUndefined();
+      expect(retry.data).toEqual(result.data);
+      expect(
+        await writer`select kind from product_content_sync_intents where product_id = ${id} order by kind`
+      ).toEqual([{ kind: 'search' }, { kind: 'translation' }]);
+      expect(await writer`select status from translation_jobs where entity_id = ${id}`).toEqual([
+        { status: 'pending' },
+      ]);
+    } finally {
+      await server.stop();
+      Container.remove(ProductContentSyncRegistrarToken);
+      await writer`delete from product_content_sync_intents where product_id = ${id}`;
+      await writer`delete from translation_jobs where entity_id = ${id}`;
+      await writer`delete from products where id = ${id}`;
+    }
+  });
+
+  it('발행 검토 중 링크와 원문이 바뀌어도 같은 조회에는 이전 상태만 표시한다', async () => {
+    const id = randomUUID().replaceAll('-', '').slice(0, 26);
+    const connection = await openFixtureConnection({ prepare: false, connect_timeout: 5 });
+    const database = drizzle(connection);
+    const { server, run } = publishReviewFixture(id, database);
+    const read = async () => {
+      const result = await run(AdminProductPublishReviewOnProductPublishReviewDocument, { slug: id });
+      expect(result.errors).toBeUndefined();
+      const review = result.data?.adminProductPublishReview as {
+        reviewToken: string;
+        officialLinkStatus: string;
+        hasSummary: boolean;
+      };
+      return {
+        reviewToken: review.reviewToken,
+        officialLinkStatus: review.officialLinkStatus,
+        hasSummary: review.hasSummary,
+      };
+    };
+    let pending: ReturnType<typeof read> | undefined;
+    try {
+      await server.start();
+      const [{ pid }] = await connection`select pg_backend_pid() as pid`;
+      await writer`insert into products (id, slug, name, summary, logo_url)
+        values (${id}, ${id}, '검토 서비스', '', '')`;
+      await writer`insert into product_links (id, product_id, title, icon_url, link, display_link)
+        values (${id}, ${id}, '사이트', '', 'https://example.com', 'example.com')`;
+      const before = await read();
+      expect(before).toMatchObject({ hasSummary: false, officialLinkStatus: 'UNCLASSIFIED' });
+
+      await writer.begin(async tx => {
+        await tx`select id from products where id = ${id} for update`;
+        await tx`lock table product_links in access exclusive mode`;
+        pending = read();
+        void pending.catch(() => undefined);
+        await expect
+          .poll(async () => {
+            await tx`select pg_stat_clear_snapshot()`;
+            const [waiting] = await tx`select wait_event, query from pg_stat_activity where pid = ${pid}`;
+            return waiting?.wait_event === 'relation' && waiting.query.includes('product_links');
+          })
+          .toBe(true);
+        await tx`update products set summary = '새 요약', content_revision = content_revision + 1 where id = ${id}`;
+        await tx`update product_links set role = 'official', link = 'invalid-url' where id = ${id}`;
+      });
+
+      expect(await pending).toEqual(before);
+      const after = await read();
+      expect(after).toMatchObject({ hasSummary: true, officialLinkStatus: 'INVALID' });
+      expect(after.reviewToken).not.toBe(before.reviewToken);
+    } finally {
+      await Promise.allSettled([pending]);
+      await server.stop();
+      await connection.end({ timeout: 5 });
+      await writer`delete from product_links where product_id = ${id}`;
+      await writer`delete from products where id = ${id}`;
+    }
+  });
+
+  it('로고를 저장하기 전에 다른 연결에서 수정한 요약을 보존한다', async () => {
+    const id = randomUUID().replaceAll('-', '').slice(0, 26);
+    const [{ pid }] = await reader`select pg_backend_pid() as pid`;
+    const edit = new EditProduct(new PostgresqlProductRepository(db));
+    const summary = '다른 관리자가 저장한 요약';
+    const logoUrl = 'https://example.com/updated.png';
+    let logoEdit: ReturnType<typeof edit.execute> | undefined;
+
+    await writer`insert into products (id, slug, name, summary, logo_url)
+      values (${id}, ${id}, '검토 서비스', '기존 요약', '')`;
+    try {
+      await writer.begin(async tx => {
+        await tx`update products set summary = ${summary}, content_revision = content_revision + 1 where id = ${id}`;
+        logoEdit = edit.execute({ id, logoUrl });
+        void logoEdit.catch(() => undefined);
+        await expect
+          .poll(async () => {
+            await tx`select pg_stat_clear_snapshot()`;
+            const [connection] = await tx`select wait_event_type from pg_stat_activity where pid = ${pid}`;
+            return connection?.wait_event_type;
+          })
+          .toBe('Lock');
+      });
+      expect(await logoEdit).toMatchObject({ id, summary, logoUrl });
+      const [saved] = await writer`select summary, logo_url from products where id = ${id}`;
+      expect(saved).toEqual({ summary, logo_url: logoUrl });
+    } finally {
+      await Promise.allSettled([logoEdit]);
+      await writer`delete from products where id = ${id}`;
+    }
   });
 
   it('관리자 분류 변경을 공개 목록과 추천 후보에 반영하고 실패 시 원자적으로 되돌린다', async () => {
@@ -1220,10 +1551,10 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         authChecker: ({ context }) => context.admin === true,
       });
       const read = () =>
-        execute({
+        execute<GetProductDescriptionJobsOnAdminQuery>({
           schema,
           document: GetProductDescriptionJobsOnAdminDocument,
-          variableValues: { limit: count },
+          variableValues: { first: count },
           contextValue: { admin: true },
         });
       return { schema, read, jobs, rows };
@@ -1237,7 +1568,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       const result = await read();
       expect(result.errors).toBeUndefined();
       const byId = new Map(rows.map(row => [row.id, row.slug]));
-      expect(result.data?.productDescriptionJobs).toEqual(
+      expect(result.data?.productDescriptionJobPage.jobs).toEqual(
         [...jobs].reverse().map(job =>
           expect.objectContaining({
             id: job.id,
@@ -1258,7 +1589,7 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         message = 'done-' || id, writer_model = 'writer', reviewer_model = 'reviewer'`;
       const result = await read();
       expect(result.errors).toBeUndefined();
-      expect(result.data?.productDescriptionJobs).toEqual(
+      expect(result.data?.productDescriptionJobPage.jobs).toEqual(
         [...jobs].reverse().map(job =>
           expect.objectContaining({
             id: job.id,
@@ -1411,11 +1742,11 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
 
     it('같은 warm reader의 다음 요청은 별도 writer의 commit·rollback·삭제·재생성을 반영한다', async () => {
       const { schema, read, rows } = await fixture(1);
-      expect((await read()).data?.productDescriptionJobs).toEqual([
+      expect((await read()).data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'current-product-0' }),
       ]);
       await writer`update products set slug = 'renamed-product' where id = ${rows[0].id}`;
-      expect((await read()).data?.productDescriptionJobs).toEqual([
+      expect((await read()).data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'renamed-product' }),
       ]);
       await expect(
@@ -1424,19 +1755,19 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
           throw new Error('synthetic rollback');
         })
       ).rejects.toThrow('synthetic rollback');
-      expect((await read()).data?.productDescriptionJobs).toEqual([
+      expect((await read()).data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'renamed-product' }),
       ]);
       await writer`delete from products where id = ${rows[0].id}`;
       const missing = await read();
       expect(missing.errors).toHaveLength(1);
       expect(missing.errors![0].message).toBe('소개 후보에 연결된 제품을 찾지 못했습니다.');
-      expect(missing.errors![0].path).toEqual(['productDescriptionJobs', 0, 'productSlug']);
+      expect(missing.errors![0].path).toEqual(['productDescriptionJobPage', 'jobs', 0, 'productSlug']);
       expect(missing.data).toBeNull();
       await writer`insert into products ${writer({ ...rows[0], slug: 'restored-product' })}`;
       const restored = await read();
       expect(restored.errors).toBeUndefined();
-      expect(restored.data?.productDescriptionJobs).toEqual([
+      expect(restored.data?.productDescriptionJobPage.jobs).toEqual([
         expect.objectContaining({ productSlug: 'restored-product' }),
       ]);
       const single = await graphql({

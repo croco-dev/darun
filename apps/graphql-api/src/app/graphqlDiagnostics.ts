@@ -1,4 +1,4 @@
-import { ProductDescriptionError, ProductFeatureErrorCode } from '@darun/products-domain';
+import { ProductDescriptionError, ProductError, ProductFeatureErrorCode } from '@darun/products-domain';
 import { createSentryApolloLogPlugin } from '@darun/utils-sentry';
 
 export const createGraphQLDiagnostics = () =>
@@ -6,6 +6,7 @@ export const createGraphQLDiagnostics = () =>
     ignoredDomainErrorCodes: [
       ProductDescriptionError.EditConflict,
       ProductDescriptionError.InvalidEditPrecondition,
+      ProductError.PublishReviewChanged,
       ProductFeatureErrorCode.NameTooLong,
       ProductFeatureErrorCode.SummaryTooLong,
     ],

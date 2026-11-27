@@ -1,0 +1,1 @@
+CREATE INDEX "product_research_jobs_created_at_id_idx" ON "product_research_jobs" USING btree ("created_at","id");

@@ -1,10 +1,12 @@
 import { gql } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation, useQuery } from '@apollo/client/react';
 import {
   PublishProductOnPublishProductButtonDocument,
   TempProductOnPublishProductButtonDocument,
 } from '@darun/provider-graphql';
 import { notifications } from '@mantine/notifications';
+import { useState } from 'react';
 
 gql`
   query TempProductOnPublishProductButton($slug: String!) {
@@ -27,7 +29,10 @@ type PublishProductButtonProps = {
   slug: string;
 };
 
+type PublishConfirmation = { kind: 'review'; reviewToken: string } | { kind: 'legacy' };
+
 export function usePublishProductButton({ slug }: PublishProductButtonProps) {
+  const [reviewChanged, setReviewChanged] = useState(false);
   const { data, loading: isQueryLoading } = useQuery(TempProductOnPublishProductButtonDocument, {
     variables: {
       slug,
@@ -38,9 +43,6 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     {
       refetchQueries: [TempProductOnPublishProductButtonDocument],
       awaitRefetchQueries: true,
-      onError: error => {
-        notifications.show({ message: error.message, color: 'red' });
-      },
       onCompleted: data => {
         if (data?.publishProduct?.product?.id) {
           notifications.show({
@@ -52,19 +54,34 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     }
   );
 
-  const publishProduct = async () => {
+  const publishProduct = async (confirmation: PublishConfirmation) => {
     if (isPublishing || Boolean(data?.tempProductBySlug?.publishedAt)) {
       return;
     }
+    const reviewToken = confirmation.kind === 'review' ? confirmation.reviewToken : undefined;
+    if (confirmation.kind === 'review' && (typeof reviewToken !== 'string' || !reviewToken.trim())) return;
+
     try {
       await publishProductMutation({
         variables: {
           input: {
             slug,
+            ...(reviewToken !== undefined && { reviewToken }),
           },
         },
       });
     } catch (error) {
+      if (
+        CombinedGraphQLErrors.is(error) &&
+        error.errors.some(({ extensions }) => extensions?.code === 'product/publish-review-changed')
+      ) {
+        setReviewChanged(true);
+        return;
+      }
+      notifications.show({
+        message: error instanceof Error ? error.message : '서비스를 발행하지 못했습니다.',
+        color: 'red',
+      });
       console.error('mutation failed:', error);
     }
   };
@@ -72,5 +89,7 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
     loading: isQueryLoading || isPublishing,
     isPublished: Boolean(data?.tempProductBySlug?.publishedAt),
     publishProduct,
+    reviewChanged,
+    clearReviewChanged: () => setReviewChanged(false),
   };
 }

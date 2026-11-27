@@ -1,18 +1,41 @@
 import { ProductContentSyncToken, type ProductContentSync } from '@darun/products-domain';
-import { GetProduct } from '@darun/products-domain';
+import { GetProduct, productInvalidArgs, type ProductDescriptionJobSummary } from '@darun/products-domain';
 import { ProductDescriptionJobService, type ProductDescriptionJobStatus } from '@darun/products-service';
-import { AuthRole } from '@darun/utils-apollo-server';
+import { AuthRole, decodeTimestampCursor, encodeTimestampCursor } from '@darun/utils-apollo-server';
 import { Arg, Authorized, Int, Query, Resolver, FieldResolver, Root } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { ProductContentSyncOverview } from './graphs/IndexProduct';
 import { ProductDescriptionJob } from './graphs/ProductDescriptionJob';
+import { ProductDescriptionJobPage } from './graphs/ProductDescriptionJobPage';
+
+function toGraphJob(job: ProductDescriptionJobSummary): ProductDescriptionJob {
+  return {
+    id: job.id,
+    productId: job.productId,
+    status: job.status,
+    dispatchStatus: job.dispatchStatus,
+    runNotBefore: job.runNotBefore,
+    nextDispatchAt: job.nextDispatchAt,
+    retryOfJobId: job.retryOfJobId ?? undefined,
+    message: job.message ?? undefined,
+    error: job.error ?? undefined,
+    evidenceHash: job.evidenceHash ?? undefined,
+    baseDescriptionHash: job.baseDescriptionHash ?? undefined,
+    writerModel: job.writerModel ?? undefined,
+    reviewerModel: job.reviewerModel ?? undefined,
+    appliedAt: job.appliedAt ?? undefined,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+  };
+}
 
 @Resolver(() => ProductDescriptionJob)
 @Service()
 export class ProductDescriptionQueryResolver {
   constructor(
     private readonly productDescriptionJobService: ProductDescriptionJobService,
-    @Inject(ProductContentSyncToken) private readonly contentSync: ProductContentSync,
+    @Inject(ProductContentSyncToken)
+    private readonly contentSync: ProductContentSync,
     private readonly getProduct: GetProduct
   ) {}
 
@@ -52,23 +75,8 @@ export class ProductDescriptionQueryResolver {
     }
 
     return {
-      id: job.id,
-      productId: job.productId,
-      status: job.status,
-      dispatchStatus: job.dispatchStatus,
-      runNotBefore: job.runNotBefore,
-      nextDispatchAt: job.nextDispatchAt,
-      retryOfJobId: job.retryOfJobId ?? undefined,
-      message: job.message ?? undefined,
-      error: job.error ?? undefined,
-      evidenceHash: job.evidenceHash ?? undefined,
-      baseDescriptionHash: job.baseDescriptionHash ?? undefined,
+      ...toGraphJob(job),
       candidateHtml: job.candidateHtml ?? undefined,
-      writerModel: job.writerModel ?? undefined,
-      reviewerModel: job.reviewerModel ?? undefined,
-      appliedAt: job.appliedAt ?? undefined,
-      createdAt: job.createdAt,
-      updatedAt: job.updatedAt,
     };
   }
 
@@ -85,23 +93,45 @@ export class ProductDescriptionQueryResolver {
       offset: offset ?? 0,
     });
 
-    return jobs.map(job => ({
-      id: job.id,
-      productId: job.productId,
-      status: job.status,
-      dispatchStatus: job.dispatchStatus,
-      runNotBefore: job.runNotBefore,
-      nextDispatchAt: job.nextDispatchAt,
-      retryOfJobId: job.retryOfJobId ?? undefined,
-      message: job.message ?? undefined,
-      error: job.error ?? undefined,
-      evidenceHash: job.evidenceHash ?? undefined,
-      baseDescriptionHash: job.baseDescriptionHash ?? undefined,
-      writerModel: job.writerModel ?? undefined,
-      reviewerModel: job.reviewerModel ?? undefined,
-      appliedAt: job.appliedAt ?? undefined,
-      createdAt: job.createdAt,
-      updatedAt: job.updatedAt,
-    }));
+    return jobs.map(toGraphJob);
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Query(() => ProductDescriptionJobPage, { name: 'productDescriptionJobPage' })
+  async productDescriptionJobPage(
+    @Arg('status', () => String, { nullable: true }) status?: string,
+    @Arg('first', () => Int, { nullable: true }) first?: number,
+    @Arg('after', () => String, { nullable: true }) after?: string
+  ): Promise<ProductDescriptionJobPage> {
+    const limit = first ?? 50;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+      throw productInvalidArgs('한 번에 1~100개의 소개 생성 작업을 조회할 수 있습니다.');
+    }
+    let filter: ProductDescriptionJobStatus | undefined;
+    switch (status) {
+      case undefined:
+      case null:
+        break;
+      case 'pending':
+      case 'in_progress':
+      case 'completed':
+      case 'failed':
+      case 'superseded':
+        filter = status;
+        break;
+      default:
+        throw productInvalidArgs('지원하지 않는 소개 생성 작업 상태입니다.');
+    }
+    const scope = 'productDescriptionJobPage:' + (filter ?? 'all');
+    const position = after == null ? undefined : decodeTimestampCursor(scope, after);
+    const { jobs, next } = await this.productDescriptionJobService.getJobPage({
+      status: filter,
+      limit,
+      after: position,
+    });
+    return {
+      jobs: jobs.map(toGraphJob),
+      nextCursor: next && encodeTimestampCursor(scope, next),
+    };
   }
 }

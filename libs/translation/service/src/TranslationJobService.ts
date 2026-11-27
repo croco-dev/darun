@@ -68,6 +68,10 @@ export class TranslationJobService {
     return this.repository.findJobs(options);
   }
 
+  getJobPage(options: Parameters<TranslationJobRepository['findJobPage']>[0]) {
+    return this.repository.findJobPage(options);
+  }
+
   async retryProductTranslationJob(jobId: string) {
     const job = await this.repository.findJobById(jobId);
     if (!job) throw new Error(`존재하지 않는 번역 작업입니다: ${jobId}`);

@@ -3,7 +3,7 @@ import { Product } from '../entities/Product';
 import type { ProductScreenshot } from '../entities/ProductScreenshot';
 
 export interface ProductRepository {
-  publishById(id: string): Promise<Product>;
+  publishById(id: string, reviewToken?: string): Promise<Product>;
   /** Company association is not canonical content; preserve other fields without collecting evidence. */
   registerCompanyById(id: string, companyId: string): Promise<Product>;
   updateById(id: string, modifier: (product: Product) => Product): Promise<Product>;

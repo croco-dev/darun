@@ -38,6 +38,7 @@ export {
   productLinkInsertFailed,
   productLinkNotFound,
   productNotFound,
+  productPublishReviewChanged,
   productScreenshotInsertFailed,
   productScreenshotNotFound,
   productSlugAlreadyExists,
@@ -125,6 +126,8 @@ export { normalizeOfficialUrl, suggestSlug, isSafeSlug } from './research/Produc
 export type { NormalizeOfficialUrlResult } from './research/ProductResearchUrl';
 export type {
   ProductResearchJobRepository,
+  ProductResearchJobCursor,
+  ProductResearchJobSummary,
   ClaimProductResearchJobResult,
 } from './repositories/ProductResearchJobRepository';
 export { ProductResearchJobRepositoryToken } from './repositories/ProductResearchJobRepository';

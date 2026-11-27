@@ -39,7 +39,11 @@ export class Cursor {
     return Buffer.from(`${cursor}${SIGNATURE_DELIMITER}${sign(cursor)}`).toString('base64');
   }
 
-  static decode<Keys extends readonly string[]>(cursor: string, keys: Keys): { [K in Keys[number]]: string } {
+  static decode<Keys extends readonly string[]>(
+    cursor: string,
+    keys: Keys,
+    { allowLegacy = process.env.ALLOW_LEGACY_CURSOR === 'true' }: { allowLegacy?: boolean } = {}
+  ): { [K in Keys[number]]: string } {
     const decoded = Buffer.from(cursor, 'base64').toString('utf8');
     const delimiterIndex = decoded.lastIndexOf(SIGNATURE_DELIMITER);
 
@@ -48,7 +52,7 @@ export class Cursor {
     if (delimiterIndex === -1) {
       // Unsigned legacy cursors are rejected by default. They bypass signature
       // verification, so only accept them when explicitly opted in.
-      if (process.env.ALLOW_LEGACY_CURSOR !== 'true') {
+      if (!allowLegacy) {
         throw new Error('pagination/invalid-cursor');
       }
       payload = decoded;

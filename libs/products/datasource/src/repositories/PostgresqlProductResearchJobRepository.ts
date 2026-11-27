@@ -2,8 +2,10 @@ import {
   type ClaimProductResearchJobResult,
   type ProductResearchDraftV1,
   type ProductResearchFailureCode,
+  type ProductResearchJobCursor,
   type ProductResearchJobEntity,
   type ProductResearchJobRepository,
+  type ProductResearchJobSummary,
   ProductResearchJobRepositoryToken,
 } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
@@ -14,7 +16,7 @@ import {
   jobDispatchStatus,
   jobRetryDelay,
 } from '@darun/utils-llm';
-import { and, asc, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import { Inject, Service } from 'typedi';
 import { type ProductResearchJobRow, productResearchJobs } from '../entities/ProductResearchJobSchema';
 
@@ -73,6 +75,35 @@ export class PostgresqlProductResearchJobRepository implements ProductResearchJo
     const rows = await this.db.select().from(productResearchJobs).where(eq(productResearchJobs.id, id)).limit(1);
     const row = rows[0];
     return row ? this.toEntity(row) : null;
+  }
+
+  async listSummaries({
+    limit,
+    after,
+  }: {
+    limit: number;
+    after?: ProductResearchJobCursor;
+  }): Promise<ProductResearchJobSummary[]> {
+    const { createdAt, id, officialUrl, status } = productResearchJobs;
+    const rows = await this.db
+      .select({
+        id,
+        officialUrl,
+        status,
+        createdAt,
+        cursorTime: sql<string>`to_char(${createdAt}, 'YYYY-MM-DD"T"HH24:MI:SS.US')`,
+      })
+      .from(productResearchJobs)
+      .where(
+        after ? sql`(${createdAt}, ${id}) < (${after.researchCreatedAt}::timestamp, ${after.researchJobId})` : undefined
+      )
+      .orderBy(desc(createdAt), desc(id))
+      .limit(limit);
+    return rows.map(({ cursorTime, ...row }) => ({
+      ...row,
+      status: row.status as ProductResearchJobSummary['status'],
+      cursor: { researchCreatedAt: cursorTime, researchJobId: row.id },
+    }));
   }
 
   async findByRequestKey(requestKey: string): Promise<ProductResearchJobEntity | null> {

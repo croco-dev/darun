@@ -14,8 +14,21 @@ export type RecoverableProductResearchJob = Pick<
   'id' | 'status' | 'leaseUntil' | 'attemptCount'
 >;
 
+export type ProductResearchJobCursor = {
+  researchCreatedAt: string;
+  researchJobId: string;
+};
+
+export type ProductResearchJobSummary = Pick<
+  ProductResearchJobEntity,
+  'id' | 'officialUrl' | 'status' | 'createdAt'
+> & {
+  cursor: ProductResearchJobCursor;
+};
+
 export interface ProductResearchJobRepository {
   findById(id: string): Promise<ProductResearchJobEntity | null>;
+  listSummaries(input: { limit: number; after?: ProductResearchJobCursor }): Promise<ProductResearchJobSummary[]>;
   findByRequestKey(requestKey: string): Promise<ProductResearchJobEntity | null>;
   findByProductId(productId: string): Promise<ProductResearchJobEntity | null>;
   createPendingJob(input: {

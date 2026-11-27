@@ -524,6 +524,9 @@ importers:
       mongoose:
         specifier: 'catalog:'
         version: 9.9.5
+      parse5:
+        specifier: 8.0.0
+        version: 8.0.0
       postgres:
         specifier: 3.4.8
         version: 3.4.8

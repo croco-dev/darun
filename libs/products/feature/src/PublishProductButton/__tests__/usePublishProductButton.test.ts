@@ -44,7 +44,7 @@ describe('usePublishProductButton', () => {
 
     await expect(
       act(async () => {
-        await result.current.publishProduct();
+        await result.current.publishProduct({ kind: 'legacy' });
       })
     ).resolves.not.toThrow();
 
@@ -52,7 +52,13 @@ describe('usePublishProductButton', () => {
     consoleSpy.mockRestore();
   });
 
-  it('should call mutation with the correct variables on success', async () => {
+  it.each([
+    [{ kind: 'legacy' }, { slug: defaultSlug }],
+    [
+      { kind: 'review', reviewToken: 'confirmed-revision' },
+      { slug: defaultSlug, reviewToken: 'confirmed-revision' },
+    ],
+  ] as const)('should send the requested publication confirmation %j', async (confirmation, input) => {
     const { result } = renderHook(() => usePublishProductButton({ slug: defaultSlug }));
 
     mutateFn.mockResolvedValueOnce({
@@ -64,11 +70,9 @@ describe('usePublishProductButton', () => {
     });
 
     await act(async () => {
-      await result.current.publishProduct();
+      await result.current.publishProduct(confirmation);
     });
 
-    expect(mutateFn).toHaveBeenCalledWith({
-      variables: { input: { slug: defaultSlug } },
-    });
+    expect(mutateFn).toHaveBeenCalledWith({ variables: { input } });
   });
 });

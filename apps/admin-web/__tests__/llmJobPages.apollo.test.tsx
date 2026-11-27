@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { ApolloClient, ApolloLink, InMemoryCache, Observable } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { GetProductDescriptionJobsOnAdminDocument, GetTranslationJobsOnAdminDocument } from '@darun/provider-graphql';
+import {
+  GetProductDescriptionJobsOnAdminDocument,
+  GetTranslationJobsOnAdminDocument,
+  ProductDescriptionJobRowOnAdminFragmentDoc,
+  TranslationJobRowOnAdminFragmentDoc,
+  useFragment as readJobRows,
+} from '@darun/provider-graphql';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -43,8 +49,8 @@ function setup(descriptionCount: number, translationCount = 0) {
   }));
   const requests: {
     name: string | undefined;
-    limit: unknown;
-    offset: unknown;
+    first: unknown;
+    after: unknown;
   }[] = [];
   const client = new ApolloClient({
     cache: new InMemoryCache(),
@@ -52,14 +58,17 @@ function setup(descriptionCount: number, translationCount = 0) {
     link: new ApolloLink(
       operation =>
         new Observable(observer => {
-          const { limit, offset } = operation.variables;
-          requests.push({ name: operation.operationName, limit, offset });
+          const { first, after } = operation.variables;
+          requests.push({ name: operation.operationName, first, after });
           const description = operation.operationName === 'GetProductDescriptionJobsOnAdmin';
           const rows = description ? descriptions : translations;
+          const position = after === undefined ? 0 : rows.findIndex(row => row.id === after) + 1;
+          const jobs = rows.slice(position, position + first);
+          const nextCursor = position + first < rows.length ? jobs.at(-1)?.id : null;
           queueMicrotask(() => {
             observer.next({
               data: {
-                [description ? 'productDescriptionJobs' : 'translationJobs']: rows.slice(offset, offset + limit),
+                [description ? 'productDescriptionJobPage' : 'translationJobPage']: { jobs, nextCursor },
               },
             });
             observer.complete();
@@ -69,16 +78,23 @@ function setup(descriptionCount: number, translationCount = 0) {
   });
   clients.push(client);
   const hook = renderHook(
-    ({ kind, scope }: Filter) => ({
-      description: useLlmJobPages(GetProductDescriptionJobsOnAdminDocument, 'productDescriptionJobs', {
+    ({ kind, scope }: Filter) => {
+      const description = useLlmJobPages(GetProductDescriptionJobsOnAdminDocument, 'productDescriptionJobPage', {
         scope,
         skip: false,
-      }),
-      translation: useLlmJobPages(GetTranslationJobsOnAdminDocument, 'translationJobs', {
+      });
+      const translation = useLlmJobPages(GetTranslationJobsOnAdminDocument, 'translationJobPage', {
         scope,
         skip: kind === 'description',
-      }),
-    }),
+      });
+      return {
+        description: {
+          ...description,
+          rows: readJobRows(ProductDescriptionJobRowOnAdminFragmentDoc, description.rows),
+        },
+        translation: { ...translation, rows: readJobRows(TranslationJobRowOnAdminFragmentDoc, translation.rows) },
+      };
+    },
     {
       initialProps: { kind: 'all', scope: 'all' } as Filter,
       wrapper: ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>,
@@ -108,9 +124,21 @@ describe('실제 Apollo 기본 cache를 통한 작업 페이지 누적', () => {
       await result.current.description.loadMore();
     });
     expect(requests.filter(request => request.name === 'GetProductDescriptionJobsOnAdmin')).toEqual([
-      { name: 'GetProductDescriptionJobsOnAdmin', limit: 100, offset: 0 },
-      { name: 'GetProductDescriptionJobsOnAdmin', limit: 100, offset: 100 },
-      { name: 'GetProductDescriptionJobsOnAdmin', limit: 100, offset: 200 },
+      {
+        name: 'GetProductDescriptionJobsOnAdmin',
+        first: 100,
+        after: undefined,
+      },
+      {
+        name: 'GetProductDescriptionJobsOnAdmin',
+        first: 100,
+        after: 'description-151',
+      },
+      {
+        name: 'GetProductDescriptionJobsOnAdmin',
+        first: 100,
+        after: 'description-051',
+      },
     ]);
   });
 
@@ -138,10 +166,18 @@ describe('실제 Apollo 기본 cache를 통한 작업 페이지 누적', () => {
     expect(result.current.translation.rows[100]?.id).toBe('translation-100');
     expect(result.current.translation.hasMore).toBe(false);
     expect(requests.filter(request => request.name === 'GetTranslationJobsOnAdmin')).toEqual([
-      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 0 },
-      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 100 },
-      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 0 },
-      { name: 'GetTranslationJobsOnAdmin', limit: 100, offset: 100 },
+      { name: 'GetTranslationJobsOnAdmin', first: 100, after: undefined },
+      {
+        name: 'GetTranslationJobsOnAdmin',
+        first: 100,
+        after: 'translation-99',
+      },
+      { name: 'GetTranslationJobsOnAdmin', first: 100, after: undefined },
+      {
+        name: 'GetTranslationJobsOnAdmin',
+        first: 100,
+        after: 'translation-99',
+      },
     ]);
   });
 
@@ -166,6 +202,6 @@ describe('실제 Apollo 기본 cache를 통한 작업 페이지 누적', () => {
     rerender({ kind: 'all', scope: 'all' });
     await waitFor(() => expect(result.current.translation.rows).toHaveLength(1));
     expect(result.current.description.rows).toHaveLength(100);
-    expect(requests.every(request => request.limit === 100)).toBe(true);
+    expect(requests.every(request => request.first === 100)).toBe(true);
   });
 });

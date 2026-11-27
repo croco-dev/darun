@@ -27,11 +27,15 @@ import {
   TranslationQueryResolver,
 } from '@darun/translation-feature/server';
 import { NonEmptyArray } from 'type-graphql';
+import { AdminProductPublishReviewFieldResolver } from './graphql/AdminProductPublishReview.field.resolver';
+import { AdminProductPublishReviewQueryResolver } from './graphql/AdminProductPublishReview.query.resolver';
 import { HealthResolver } from './graphql/Health.resolver';
 
 export const resolvers: NonEmptyArray<Function> = [
   HealthResolver,
   AdminProductCategoriesResolver,
+  AdminProductPublishReviewQueryResolver,
+  AdminProductPublishReviewFieldResolver,
   CategoryQueryResolver,
   ProductQueryResolver,
   ScreenshotFieldResolver,

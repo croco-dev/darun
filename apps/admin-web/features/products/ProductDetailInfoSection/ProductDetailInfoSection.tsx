@@ -39,6 +39,7 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
           </Button>
           <div className="flex flex-wrap items-center gap-2">
             <Button
+              id="product-edit-basic"
               onClick={openEditModal}
               variant="base"
               color="secondary"
@@ -47,7 +48,9 @@ export const ProductDetailInfoSection = ({ slug }: ProductDetailInfoSectionProps
             >
               <span className="whitespace-nowrap">기본 정보 수정</span>
             </Button>
-            <ProductTranslationRecovery slug={slug} />
+            <div id="product-edit-translation" tabIndex={-1} className="scroll-mt-20">
+              <ProductTranslationRecovery slug={slug} />
+            </div>
             <IndexProductButton slug={slug} />
             <PublishProductButton slug={slug} />
           </div>

@@ -6,8 +6,11 @@ import { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } 
 import {
   GetProductDescriptionJobsOnAdminDocument,
   GetTranslationJobsOnAdminDocument,
+  ProductDescriptionJobRowOnAdminFragmentDoc,
   RetryProductDescriptionJobOnAdminDocument,
   RetryTranslationJobOnAdminDocument,
+  TranslationJobRowOnAdminFragmentDoc,
+  useFragment as readJobRows,
 } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import { AlertCircle, CheckCircle2, Clock, Copy, Globe, Info, RefreshCw, RotateCw, Sparkles } from '@darun/ui';
@@ -15,23 +18,33 @@ import { AdminEmptyState, AdminErrorState, AdminLoadingState, AdminModal, AdminP
 import { Link, usePathname, useRouter } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
 import dayjs from 'dayjs';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { formatAsKst, parseAsUtc } from '../../lib/datetime';
 import { useLlmJobPages } from './useLlmJobPages';
 
 gql`
-  query GetTranslationJobsOnAdmin($status: String, $limit: Int, $offset: Int) {
-    translationJobs(status: $status, limit: $limit, offset: $offset) {
-      id
-      entityType
-      entityId
-      locale
-      status
-      model
-      message
-      error
-      createdAt
-      updatedAt
+  fragment TranslationJobRowOnAdmin on TranslationJob {
+    id
+    entityType
+    entityId
+    locale
+    status
+    model
+    message
+    error
+    createdAt
+    updatedAt
+  }
+`;
+
+gql`
+  query GetTranslationJobsOnAdmin($status: String, $first: Int, $after: String) {
+    translationJobPage(status: $status, first: $first, after: $after) {
+      nextCursor
+      jobs {
+        id
+        ...TranslationJobRowOnAdmin
+      }
     }
   }
 `;
@@ -54,18 +67,28 @@ gql`
 `;
 
 gql`
-  query GetProductDescriptionJobsOnAdmin($status: String, $limit: Int, $offset: Int) {
-    productDescriptionJobs(status: $status, limit: $limit, offset: $offset) {
-      id
-      productId
-      productSlug
-      status
-      writerModel
-      reviewerModel
-      message
-      error
-      createdAt
-      updatedAt
+  fragment ProductDescriptionJobRowOnAdmin on ProductDescriptionJob {
+    id
+    productId
+    productSlug
+    status
+    writerModel
+    reviewerModel
+    message
+    error
+    createdAt
+    updatedAt
+  }
+`;
+
+gql`
+  query GetProductDescriptionJobsOnAdmin($status: String, $first: Int, $after: String) {
+    productDescriptionJobPage(status: $status, first: $first, after: $after) {
+      nextCursor
+      jobs {
+        id
+        ...ProductDescriptionJobRowOnAdmin
+      }
     }
   }
 `;
@@ -200,12 +223,12 @@ export function LlmJobListSection() {
     };
   }, [pathname]);
   const paginationScope = `${pathname}:${jobTypeFilter}:${statusFilter}`;
-  const translation = useLlmJobPages(GetTranslationJobsOnAdminDocument, 'translationJobs', {
+  const translation = useLlmJobPages(GetTranslationJobsOnAdminDocument, 'translationJobPage', {
     scope: paginationScope,
     status: statusFilter === 'all' ? undefined : statusFilter,
     skip: jobTypeFilter === 'description',
   });
-  const description = useLlmJobPages(GetProductDescriptionJobsOnAdminDocument, 'productDescriptionJobs', {
+  const description = useLlmJobPages(GetProductDescriptionJobsOnAdminDocument, 'productDescriptionJobPage', {
     scope: paginationScope,
     status: statusFilter === 'all' ? undefined : statusFilter,
     skip: jobTypeFilter === 'translation',
@@ -216,21 +239,26 @@ export function LlmJobListSection() {
   const [retryTranslation] = useMutation(RetryTranslationJobOnAdminDocument);
   const [retryDescription] = useMutation(RetryProductDescriptionJobOnAdminDocument);
 
-  const translationJobs: UnifiedLlmJob[] = translation.rows.map(j => ({
-    id: j.id,
-    jobType: 'translation',
-    jobTypeLabel: j.entityType === 'Product' ? '상품 영문 번역' : `${j.entityType} 번역`,
-    entityType: j.entityType,
-    entityId: j.entityId,
-    status: j.status,
-    model: j.model,
-    message: j.message,
-    error: j.error,
-    createdAt: j.createdAt,
-    updatedAt: j.updatedAt,
-  }));
+  const translationJobs: UnifiedLlmJob[] = readJobRows(TranslationJobRowOnAdminFragmentDoc, translation.rows).map(
+    j => ({
+      id: j.id,
+      jobType: 'translation',
+      jobTypeLabel: j.entityType === 'Product' ? '상품 영문 번역' : `${j.entityType} 번역`,
+      entityType: j.entityType,
+      entityId: j.entityId,
+      status: j.status,
+      model: j.model,
+      message: j.message,
+      error: j.error,
+      createdAt: j.createdAt,
+      updatedAt: j.updatedAt,
+    })
+  );
 
-  const descriptionJobs: UnifiedLlmJob[] = description.rows.map(j => ({
+  const descriptionJobs: UnifiedLlmJob[] = readJobRows(
+    ProductDescriptionJobRowOnAdminFragmentDoc,
+    description.rows
+  ).map(j => ({
     id: j.id,
     jobType: 'description',
     jobTypeLabel: '상품 AI 소개 생성',
@@ -295,6 +323,11 @@ export function LlmJobListSection() {
     );
   }, [translation.refresh, description.refresh]);
 
+  const refreshAfterRetry = useRef(refetchAll);
+  useLayoutEffect(() => {
+    refreshAfterRetry.current = refetchAll;
+  }, [refetchAll]);
+
   // Auto-polling when active jobs exist
   const hasActiveJobs = jobs.some(j => j.status === 'pending' || j.status === 'in_progress');
   useEffect(() => {
@@ -358,7 +391,7 @@ export function LlmJobListSection() {
           color: 'teal',
         });
       }
-      await refetchAll();
+      await refreshAfterRetry.current();
       if (!isCurrent()) return;
     } catch (err) {
       if (!isCurrent()) return;
@@ -479,7 +512,7 @@ export function LlmJobListSection() {
         </div>
       </div>
 
-      {queryError && jobs.length > 0 && (
+      {Boolean(queryError) && jobs.length > 0 && (
         <AdminErrorState
           title="일부 작업 목록을 조회하지 못했습니다."
           error={queryError}

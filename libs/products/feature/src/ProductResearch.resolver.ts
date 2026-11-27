@@ -3,7 +3,9 @@ import {
   ProductResearchJobRepositoryToken,
   ProductResearchMaterializationRepositoryToken,
   normalizeOfficialUrl,
+  productInvalidArgs,
   type CategoryRepository,
+  type ProductResearchJobCursor,
   type ProductResearchJobEntity,
   type ProductResearchJobRepository,
   type ProductResearchMaterializationRepository,
@@ -16,19 +18,45 @@ import {
   type ProductResearchDependencies,
 } from '@darun/products-service';
 import { LlmSettingService } from '@darun/translation-service';
-import { AuthRole } from '@darun/utils-apollo-server';
+import { AuthRole, Cursor } from '@darun/utils-apollo-server';
 import { BraveSearchClient } from '@darun/utils-llm';
 import { LlmClient } from '@darun/utils-llm';
-import { Arg, Authorized, Mutation, Query, Resolver } from 'type-graphql';
+import { Arg, Authorized, Int, Mutation, Query, Resolver } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { Product } from './graphs/Product';
 import {
+  AdminProductResearchJobPage,
   MaterializeResearchedProductInput,
   ProductResearchJob,
   RequestProductResearchInput,
   RetryProductResearchInput,
   toProductResearchJobGraph,
 } from './graphs/ProductResearch';
+
+const researchCursorKeys = ['researchCreatedAt', 'researchJobId'] as const;
+
+function decodeResearchCursor(after: string): ProductResearchJobCursor {
+  const invalidCursor = () => productInvalidArgs('조사 이력 목록 커서가 올바르지 않습니다.');
+  if (after.length > 512) throw invalidCursor();
+  let cursor: ProductResearchJobCursor;
+  try {
+    cursor = Cursor.decode(after, researchCursorKeys);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'pagination/invalid-cursor') throw invalidCursor();
+    throw error;
+  }
+  const { researchCreatedAt, researchJobId } = cursor;
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}$/.test(researchCreatedAt) ||
+    !researchJobId ||
+    researchJobId.length > 128
+  )
+    throw invalidCursor();
+  const milliseconds = researchCreatedAt.slice(0, 23);
+  const date = new Date(milliseconds + 'Z');
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 23) !== milliseconds) throw invalidCursor();
+  return cursor;
+}
 
 @Service()
 @Resolver(() => ProductResearchJob)
@@ -208,5 +236,30 @@ export class ProductResearchQueryResolver {
   async productResearchJob(@Arg('id') id: string): Promise<ProductResearchJob | null> {
     const job = await this.jobRepository.findById(id);
     return job ? toProductResearchJobGraph(job) : null;
+  }
+
+  @Authorized([AuthRole.Admin])
+  @Query(() => AdminProductResearchJobPage, {
+    name: 'adminProductResearchJobs',
+  })
+  async adminProductResearchJobs(
+    @Arg('first', () => Int, { defaultValue: 20 }) first: number,
+    @Arg('after', () => String, { nullable: true }) after?: string | null
+  ): Promise<AdminProductResearchJobPage> {
+    if (first < 1 || first > 50) throw productInvalidArgs('조사 이력은 한 번에 1~50개까지 조회할 수 있습니다.');
+    const rows = await this.jobRepository.listSummaries({
+      limit: first + 1,
+      after: after == null ? undefined : decodeResearchCursor(after),
+    });
+    const page = rows.slice(0, first);
+    return {
+      jobs: page.map(({ id, officialUrl, status, createdAt }) => ({
+        id,
+        officialUrl,
+        status,
+        createdAt,
+      })),
+      nextCursor: rows.length > first ? Cursor.encode(page[first - 1]!.cursor, [...researchCursorKeys]) : null,
+    };
   }
 }

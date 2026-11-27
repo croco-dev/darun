@@ -3,6 +3,7 @@
 import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation } from '@apollo/client/react';
+import { PRODUCT_DESCRIPTION_MEDIA_ELEMENTS } from '@darun/products-domain/info';
 import {
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
@@ -53,7 +54,8 @@ export function normalizeProductDescriptionDraft(draft: string) {
   if (!draft.trim()) return '';
   if (typeof DOMParser === 'undefined') return draft;
   const doc = new DOMParser().parseFromString(draft, 'text/html');
-  const hasContent = doc.body.textContent?.trim() || doc.body.querySelector('img, video, iframe, table, hr');
+  const hasContent =
+    doc.body.textContent?.trim() || doc.body.querySelector(PRODUCT_DESCRIPTION_MEDIA_ELEMENTS.join(','));
   return hasContent ? draft : '';
 }
 

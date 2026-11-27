@@ -64,6 +64,7 @@
     "graphql": "catalog:",
     "graphql-scalars": "1.25.0",
     "mongoose": "catalog:",
+    "parse5": "8.0.0",
     "postgres": "3.4.8",
     "reflect-metadata": "catalog:",
     "type-graphql": "catalog:",

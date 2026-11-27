@@ -6,6 +6,7 @@ import {
   ProductRepositoryToken,
   productCategoryNotFound,
   productNotFound,
+  productPublishReviewChanged,
   productUpdateFailed,
   productSlugAlreadyExists,
 } from '@darun/products-domain';
@@ -36,6 +37,7 @@ import { products } from '../entities/ProductSchema';
 import { productScreenshots } from '../entities/ProductScreenshotsSchema';
 
 import { beginProductContentWrite } from './productContentSync';
+import { productPublishReviewToken } from './productPublishReviewToken';
 import { isProductSlugConflict } from './productSlugConflict';
 import { lockCategoryMembership, lockProductSource } from './productSourceMutex';
 
@@ -183,10 +185,13 @@ export class PostgresqlProductRepository implements ProductRepository {
     return this.findPublishedByIdsInternal(ids);
   }
 
-  publishById(id: string): Promise<Product> {
+  publishById(id: string, reviewToken?: string): Promise<Product> {
     return this.db.transaction(async tx => {
       const row = await lockProductSource(tx, id);
+      if (reviewToken !== undefined && !reviewToken.startsWith(`${row.id}.`)) throw productPublishReviewChanged();
       if (row.publishedAt) return this.mapper(row);
+      if (reviewToken !== undefined && reviewToken !== productPublishReviewToken(row))
+        throw productPublishReviewChanged();
 
       const finishContentWrite = await beginProductContentWrite(tx, id);
       const product = this.mapper(row);

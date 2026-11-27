@@ -3,11 +3,20 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { ErrorLink } from '@apollo/client/link/error';
 import { HttpLink } from '@apollo/client/link/http';
 import { RetryLink } from '@apollo/client/link/retry';
-import { productLinkSchemaCompatibility } from '@darun/products-feature';
+import {
+  ProductPublishReviewUnavailableError,
+  productLinkSchemaCompatibility,
+  productPublishReviewSchemaCompatibility,
+} from '@darun/products-feature';
 import { createTimeoutLink, shouldRetryOperation } from '@darun/utils-apollo-client/client';
 import { FirebaseAuthService } from '@darun/utils-auth-service-firebase';
+import { llmJobHistoryCompatibility } from '../features/llm-jobs/llmJobHistoryCompatibility';
 
-const httpErrorLink = new ErrorLink(({ error }) => {
+const httpErrorLink = new ErrorLink(({ error, operation }) => {
+  const fetchOptions = operation.getContext().fetchOptions as RequestInit | undefined;
+  if (error.name === 'AbortError' && fetchOptions?.signal?.aborted) return;
+  if (error instanceof ProductPublishReviewUnavailableError) return;
+
   if (CombinedGraphQLErrors.is(error)) {
     for (const entry of error.errors) {
       if (!entry) continue;
@@ -72,12 +81,15 @@ const apolloClient = new ApolloClient({
       },
       attempts: {
         max: 3,
-        retryIf: shouldRetryOperation,
+        retryIf: (error, operation) =>
+          !(error instanceof ProductPublishReviewUnavailableError) && shouldRetryOperation(error, operation),
       },
     }),
     httpErrorLink,
     createTimeoutLink(),
     productLinkSchemaCompatibility,
+    productPublishReviewSchemaCompatibility,
+    llmJobHistoryCompatibility,
     operationExtensionsLink,
     httpLink,
   ]),

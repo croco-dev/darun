@@ -98,6 +98,7 @@ export class ProductPublishMutationResolver extends ProductMediaMutationResolver
 
     const updatedProduct = await this.publishProductUseCase.execute({
       id: product.id,
+      ...(input.reviewToken != null && { reviewToken: input.reviewToken }),
     });
 
     return {
