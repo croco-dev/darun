@@ -79,6 +79,14 @@ function EditProductInfoForm({
             {...form.getInputProps('summary')}
           />
         </AdminField>
+        <AdminField label="로고 주소" error={form.errors.logoUrl}>
+          <AdminInput
+            disabled={!canEdit}
+            inputMode="url"
+            key={form.key('logoUrl')}
+            {...form.getInputProps('logoUrl')}
+          />
+        </AdminField>
       </div>
 
       <AdminActions>

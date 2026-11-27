@@ -67,11 +67,16 @@ type AdminProductPublishReview {
 }
 
 type AdminProductPublishTranslation {
-  description: String!
+  description: AdminProductPublishTranslationField!
   latestJobFailed: Boolean!
-  name: String!
+  name: AdminProductPublishTranslationField!
   observedAt: DateTimeISO!
-  summary: String!
+  summary: AdminProductPublishTranslationField!
+}
+
+type AdminProductPublishTranslationField {
+  sourceHash: String
+  status: String!
 }
 
 type AdminProductResearchJobPage {

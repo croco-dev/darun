@@ -20,9 +20,18 @@ gql`
       hasScreenshot
       officialLinkStatus
       translation {
-        name
-        summary
-        description
+        name {
+          status
+          sourceHash
+        }
+        summary {
+          status
+          sourceHash
+        }
+        description {
+          status
+          sourceHash
+        }
         observedAt
         latestJobFailed
       }
@@ -47,7 +56,7 @@ function ProductPublishControl({ slug }: { slug: string }) {
         variant="contained"
         color="secondary"
         size="sm"
-        disabled={publish.isPublished || publish.loading || !publish.canReview}
+        disabled={publish.isPublished || publish.loading}
         aria-expanded={showReview}
         aria-controls={showReview ? reviewId : undefined}
         onClick={() => setOpen(value => !value)}
@@ -79,6 +88,11 @@ const translationStatuses: Record<string, string> = {
   MISSING: '번역 없음',
   NOT_NEEDED: '원문 미입력',
 };
+const translationFields = [
+  ['name', '이름'],
+  ['summary', '요약'],
+  ['description', '본문'],
+] as const;
 const observationTime = new Intl.DateTimeFormat('ko-KR', {
   dateStyle: 'short',
   timeStyle: 'short',
@@ -201,14 +215,26 @@ function ProductPublishReview({
               {translation ? (
                 <>
                   <ul>
-                    <li>이름 · {translationStatuses[translation.name] ?? '확인 실패'}</li>
-                    <li>요약 · {translationStatuses[translation.summary] ?? '확인 실패'}</li>
-                    <li>본문 · {translationStatuses[translation.description] ?? '확인 실패'}</li>
+                    {translationFields.map(([field, label]) => (
+                      <li key={field}>
+                        {label} · {translationStatuses[translation[field].status] ?? '확인 실패'}
+                      </li>
+                    ))}
                   </ul>
                   {translation.latestJobFailed && <p>최근 영어 번역 작업 실패</p>}
                   <p className="mt-1 text-xs text-dark-600">
                     {observationTime.format(new Date(translation.observedAt))} 기준
                   </p>
+                  <details className="mt-1 text-xs">
+                    <summary>비교한 원문 해시</summary>
+                    <ul className="mt-1 space-y-1">
+                      {translationFields.map(([field, label]) => (
+                        <li key={field}>
+                          {label} · <code className="break-all">{translation[field].sourceHash ?? '없음'}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
                 </>
               ) : (
                 '확인 실패'

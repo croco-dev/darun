@@ -9,7 +9,12 @@ import { useEditProductInfo } from '../useEditProductInfo';
 
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }));
 
-const product = { id: 'product-1', name: '기존 이름', summary: '보존할 기존 요약' };
+const product = {
+  id: 'product-1',
+  name: '기존 이름',
+  summary: '보존할 기존 요약',
+  logoUrl: 'https://example.com/current.png',
+};
 const clients: ApolloClient[] = [];
 
 afterEach(() => {
@@ -115,7 +120,11 @@ it('initializes from the retried read and allows intentionally clearing the summ
   expect(result.current.readState).toBe('loading');
   await act(async () => reads[1](product));
   expect(result.current.readState).toBe('ready');
-  expect(result.current.form.getValues()).toEqual({ name: product.name, summary: product.summary });
+  expect(result.current.form.getValues()).toEqual({
+    name: product.name,
+    summary: product.summary,
+    logoUrl: product.logoUrl,
+  });
 
   await act(async () => {
     void result.current.submit({ name: product.name, summary: '' });
@@ -139,7 +148,24 @@ it('requires the selected product to load before submitting after a slug change'
 
   await act(async () => reads[1]({ ...product, id: 'product-2' }));
   expect(result.current.readState).toBe('ready');
-  expect(result.current.form.getValues()).toEqual({ name: product.name, summary: product.summary });
+  expect(result.current.form.getValues()).toEqual({
+    name: product.name,
+    summary: product.summary,
+    logoUrl: product.logoUrl,
+  });
+});
+
+it.each([
+  [' https://example.com/new.png ', 'https://example.com/new.png'],
+  ['', ''],
+] as const)('sends the changed logo %j with the existing basic info', async (input, logoUrl) => {
+  const { result, reads, writes } = mount();
+  await waitFor(() => expect(reads).toHaveLength(1));
+  await act(async () => reads[0](product));
+  await act(async () => {
+    void result.current.submit({ ...result.current.form.getValues(), logoUrl: input });
+  });
+  expect(writes).toEqual([{ slug: 'sample', input: { name: product.name, summary: product.summary, logoUrl } }]);
 });
 
 it('returns focus to retry after another error and to the name input after recovery', async () => {

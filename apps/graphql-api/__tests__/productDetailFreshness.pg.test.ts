@@ -66,6 +66,7 @@ import {
   type AllProductsOnProductListTableQueryVariables,
   AdminProductCategorySelectionOnProductDetailCategorySectionDocument,
   AdminProductPublishReviewDocument,
+  EditProductOnEditProductInfoDocument,
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
   UpdateProductCategoriesOnProductDetailCategorySectionDocument,
@@ -224,13 +225,11 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     const slug = `publish-review-${id}`;
     const repository = new PostgresqlProductRepository(db);
     const translations = new PostgresqlTranslationRepository(db);
-    const reviewResolver = new AdminProductPublishReviewResolver(
-      new PostgresqlProductPublishReview(db),
-      db,
-      translations
-    );
+    const translationDb = drizzle(reader);
+    const reviewResolver = new AdminProductPublishReviewResolver(new PostgresqlProductPublishReview(db), translationDb);
     const mutationResolver = Object.assign(Object.create(ProductMutationResolver.prototype), {
       getProductUseCase: new GetProduct(repository),
+      editProductUseCase: new EditProduct(repository),
       publishProductUseCase: new PublishProduct(repository),
     });
     const server = new ApolloServer({
@@ -269,16 +268,27 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
     });
     try {
       await writer`insert into products (id, slug, name, summary, description, logo_url)
-        values (${id}, ${slug}, '검토 서비스', '원문 요약', '<p><br></p>', '')`;
+        values (${id}, ${slug}, '검토 서비스', '원문 요약', '<h2></h2><blockquote><p>&#x2002;</p></blockquote>', '')`;
       await writer`insert into product_links (id, product_id, title, icon_url, link, display_link)
         values (${id}, ${id}, '공식 사이트', '', 'https://example.com', 'example.com')`;
+      const nameHash = createHash('sha256').update('검토 서비스').digest('hex');
       await translations.upsert({
         entityType: 'Product',
         entityId: id,
         locale: 'en',
         field: 'name',
         value: 'Review App',
-        sourceHash: computeSourceHash('검토 서비스', 'name'),
+        sourceHash: nameHash,
+        model: 'fixture',
+        promptVersion: 'fixture',
+      });
+      await translations.upsert({
+        entityType: 'Product',
+        entityId: id,
+        locale: 'en',
+        field: 'summary',
+        value: 'Old summary',
+        sourceHash: createHash('sha256').update('다른 요약').digest('hex'),
         model: 'fixture',
         promptVersion: 'fixture',
       });
@@ -296,21 +306,24 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         hasScreenshot: false,
         officialLinkStatus: 'UNCLASSIFIED',
         translation: {
-          name: 'CURRENT',
-          summary: 'MISSING',
-          description: 'NOT_NEEDED',
+          name: { status: 'CURRENT', sourceHash: nameHash },
+          summary: { status: 'STALE', sourceHash: createHash('sha256').update('원문 요약').digest('hex') },
+          description: { status: 'NOT_NEEDED', sourceHash: null },
           latestJobFailed: false,
         },
       });
       expect(await effects()).toEqual({ intents: [], jobs: [] });
       const oldToken = (first.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
       expect((await publish(oldToken, [])).errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
-      await writer`update products set logo_url = 'https://example.com/review.png' where id = ${id}`;
+      const logoUrl = 'https://example.com/review.png';
+      const edited = await run(EditProductOnEditProductInfoDocument, { slug, input: { logoUrl } });
+      expect(edited.errors).toBeUndefined();
+      expect(edited.data?.editProduct).toMatchObject({ product: { id, logoUrl } });
       const stale = await publish(oldToken);
       expect(stale.errors?.[0]?.extensions?.code).toBe('product/publish-review-changed');
       expect(await effects()).toEqual({ intents: [], jobs: [] });
 
-      const failure = vi.spyOn(translations, 'findMany').mockRejectedValueOnce(new Error('fixture unavailable'));
+      const failure = vi.spyOn(translationDb, 'transaction').mockRejectedValueOnce(new Error('fixture unavailable'));
       const partial = await read();
       failure.mockRestore();
       expect(partial.errors?.[0]?.path).toEqual(['adminProductPublishReview', 'translation']);
@@ -318,15 +331,34 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         hasLogo: true,
         translation: null,
       });
+      const logoToken = (partial.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
 
       await new PostgresqlProductLinkRepository(db).updateById(id, id, link => {
         link.update({ role: 'official' });
         return link;
       });
+      expect((await publish(logoToken)).errors?.[0]?.extensions?.code).toBe('product/publish-review-changed');
+      const [draft] = await writer`select published_at from products where id = ${id}`;
+      expect(draft.published_at).toBeNull();
+      expect(await effects()).toEqual({ intents: [], jobs: [] });
+
+      const description = '<p><img src="/fixture.png" alt=""></p>';
+      const media = await run(EditProductOnEditProductInfoDocument, { slug, input: { description } });
+      expect(media.errors).toBeUndefined();
+      await writer`insert into translation_jobs (id, entity_type, entity_id, locale, status)
+        values (${id}, 'Product', ${id}, 'en', 'failed')`;
       const fresh = await read();
       expect(fresh.errors).toBeUndefined();
       expect(fresh.data?.adminProductPublishReview).toMatchObject({
         officialLinkStatus: 'READY',
+        hasDescription: true,
+        translation: {
+          description: {
+            status: 'MISSING',
+            sourceHash: `document:v1:${createHash('sha256').update(description).digest('hex')}`,
+          },
+          latestJobFailed: true,
+        },
       });
       const newToken = (fresh.data?.adminProductPublishReview as { reviewToken: string }).reviewToken;
       expect(newToken).not.toBe(oldToken);
@@ -338,10 +370,9 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
       const retry = await publish(newToken);
       expect(retry.errors).toBeUndefined();
       expect(retry.data).toEqual(result.data);
-      expect(await effects()).toEqual({
-        intents: [{ kind: 'search' }, { kind: 'translation' }],
-        jobs: [{ status: 'pending' }],
-      });
+      const published = await effects();
+      expect(published.intents).toEqual([{ kind: 'search' }, { kind: 'translation' }]);
+      expect(published.jobs.map(({ status }) => status).sort()).toEqual(['failed', 'pending']);
     } finally {
       await server.stop();
       Container.remove(ProductContentSyncRegistrarToken);

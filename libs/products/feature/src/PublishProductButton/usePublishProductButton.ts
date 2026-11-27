@@ -30,11 +30,7 @@ type PublishProductButtonProps = {
 };
 
 export function usePublishProductButton({ slug }: PublishProductButtonProps) {
-  const {
-    data,
-    error,
-    loading: isQueryLoading,
-  } = useQuery(TempProductOnPublishProductButtonDocument, {
+  const { data, loading: isQueryLoading } = useQuery(TempProductOnPublishProductButtonDocument, {
     variables: {
       slug,
     },
@@ -85,7 +81,6 @@ export function usePublishProductButton({ slug }: PublishProductButtonProps) {
   return {
     loading: isQueryLoading || isPublishing,
     isPublished: Boolean(data?.tempProductBySlug?.publishedAt),
-    canReview: Boolean(data?.tempProductBySlug) && !error,
     publishProduct,
   };
 }

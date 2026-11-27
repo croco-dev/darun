@@ -1,22 +1,34 @@
 import { PostgresqlProductPublishReview } from '@darun/products-datasource';
+import { PRODUCT_DESCRIPTION_MEDIA_ELEMENTS } from '@darun/products-domain/info';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
-import { computeSourceHash, TranslationRepositoryToken, type TranslationRepository } from '@darun/translation-domain';
+import { PostgresqlTranslationRepository } from '@darun/translation-datasource';
+import { computeSourceHash } from '@darun/translation-domain';
 import { AuthRole } from '@darun/utils-apollo-server';
 import { and, desc, eq } from 'drizzle-orm';
+import { parseFragment, type DefaultTreeAdapterMap } from 'parse5';
 import { Arg, Authorized, Field, FieldResolver, ObjectType, Query, Resolver, Root } from 'type-graphql';
 import { Inject, Service } from 'typedi';
 import { translationJobs } from '../../../../../libs/translation/datasource/src/entities/TranslationJobSchema';
 
+@ObjectType('AdminProductPublishTranslationField')
+class AdminProductPublishTranslationField {
+  @Field(() => String)
+  status: string;
+
+  @Field(() => String, { nullable: true })
+  sourceHash: string | null;
+}
+
 @ObjectType('AdminProductPublishTranslation')
 class AdminProductPublishTranslation {
-  @Field(() => String)
-  name: string;
+  @Field(() => AdminProductPublishTranslationField)
+  name: AdminProductPublishTranslationField;
 
-  @Field(() => String)
-  summary: string;
+  @Field(() => AdminProductPublishTranslationField)
+  summary: AdminProductPublishTranslationField;
 
-  @Field(() => String)
-  description: string;
+  @Field(() => AdminProductPublishTranslationField)
+  description: AdminProductPublishTranslationField;
 
   @Field(() => Date)
   observedAt: Date;
@@ -56,10 +68,19 @@ class AdminProductPublishReview {
 }
 
 type ReviewSnapshot = NonNullable<Awaited<ReturnType<PostgresqlProductPublishReview['read']>>>;
+type ReviewSource = ReviewSnapshot & { hasDescription: boolean };
 
 function hasDescription(description: string): boolean {
-  // The rich-text editor can serialize an empty document as a paragraph.
-  return Boolean(description.replace(/<\/?p\b[^>]*>|<br\s*\/?>|&nbsp;|&#160;/gi, '').trim());
+  const pending: DefaultTreeAdapterMap['node'][] = [parseFragment(description)];
+  while (pending.length > 0) {
+    const node = pending.pop()!;
+    if ('value' in node && node.value.trim()) return true;
+    if ('tagName' in node && PRODUCT_DESCRIPTION_MEDIA_ELEMENTS.some(tag => tag === node.tagName)) return true;
+    if ('childNodes' in node) {
+      for (const child of node.childNodes) pending.push(child);
+    }
+  }
+  return false;
 }
 
 @Resolver(() => AdminProductPublishReview)
@@ -67,9 +88,7 @@ function hasDescription(description: string): boolean {
 export class AdminProductPublishReviewResolver {
   constructor(
     private readonly reviews: PostgresqlProductPublishReview,
-    @Inject(DrizzleToken) private readonly db: Drizzle,
-    @Inject(TranslationRepositoryToken)
-    private readonly translations: TranslationRepository
+    @Inject(DrizzleToken) private readonly db: Drizzle
   ) {}
 
   @Authorized([AuthRole.Admin])
@@ -90,39 +109,46 @@ export class AdminProductPublishReviewResolver {
 
   @Authorized([AuthRole.Admin])
   @FieldResolver(() => AdminProductPublishTranslation, { nullable: true })
-  async translation(@Root() snapshot: ReviewSnapshot): Promise<AdminProductPublishTranslation> {
+  async translation(@Root() snapshot: ReviewSource): Promise<AdminProductPublishTranslation> {
     const { productId, source } = snapshot;
     const fields = ['name', 'summary', 'description'] as const;
-    const [translations, [latestJob]] = await Promise.all([
-      this.translations.findMany({
-        entityType: 'Product',
-        locale: 'en',
-        entities: fields.map(field => ({ entityId: productId, field })),
-      }),
-      this.db
-        .select({ status: translationJobs.status })
-        .from(translationJobs)
-        .where(
-          and(
-            eq(translationJobs.entityType, 'Product'),
-            eq(translationJobs.entityId, productId),
-            eq(translationJobs.locale, 'en')
+    const { translations, latestJob, observedAt } = await this.db.transaction(
+      async tx => {
+        const observedAt = new Date();
+        const translations = await new PostgresqlTranslationRepository(tx).findMany({
+          entityType: 'Product',
+          locale: 'en',
+          entities: fields.map(field => ({ entityId: productId, field })),
+        });
+        const [latestJob] = await tx
+          .select({ status: translationJobs.status })
+          .from(translationJobs)
+          .where(
+            and(
+              eq(translationJobs.entityType, 'Product'),
+              eq(translationJobs.entityId, productId),
+              eq(translationJobs.locale, 'en')
+            )
           )
-        )
-        .orderBy(desc(translationJobs.createdAt), desc(translationJobs.id))
-        .limit(1),
-    ]);
-    const status = (field: (typeof fields)[number]) => {
-      if (!(field === 'description' ? hasDescription(source[field]) : source[field].trim())) return 'NOT_NEEDED';
+          .orderBy(desc(translationJobs.createdAt), desc(translationJobs.id))
+          .limit(1);
+        return { translations, latestJob, observedAt };
+      },
+      { isolationLevel: 'repeatable read', accessMode: 'read only' }
+    );
+    const observe = (field: (typeof fields)[number]): AdminProductPublishTranslationField => {
+      if (!(field === 'description' ? snapshot.hasDescription : source[field].trim()))
+        return { status: 'NOT_NEEDED', sourceHash: null };
+      const sourceHash = computeSourceHash(source[field], field);
       const row = translations.find(row => row.field === field);
-      if (!row?.value.trim()) return 'MISSING';
-      return row.sourceHash === computeSourceHash(source[field], field) ? 'CURRENT' : 'STALE';
+      if (!row?.value.trim()) return { status: 'MISSING', sourceHash };
+      return { status: row.sourceHash === sourceHash ? 'CURRENT' : 'STALE', sourceHash };
     };
     return {
-      name: status('name'),
-      summary: status('summary'),
-      description: status('description'),
-      observedAt: new Date(),
+      name: observe('name'),
+      summary: observe('summary'),
+      description: observe('description'),
+      observedAt,
       latestJobFailed: latestJob?.status === 'failed',
     };
   }
