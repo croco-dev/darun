@@ -152,8 +152,7 @@ function redactSensitiveArguments(
         if (screenshotOrder) screenshotOrderBudget.exceeded = true;
       },
       Variable(node) {
-        secretVariables.add(node.name.value);
-        if (screenshotOrder) screenshotOrderVariables.add(node.name.value);
+        (screenshotOrder ? screenshotOrderVariables : secretVariables).add(node.name.value);
         if (collectVariables) collectValue(variables?.[node.name.value]);
       },
     });
@@ -222,24 +221,28 @@ function redactSensitiveArguments(
   });
   redactedDocument = visit(redactedDocument, {
     VariableDefinition(node) {
-      if (!secretVariables.has(node.variable.name.value) || !node.defaultValue) return;
+      const name = node.variable.name.value;
+      const isSecret = secretVariables.has(name);
+      const isScreenshotOrder = screenshotOrderVariables.has(name);
+      if ((!isSecret && !isScreenshotOrder) || !node.defaultValue) return;
       let type = node.type;
       while (type.kind !== Kind.NAMED_TYPE) type = type.type;
-      if (type.name.value === 'ID' && screenshotOrderVariables.has(node.variable.name.value)) {
+      // A name used solely for screenshot ordering is bounded even in another operation's default.
+      if (isScreenshotOrder && (type.name.value === 'ID' || !isSecret)) {
         collectLiteralOccurrences(node.defaultValue, collectScreenshotOrderId, true);
-      } else if (reviewInputVariables.has(node.variable.name.value)) {
+      } else if (reviewInputVariables.has(name)) {
         collectReviewLiteral(node.defaultValue);
       } else {
         collectLiteralOccurrences(
           node.defaultValue,
-          reviewFieldVariables.has(node.variable.name.value) ? collectReviewValue : collectSecret
+          reviewFieldVariables.has(name) ? collectReviewValue : collectSecret
         );
       }
       return { ...node, defaultValue: { kind: Kind.STRING, value: REDACTED } };
     },
   });
   const redactedVariables = variables ? { ...variables } : undefined;
-  for (const name of secretVariables) {
+  for (const name of [...secretVariables, ...screenshotOrderVariables]) {
     if (redactedVariables && name in redactedVariables) redactedVariables[name] = REDACTED;
   }
   return {

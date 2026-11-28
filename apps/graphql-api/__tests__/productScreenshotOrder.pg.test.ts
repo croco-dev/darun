@@ -158,7 +158,9 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
       expect((await reorder(ids)).errors?.[0]?.extensions?.code).toBe('product/invalid-args');
     }
     for (const cover of [null, 'x']) {
-      expect((await reorder(reordered, original, cover)).errors?.[0]?.extensions?.code).toBe('product/invalid-args');
+      expect((await reorder(reordered, original, cover)).errors?.[0]?.extensions?.code).toBe(
+        'product-screenshot/order-changed'
+      );
     }
     expect((await reorder(['x', 'c', 'a'], ['a', 'x', 'c'])).errors?.[0]?.extensions?.code).toBe(
       'product-screenshot/order-changed'
@@ -198,7 +200,7 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
     );
     expect(await priorities()).toEqual(afterAdd);
 
-    await sql`delete from product_screenshots where id = 'b'`;
+    await sql`delete from product_screenshots where id in ('d', ${winningOrder[2]})`;
     const afterDelete = await priorities();
     expect((await reorder(original, winningOrder, winningOrder[0])).errors?.[0]?.extensions?.code).toBe(
       'product-screenshot/order-changed'

@@ -199,6 +199,24 @@ it('drops diagnostics for malformed inline screenshot ID objects', () => {
   expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
 });
 
+it('applies the screenshot ID budget to defaults shadowed by another operation', () => {
+  const request = {
+    method: 'POST',
+    data: {
+      query: `mutation ScreenshotOrder($product: ID!) {
+        reorderProductScreenshots(productId: $product, orderedIds: [], expectedOrderIds: [])
+      }
+      query Product($product: String! = "${'a'.repeat(8193)}") {
+        productBySlug(slug: $product) { id }
+      }`,
+      operationName: 'ScreenshotOrder',
+      variables: { product: 'fixture-product' },
+    },
+  };
+  expect(sentryRequestRedaction.beforeSend({ request })).toBeNull();
+  expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
+});
+
 it('keeps the public coercion error and drops diagnostics for an invalid numeric ID variable', async () => {
   const query = `mutation ScreenshotOrder($product: ID!) {
     reorderProductScreenshots(productId: $product, orderedIds: [], expectedOrderIds: [])
