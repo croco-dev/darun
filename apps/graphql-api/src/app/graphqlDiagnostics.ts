@@ -7,6 +7,7 @@ export const createGraphQLDiagnostics = () =>
       ProductDescriptionError.EditConflict,
       ProductDescriptionError.InvalidEditPrecondition,
       ProductError.PublishReviewChanged,
+      ProductError.ScreenshotOrderChanged,
       ProductFeatureErrorCode.NameTooLong,
       ProductFeatureErrorCode.SummaryTooLong,
     ],

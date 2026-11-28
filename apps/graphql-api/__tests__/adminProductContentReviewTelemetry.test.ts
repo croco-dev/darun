@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { HeaderMap, type ApolloServer } from '@apollo/server';
 import type { PostgresqlProductContentReviews, PostgresqlProductUsageConditions } from '@darun/products-datasource';
+import type { ReorderProductScreenshots } from '@darun/products-domain';
+import { ProductScreenshotOrderMutationResolver } from '@darun/products-feature/server';
 import { AuthRole, createAuthChecker, createServer } from '@darun/utils-apollo-server';
 import { createSentryApolloLogPlugin, sentryRequestRedaction } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/node';
@@ -27,6 +29,23 @@ beforeAll(async () => {
       });
     },
   } as PostgresqlProductUsageConditions);
+  const order = new ProductScreenshotOrderMutationResolver({
+    async execute(productId, orderedIds, expectedOrderIds, expectedCoverId) {
+      throw Object.assign(
+        new Error(
+          `Synthetic screenshot order storage failure: ${productId} ${orderedIds.join(',')} ${expectedCoverId}`
+        ),
+        {
+          params: { productId, orderedIds, expectedOrderIds, expectedCoverId },
+        }
+      );
+    },
+  } as ReorderProductScreenshots);
+  const resolvers = new Map([
+    [AdminProductContentReviewsResolver, resolver],
+    [AdminProductUsageConditionsResolver, conditions],
+    [ProductScreenshotOrderMutationResolver, order],
+  ] as const);
   Sentry.init({
     dsn: 'https://synthetic@telemetry.invalid/1',
     defaultIntegrations: false,
@@ -36,14 +55,19 @@ beforeAll(async () => {
     transport: () => ({ send: vi.fn(async () => ({})), flush: async () => true }),
     ...sentryRequestRedaction,
     beforeSend: event => {
-      events.push(sentryRequestRedaction.beforeSend(event));
+      const redacted = sentryRequestRedaction.beforeSend(event);
+      if (redacted) events.push(redacted);
       return null;
     },
   });
   server = createServer({
     options: {
-      resolvers: [AdminProductContentReviewsResolver, AdminProductUsageConditionsResolver],
-      container: { get: target => (target === AdminProductContentReviewsResolver ? resolver : conditions) },
+      resolvers: [
+        AdminProductContentReviewsResolver,
+        AdminProductUsageConditionsResolver,
+        ProductScreenshotOrderMutationResolver,
+      ],
+      container: { get: target => resolvers.get(target as Parameters<typeof resolvers.get>[0]) },
       authChecker: createAuthChecker(),
     },
     config: { playground: false, plugins: [createSentryApolloLogPlugin()] },
@@ -56,7 +80,7 @@ afterAll(async () => {
   await Sentry.close(2000);
 });
 
-it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
+it.each(['variables', 'inline', 'default', 'field defaults', 'overlapping defaults', 'overlapping variables'] as const)(
   '검토 기록 %s 입력을 전송 전에 가린다',
   async encoding => {
     const memo = `private-review-${randomUUID()} 한글+`;
@@ -68,7 +92,8 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
       memo: `  ${memo}\n`,
       referenceUrl: ` ${referenceUrl}\t`,
     };
-    const nestedVariables = encoding === 'field defaults';
+    const overlaps = encoding === 'overlapping defaults' || encoding === 'overlapping variables';
+    const nestedVariables = encoding === 'field defaults' || encoding === 'overlapping defaults';
     const memoArgument = nestedVariables ? '$memo' : JSON.stringify(input.memo);
     const urlArgument = nestedVariables ? '$url' : JSON.stringify(input.referenceUrl);
     const literal = `{ productId: "fixture", expectedRevision: "7", requestId: "${input.requestId}", memo: ${memoArgument}, referenceUrl: ${urlArgument} }`;
@@ -78,11 +103,18 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
       : encoding === 'inline'
         ? ''
         : `($review: RecordAdminProductContentReviewInput!${encoding === 'default' ? ` = ${literal}` : ''})`;
+    const otherVariable = nestedVariables ? '$memo' : '$review';
+    const unselectedOperation = overlaps
+      ? `mutation Other(${otherVariable}: ID! = 71358129) {
+          reorderProductScreenshots(productId: ${otherVariable}, orderedIds: [], expectedOrderIds: [])
+        }`
+      : '';
     const body = {
       query: `mutation ReviewTelemetry${declaration} {
       recorded: recordAdminProductContentReview(input: ${literalInput ? literal : '$review'}) { id }
-    }`,
-      ...(encoding === 'variables' ? { variables: { review: input } } : {}),
+    } ${unselectedOperation}`,
+      ...(overlaps && { operationName: 'ReviewTelemetry' }),
+      ...((encoding === 'variables' || encoding === 'overlapping variables') && { variables: { review: input } }),
     };
     events.length = 0;
     const url = 'http://127.0.0.1:7017/graphql';
@@ -121,6 +153,110 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
   }
 );
 
+it('redacts integer IDs in copied diagnostic data while preserving unrelated numbers', () => {
+  const product = 71358129;
+  const screenshot = 82936576;
+  const request = {
+    method: 'POST',
+    data: {
+      query: `mutation ScreenshotOrder($product: ID!, $screenshots: [ID!]!) {
+        reorderProductScreenshots(productId: $product, orderedIds: $screenshots, expectedOrderIds: $screenshots)
+      }`,
+      variables: { product, screenshots: [screenshot] },
+    },
+  };
+  const event = sentryRequestRedaction.beforeSend({
+    request,
+    extra: { product, screenshots: [screenshot], status: 17 },
+  });
+  expect(event?.extra).toEqual({ product: '[REDACTED]', screenshots: ['[REDACTED]'], status: 17 });
+  const transaction = sentryRequestRedaction.beforeSendTransaction({
+    request,
+    type: 'transaction',
+    contexts: { trace: { data: { product, screenshots: [screenshot], status: 17 } } },
+  });
+  expect(transaction?.contexts?.trace?.data).toEqual({
+    product: '[REDACTED]',
+    screenshots: ['[REDACTED]'],
+    status: 17,
+  });
+});
+
+it('drops diagnostics for malformed inline screenshot ID objects', () => {
+  const request = {
+    method: 'POST',
+    data: {
+      query: `mutation ScreenshotOrder {
+        reorderProductScreenshots(
+          productId: { fixture: "not an ID" }
+          orderedIds: []
+          expectedOrderIds: []
+        )
+      }`,
+    },
+  };
+  expect(sentryRequestRedaction.beforeSend({ request })).toBeNull();
+  expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
+});
+
+it('applies the screenshot ID budget to defaults shadowed by another operation', () => {
+  const request = {
+    method: 'POST',
+    data: {
+      query: `mutation ScreenshotOrder($product: ID!) {
+        reorderProductScreenshots(productId: $product, orderedIds: [], expectedOrderIds: [])
+      }
+      query Product($product: String! = "${'a'.repeat(8193)}") {
+        productBySlug(slug: $product) { id }
+      }`,
+      operationName: 'ScreenshotOrder',
+      variables: { product: 'fixture-product' },
+    },
+  };
+  expect(sentryRequestRedaction.beforeSend({ request })).toBeNull();
+  expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
+});
+
+it('keeps the public coercion error and drops diagnostics for an invalid numeric ID variable', async () => {
+  const query = `mutation ScreenshotOrder($product: ID!) {
+    reorderProductScreenshots(productId: $product, orderedIds: [], expectedOrderIds: [])
+  }`;
+  const variables = { product: 71358.129 };
+  events.length = 0;
+  const response = await server.executeOperation(
+    { query, variables },
+    { contextValue: { getRoles: async () => [AuthRole.Admin] } }
+  );
+  if (response.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+  expect(response.body.singleResult.errors?.[0]?.extensions?.code).toBe('BAD_USER_INPUT');
+  await Sentry.flush(2000);
+  expect(events).toHaveLength(0);
+  expect(sentryRequestRedaction.beforeSend({ request: { method: 'POST', data: { query, variables } } })).toBeNull();
+});
+
+it.each([
+  {
+    product: 'fixture-product',
+    ordered: Array.from({ length: 256 }, (_, index) => `fixture-screen-${index}`),
+    expected: ['fixture-screen'],
+  },
+  { product: 'a'.repeat(8193), ordered: ['fixture-screen'], expected: ['fixture-screen'] },
+])('drops over-budget screenshot order diagnostics without changing the authorization error', async variables => {
+  const query = `mutation ScreenshotOrder($product: ID!, $ordered: [ID!]!, $expected: [ID!]!) {
+    reorderProductScreenshots(productId: $product, orderedIds: $ordered, expectedOrderIds: $expected)
+  }`;
+  events.length = 0;
+  const response = await server.executeOperation({ query, variables }, { contextValue: { getRoles: async () => [] } });
+  if (response.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+  expect(response.body.singleResult.errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+  await Sentry.flush(2000);
+  expect(events).toHaveLength(0);
+
+  const request = { method: 'POST', data: { query, variables } };
+  expect(sentryRequestRedaction.beforeSend({ request, message: 'Storage failure' })).toBeNull();
+  expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
+});
+
 it.each(['variables', 'inline', 'default'] as const)('사용 조건의 %s 입력을 전송 전에 가린다', async encoding => {
   const excerpt = `private-condition-${randomUUID()} 한글+`;
   const input = {
@@ -158,4 +294,62 @@ it.each(['variables', 'inline', 'default'] as const)('사용 조건의 %s 입력
   expect(events[0].extra?.query).toContain('UsageConditionsTelemetry');
   expect(events[0].exception?.values?.[0].value).toContain('Synthetic usage conditions storage failure');
   expect(JSON.stringify(events[0])).not.toContain(excerpt);
+});
+
+it.each([
+  'variables',
+  'inline',
+  'integer variables',
+  'integer inline',
+  'integer defaults',
+  'named active fragment',
+] as const)('스크린샷 순서의 %s 입력을 전송 전에 가린다', async encoding => {
+  const integers = encoding.startsWith('integer');
+  const productId = integers ? 71358129 : `private-product-${randomUUID()}`;
+  const first = integers ? 82936576 : `private-first-${randomUUID()}`;
+  const second = integers ? 65184972 : `private-second-${randomUUID()}`;
+  const cover = integers ? 56487219 : `private-cover-${randomUUID()}`;
+  const variables = { product: productId, next: [second, first], before: [first, second], cover };
+  const inline = encoding.endsWith('inline');
+  const defaults = encoding.endsWith('defaults');
+  const declaration = inline
+    ? ''
+    : `($product: ID!${defaults ? ` = ${productId}` : ''}, $next: [ID!]!${defaults ? ` = ${JSON.stringify(variables.next)}` : ''}, $before: [ID!]!${defaults ? ` = ${JSON.stringify(variables.before)}` : ''}, $cover: ID${defaults ? ` = ${cover}` : ''})`;
+  const field = `saved: reorderProductScreenshots(
+        productId: ${inline ? JSON.stringify(variables.product) : '$product'}
+        orderedIds: ${inline ? JSON.stringify(variables.next) : '$next'}
+        expectedOrderIds: ${inline ? JSON.stringify(variables.before) : '$before'}
+        expectedCoverId: ${inline ? JSON.stringify(cover) : '$cover'}
+      )`;
+  const usesFragment = encoding === 'named active fragment';
+  const body = {
+    query: usesFragment
+      ? `mutation ScreenshotOrderTelemetry${declaration} { ...Outer }
+           fragment Outer on Mutation { ...OnOrder }
+           fragment OnOrder on Mutation { ${field} }
+           mutation Other { reorderProductScreenshots(productId: "fixture", orderedIds: [], expectedOrderIds: []) }`
+      : `mutation ScreenshotOrderTelemetry${declaration} { ${field} }`,
+    ...(usesFragment && { operationName: 'ScreenshotOrderTelemetry' }),
+    ...(!inline && !defaults && { variables }),
+  };
+
+  events.length = 0;
+  await Sentry.withIsolationScope(async scope => {
+    scope.addEventProcessor(event => ({ ...event, request: { method: 'POST', data: body } }));
+    const headers = new HeaderMap();
+    headers.set('content-type', 'application/json');
+    const response = await server.executeHTTPGraphQLRequest({
+      httpGraphQLRequest: { method: 'POST', headers, search: '', body },
+      context: async () => ({ getRoles: async () => [AuthRole.Admin] }),
+    });
+    if (response.body.kind !== 'complete') throw new Error('Expected a complete GraphQL response');
+    expect(JSON.parse(response.body.string).errors[0].extensions.code).toBe('INTERNAL_SERVER_ERROR');
+    await Sentry.flush(2000);
+  });
+
+  expect(events).toHaveLength(1);
+  expect(events[0].extra?.query).toContain('ScreenshotOrderTelemetry');
+  expect(events[0].exception?.values?.[0].value).toContain('Synthetic screenshot order storage failure');
+  const serialized = JSON.stringify(events[0]);
+  for (const id of [productId, first, second, cover]) expect(serialized).not.toContain(String(id));
 });

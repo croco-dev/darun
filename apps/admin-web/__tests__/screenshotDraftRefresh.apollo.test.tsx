@@ -23,7 +23,7 @@ afterEach(() => {
 
 type ReadFailure = boolean | 'graphql';
 
-function mountSection(ids = ['A', 'B'], deferSave = false) {
+function mountSection(ids = ['A', 'B'], deferSave = false, deferOrder = false) {
   const screenshots = ids.map(id => ({
     __typename: 'Screenshot',
     id,
@@ -37,7 +37,11 @@ function mountSection(ids = ['A', 'B'], deferSave = false) {
   const queries: ((fail?: ReadFailure) => void)[] = [];
   const readSlugs: string[] = [];
   const pendingSaves: (() => void)[] = [];
+  const pendingOrderSaves: (() => void)[] = [];
   const writes: Record<string, unknown>[] = [];
+  const orderWrites: Record<string, unknown>[] = [];
+  let coverId = ids.at(-1);
+  let orderFailure: 'conflict' | 'network' | undefined;
   const client = new ApolloClient({
     cache: new InMemoryCache(),
     link: new ApolloLink(
@@ -45,6 +49,8 @@ function mountSection(ids = ['A', 'B'], deferSave = false) {
         new Observable(observer => {
           if (operation.operationName === 'GetProductScreenshotsOnDetailSection') {
             const slug = operation.variables.slug;
+            const snapshot = structuredClone(screenshots);
+            const snapshotCover = coverId;
             readSlugs.push(slug);
             queries.push(fail => {
               if (fail === 'graphql') {
@@ -61,7 +67,11 @@ function mountSection(ids = ['A', 'B'], deferSave = false) {
                   tempProductBySlug: {
                     __typename: 'Product',
                     id: slug,
-                    screenshots: slug === 'fixture-product' ? structuredClone(screenshots) : [],
+                    coverScreenshot:
+                      slug === 'fixture-product' && snapshotCover
+                        ? { __typename: 'Screenshot', id: snapshotCover }
+                        : null,
+                    screenshots: slug === 'fixture-product' ? snapshot : [],
                   },
                 },
               });
@@ -93,6 +103,25 @@ function mountSection(ids = ['A', 'B'], deferSave = false) {
             };
             if (deferSave) pendingSaves.push(completeSave);
             else completeSave();
+          } else if (operation.operationName === 'ReorderProductScreenshotsOnDetailSection') {
+            orderWrites.push(structuredClone(operation.variables));
+            const completeOrder = () => {
+              if (orderFailure === 'network') return observer.error(new Error('Screenshot order unavailable'));
+              if (orderFailure === 'conflict') {
+                observer.next({
+                  errors: [{ message: 'Order changed', extensions: { code: 'product-screenshot/order-changed' } }],
+                });
+              } else {
+                const byId = new Map(screenshots.map(row => [row.id, row]));
+                const ids: string[] = operation.variables.orderedIds;
+                screenshots.splice(0, screenshots.length, ...ids.map(id => byId.get(id)!));
+                coverId = ids[0];
+                observer.next({ data: { reorderProductScreenshots: true } });
+              }
+              observer.complete();
+            };
+            if (deferOrder) pendingOrderSaves.push(completeOrder);
+            else completeOrder();
           } else observer.error(new Error(`Unexpected operation: ${operation.operationName}`));
         })
     ),
@@ -105,7 +134,21 @@ function mountSection(ids = ['A', 'B'], deferSave = false) {
   );
   const view = render(section());
   vi.spyOn(window, 'confirm').mockReturnValue(true);
-  return { client, pendingSaves, queries, readSlugs, section, view, writes };
+  return {
+    client,
+    pendingSaves,
+    pendingOrderSaves,
+    queries,
+    readSlugs,
+    section,
+    view,
+    writes,
+    orderWrites,
+    screenshots,
+    failOrder: (failure: typeof orderFailure) => {
+      orderFailure = failure;
+    },
+  };
 }
 
 async function finishQuery(queries: ((fail?: ReadFailure) => void)[], fail: ReadFailure = false) {
@@ -116,6 +159,184 @@ async function finishQuery(queries: ((fail?: ReadFailure) => void)[], fail: Read
 function card(id: string) {
   return screen.getByText(`Saved alt ${id}`, { selector: 'span[title]' }).closest('.group') as HTMLElement;
 }
+
+function visibleOrder() {
+  return within(screen.getByRole('list', { name: '스크린샷 순서' }))
+    .getAllByRole('img')
+    .map(img => img.getAttribute('alt'));
+}
+
+it('previews moves and cancellation, then saves a new order and refetches the real cover', async () => {
+  const { queries, orderWrites, writes } = mountSection(['A', 'B', 'C']);
+  await finishQuery(queries);
+  expect(within(card('C')).getByText('대표 화면')).toBeTruthy();
+  fireEvent.click(within(card('C')).getByRole('button', { name: '첫 화면으로' }));
+  expect(visibleOrder()).toEqual(['Saved alt C', 'Saved alt A', 'Saved alt B']);
+  expect(within(card('C')).getByText('대표 화면 예정')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '순서 변경 취소' }));
+  expect(visibleOrder()).toEqual(['Saved alt A', 'Saved alt B', 'Saved alt C']);
+  expect(orderWrites).toEqual([]);
+
+  fireEvent.click(within(card('B')).getByRole('button', { name: '위로 이동' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await finishQuery(queries);
+  expect(orderWrites).toEqual([
+    {
+      productId: 'fixture-product',
+      orderedIds: ['B', 'A', 'C'],
+      expectedOrderIds: ['A', 'B', 'C'],
+      expectedCoverId: 'C',
+    },
+  ]);
+  expect(writes).toEqual([]);
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expect(await within(card('B')).findByText('대표 화면')).toBeTruthy();
+});
+
+it('keeps the same draft on a transient failure and on a conflict until the latest list loads', async () => {
+  const { queries, orderWrites, screenshots, failOrder } = mountSection(['A', 'B', 'C']);
+  await finishQuery(queries);
+  fireEvent.click(within(card('A')).getByRole('button', { name: '아래로 이동' }));
+  const save = () => fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  failOrder('network');
+  save();
+  await screen.findByText(/순서를 저장하지 못했습니다/);
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  failOrder('conflict');
+  save();
+  const reload = await screen.findByRole('button', { name: '최신 목록으로 다시 시작' });
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expect(orderWrites).toHaveLength(2);
+  expect(orderWrites[1]).toEqual(orderWrites[0]);
+
+  screenshots.splice(1, 1);
+  fireEvent.click(reload);
+  await finishQuery(queries);
+  expect(visibleOrder()).toEqual(['Saved alt A', 'Saved alt C']);
+  expect(screen.queryByRole('button', { name: '순서 저장' })).toBeNull();
+});
+
+it('can make the first listed screenshot the cover when legacy priorities are tied', async () => {
+  const { queries, orderWrites } = mountSection(['A', 'B', 'C']);
+  await finishQuery(queries);
+  expect(within(card('C')).getByText('대표 화면')).toBeTruthy();
+  fireEvent.click(within(card('A')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await finishQuery(queries);
+  expect(orderWrites).toEqual([
+    {
+      productId: 'fixture-product',
+      orderedIds: ['A', 'B', 'C'],
+      expectedOrderIds: ['A', 'B', 'C'],
+      expectedCoverId: 'C',
+    },
+  ]);
+  expect(await within(card('A')).findByText('대표 화면')).toBeTruthy();
+});
+
+it('refreshes the saved order after an earlier metadata read can write the old order', async () => {
+  const { queries, pendingOrderSaves } = mountSection(['A', 'B', 'C'], false, true);
+  await finishQuery(queries);
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await waitFor(() => expect(pendingOrderSaves).toHaveLength(1));
+
+  fireEvent.click(within(card('A')).getByRole('button', { name: '메타데이터 수정' }));
+  fireEvent.change(screen.getByLabelText('이미지 alt'), { target: { value: 'Updated alt A' } });
+  fireEvent.click(screen.getByRole('button', { name: /^저장$/ }));
+  await waitFor(() => expect(queries).toHaveLength(1));
+
+  await act(async () => pendingOrderSaves[0]());
+  await finishQuery(queries);
+  await finishQuery(queries);
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Updated alt A', 'Saved alt C']);
+  expect(await within(card('B')).findByText('대표 화면')).toBeTruthy();
+});
+
+it('refreshes the saved order after reopening a gallery with a retained metadata read', async () => {
+  const { queries, pendingOrderSaves, section, view } = mountSection(['A', 'B', 'C'], false, true);
+  await finishQuery(queries);
+  fireEvent.click(within(card('A')).getByRole('button', { name: '메타데이터 수정' }));
+  fireEvent.change(screen.getByLabelText('이미지 alt'), { target: { value: 'Updated alt A' } });
+  fireEvent.click(screen.getByRole('button', { name: /^저장$/ }));
+  await waitFor(() => expect(queries).toHaveLength(1));
+
+  view.unmount();
+  render(section());
+  await screen.findByText('Saved alt B', { selector: 'span[title]' });
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await waitFor(() => expect(pendingOrderSaves).toHaveLength(1));
+  await act(async () => pendingOrderSaves[0]());
+  await finishQuery(queries);
+  await finishQuery(queries);
+
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Updated alt A', 'Saved alt C']);
+  expect(await within(card('B')).findByText('대표 화면')).toBeTruthy();
+});
+
+it.each(['retry', 're-entry'])('reads again through %s when only the post-save read failed', async action => {
+  const { queries, orderWrites, section, view } = mountSection(['A', 'B', 'C']);
+  await finishQuery(queries);
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await finishQuery(queries, true);
+  await waitFor(() =>
+    expect(notifications.show).toHaveBeenCalledWith({ message: '스크린샷 순서를 저장했습니다.', color: 'teal' })
+  );
+  expect(screen.queryByRole('list', { name: '스크린샷 순서' })).toBeNull();
+
+  if (action === 'retry') {
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+  } else {
+    view.unmount();
+    render(section());
+  }
+  await finishQuery(queries);
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expect(within(card('B')).getByText('대표 화면')).toBeTruthy();
+  expect(orderWrites).toHaveLength(1);
+});
+
+it('keeps unsaved metadata while a failed post-order lookup hides and then refreshes the list', async () => {
+  const { queries } = mountSection(['A', 'B', 'C']);
+  await editA(queries);
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await finishQuery(queries, true);
+  await waitFor(() => expect(screen.queryByRole('list', { name: '스크린샷 순서' })).toBeNull());
+
+  fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+  await finishQuery(queries);
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expectDraft();
+});
+
+it('refreshes the reopened gallery if an earlier retained read of the saved order fails', async () => {
+  const { queries, orderWrites, section, view } = mountSection(['A', 'B', 'C']);
+  await finishQuery(queries);
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await waitFor(() => expect(queries).toHaveLength(1));
+
+  view.unmount();
+  render(section());
+  await screen.findByText('Saved alt B', { selector: 'span[title]' });
+  expect(visibleOrder()).toEqual(['Saved alt A', 'Saved alt B', 'Saved alt C']);
+  await finishQuery(queries, true);
+  await finishQuery(queries);
+
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expect(within(card('B')).getByText('대표 화면')).toBeTruthy();
+  expect(orderWrites).toHaveLength(1);
+});
+
+it.each([{ ids: [] }, { ids: ['A'] }])('omits reorder actions for a gallery with $ids', async ({ ids }) => {
+  const { queries } = mountSection(ids);
+  await finishQuery(queries);
+  expect(screen.queryByRole('button', { name: '첫 화면으로' })).toBeNull();
+  expect(screen.queryByRole('button', { name: '순서 저장' })).toBeNull();
+});
 
 async function editA(queries: ((fail?: ReadFailure) => void)[]) {
   await finishQuery(queries);

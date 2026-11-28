@@ -15,6 +15,7 @@ export { ProductMediaMutationResolver } from './ProductMediaMutationResolver';
 export { ProductMutationResolver } from './Product.mutation.resolver';
 export { ProductPublishMutationResolver } from './ProductPublishMutationResolver';
 export { ProductQueryResolver } from './Product.query.resolver';
+export { ProductScreenshotOrderMutationResolver } from './ProductScreenshotOrder.mutation.resolver';
 export { ScreenshotFieldResolver } from './Screenshot.field.resolver';
 export { VisualScreenshotQueryResolver } from './VisualScreenshot.query.resolver';
 export { VisualFlowQueryResolver } from './VisualFlow.query.resolver';

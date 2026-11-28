@@ -13,17 +13,13 @@ import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { getReusableCreationUploadUrl, type CompletedCreationUpload } from '../creationUpload';
+import { queueProductScreenshotRefresh } from '../queueProductScreenshotRefresh';
 
 gql`
   mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
     addProductScreenshot(slug: $slug, input: $input) {
       product {
         id
-        screenshots {
-          id
-          imageAlt
-          imageUrl
-        }
       }
     }
   }
@@ -115,19 +111,48 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     AddProductScreenshotOnNewProductScreenshotFormDocument,
     {
       onCompleted: ({ addProductScreenshot }) => {
-        if (mounted.current && addProductScreenshot?.product?.id) {
-          notifySavedWithRefresh(() =>
-            client.query({
-              query: GetProductScreenshotsOnDetailSectionDocument,
-              variables: { slug: productSlug },
-              fetchPolicy: 'network-only',
-            })
+        const productId = addProductScreenshot?.product?.id;
+        if (!productId) return;
+        const refresh = () =>
+          queueProductScreenshotRefresh(
+            client,
+            productSlug,
+            async () => {
+              const activeReads = client.refetchQueries({
+                include: [GetProductScreenshotsOnDetailSectionDocument],
+                onQueryUpdated(query) {
+                  if (query.variables['slug'] !== productSlug) return false;
+                  // Replace an active pre-commit read so it cannot publish its older snapshot.
+                  return query
+                    .reobserve({
+                      fetchPolicy: 'network-only',
+                      nextFetchPolicy: query.options.nextFetchPolicy ?? query.options.fetchPolicy,
+                      context: { ...query.options.context, queryDeduplication: false },
+                    })
+                    .retain();
+                },
+              });
+              if (activeReads.queries.length > 0) await activeReads;
+              else {
+                await client.query({
+                  query: GetProductScreenshotsOnDetailSectionDocument,
+                  variables: { slug: productSlug },
+                  fetchPolicy: 'network-only',
+                  context: { queryDeduplication: false },
+                });
+              }
+            },
+            productId
           );
-          completedUpload.current = null;
-          registrationRequests.current.clear();
-          form.reset();
-          navigate(`/products/${encodeURIComponent(productSlug)}`);
+        if (!mounted.current) {
+          void refresh().catch(() => {});
+          return;
         }
+        notifySavedWithRefresh(refresh);
+        completedUpload.current = null;
+        registrationRequests.current.clear();
+        form.reset();
+        navigate(`/products/${encodeURIComponent(productSlug)}`);
       },
       onError: error => {
         if (!mounted.current) return;

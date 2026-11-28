@@ -97,7 +97,8 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
       // Observe the complete SDK-produced event, then stop it before transport.
       beforeSend: event => {
         processorEvents.push(event);
-        events.push(sentryRequestRedaction.beforeSend(event));
+        const redacted = sentryRequestRedaction.beforeSend(event);
+        if (redacted) events.push(redacted);
         return null;
       },
     });

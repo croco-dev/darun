@@ -133,7 +133,7 @@ const cases = [
     variables: { slug: props.productSlug },
     read: { tempProductBySlug: null },
     write: {
-      addProductScreenshot: { product: { id: 'parent-id', screenshots: [] } },
+      addProductScreenshot: { product: { id: 'parent-id' } },
     },
     path: '/products/parent-app',
   },
@@ -241,4 +241,82 @@ describe.each(cases)('$name creation with real Apollo client/link', c => {
     expect(fixture.requests[2]!.name).toBe(fixture.requests[1]!.name);
     fixture.subscription.unsubscribe();
   });
+});
+
+function screenshotGallery(ids: string[]) {
+  return {
+    tempProductBySlug: {
+      __typename: 'Product' as const,
+      id: 'parent-id',
+      coverScreenshot: { __typename: 'Screenshot' as const, id: ids[0] },
+      screenshots: ids.map(id => ({
+        __typename: 'Screenshot' as const,
+        id,
+        title: id,
+        imageUrl: `/fixture-${id}.png`,
+        imageAlt: id,
+        platform: null,
+        screenType: null,
+        uiElements: [],
+      })),
+    },
+  };
+}
+
+it.each([false, true])('reconciles a late registration with refresh failure=%s', async refreshFails => {
+  upload.mockResolvedValue('https://example.com/uploaded.png');
+  const query = documents.GetProductScreenshotsOnDetailSectionDocument;
+  const variables = { slug: props.productSlug };
+  const { client, requests, subscription, wrapper } = setup(query, variables);
+  await settle(() => requests[0]!.resolve(screenshotGallery(['a', 'b'])));
+  const { result, unmount } = renderHook(() => useNewProductScreenshotForm(props), { wrapper });
+  await settle(() => void result.current.submit({ file, imageAlt: '새 화면' }));
+  await waitFor(() => expect(requests).toHaveLength(2));
+  unmount();
+
+  const current = screenshotGallery(['b', 'a', 'new']);
+  const cached = refreshFails ? screenshotGallery(['b', 'a']) : current;
+  client.writeQuery({ query, variables, data: cached });
+  await settle(() =>
+    requests[1]!.resolve({
+      addProductScreenshot: { product: screenshotGallery(['a', 'b', 'new']).tempProductBySlug },
+    })
+  );
+  await waitFor(() => expect(requests).toHaveLength(3));
+  expect(client.readQuery({ query, variables })).toEqual(cached);
+  if (refreshFails) {
+    await settle(() => requests[2]!.fail());
+    await waitFor(() => expect(client.readQuery({ query, variables })).toBeNull());
+    const reopened = client.query({ query, variables });
+    await waitFor(() => expect(requests).toHaveLength(4));
+    await settle(() => requests[3]!.resolve(current));
+    expect((await reopened).data).toEqual(current);
+  } else {
+    await settle(() => requests[2]!.resolve(current));
+  }
+  expect(navigate).not.toHaveBeenCalled();
+  expect(notifications.show).not.toHaveBeenCalled();
+  subscription.unsubscribe();
+});
+
+it('replaces a pending pre-registration lookup with a fresh gallery read', async () => {
+  upload.mockResolvedValue('https://example.com/uploaded.png');
+  const query = documents.GetProductScreenshotsOnDetailSectionDocument;
+  const variables = { slug: props.productSlug };
+  const { client, requests, subscription, wrapper } = setup(query, variables);
+  const { result, unmount } = renderHook(() => useNewProductScreenshotForm(props), { wrapper });
+  await settle(() => void result.current.submit({ file, imageAlt: '새 화면' }));
+  await waitFor(() => expect(requests).toHaveLength(2));
+  unmount();
+
+  await settle(() => requests[1]!.resolve({ addProductScreenshot: { product: { id: 'parent-id' } } }));
+  await waitFor(() => expect(requests).toHaveLength(3));
+  const current = screenshotGallery(['b', 'a', 'new']);
+  await settle(() => requests[2]!.resolve(current));
+  await settle(() => requests[0]!.resolve(screenshotGallery(['a', 'b'])));
+
+  expect(client.readQuery({ query, variables })).toEqual(current);
+  expect(navigate).not.toHaveBeenCalled();
+  expect(notifications.show).not.toHaveBeenCalled();
+  subscription.unsubscribe();
 });
