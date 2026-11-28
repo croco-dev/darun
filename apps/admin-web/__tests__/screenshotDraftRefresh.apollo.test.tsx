@@ -265,7 +265,7 @@ it('refreshes the saved order after reopening a gallery with a retained metadata
   expect(await within(card('B')).findByText('대표 화면')).toBeTruthy();
 });
 
-it('reads again on re-entry when saving succeeded but reading the saved order failed', async () => {
+it.each(['retry', 're-entry'])('reads again through %s when only the post-save read failed', async action => {
   const { queries, orderWrites, section, view } = mountSection(['A', 'B', 'C']);
   await finishQuery(queries);
   fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
@@ -274,9 +274,14 @@ it('reads again on re-entry when saving succeeded but reading the saved order fa
   await waitFor(() =>
     expect(notifications.show).toHaveBeenCalledWith({ message: '스크린샷 순서를 저장했습니다.', color: 'teal' })
   );
+  expect(screen.queryByRole('list', { name: '스크린샷 순서' })).toBeNull();
 
-  view.unmount();
-  render(section());
+  if (action === 'retry') {
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+  } else {
+    view.unmount();
+    render(section());
+  }
   await finishQuery(queries);
   expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
   expect(within(card('B')).getByText('대표 화면')).toBeTruthy();

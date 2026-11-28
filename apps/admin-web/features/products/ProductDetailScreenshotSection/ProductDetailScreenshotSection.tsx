@@ -417,6 +417,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
   const [orderDraft, setOrderDraft] = useState<ScreenshotOrderDraft | null>(null);
   const [orderFailure, setOrderFailure] = useState<{ draft: ScreenshotOrderDraft; conflict: boolean } | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
+  const [unreadSavedOrder, setUnreadSavedOrder] = useState<string | null>(null);
   const moveFocus = useRef<HTMLButtonElement | null>(null);
 
   const { client, data, loading, error, observable } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
@@ -436,7 +437,9 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
       async () => {
         if (observable.variables.slug === slug) {
           const request = observable.refetch();
-          await (afterSave ? request.retain() : request);
+          const result = await (afterSave ? request.retain() : request);
+          const refreshedProductId = result.data?.tempProductBySlug?.id;
+          setUnreadSavedOrder(current => (current === refreshedProductId ? null : current));
         } else if (afterSave) {
           // A committed edit refreshes its own product after the mounted list switches products.
           await client.query({
@@ -505,6 +508,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
       : []
   );
   const product = data?.tempProductBySlug;
+  const hideUnverifiedOrder = unreadSavedOrder === product?.id && Boolean(error || loading);
   const draft = orderDraft?.slug === slug && (!product || orderDraft.productId === product.id) ? orderDraft : null;
   const failure = orderFailure && orderFailure.draft === draft ? orderFailure : null;
   const savedCoverId = product?.coverScreenshot?.id;
@@ -555,7 +559,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         },
       });
       if (!result.data?.reorderProductScreenshots) throw new Error('Missing screenshot order confirmation');
-      await refreshScreenshots(true, draft.productId);
+      if (!(await refreshScreenshots(true, draft.productId))) setUnreadSavedOrder(draft.productId);
       setOrderDraft(current => (current === draft ? null : current));
       notifications.show({ message: '스크린샷 순서를 저장했습니다.', color: 'teal' });
     } catch (error) {
@@ -653,7 +657,8 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         )}
         {loading && !data ? (
           <AdminLoadingState />
-        ) : (!data || (error && screenshots.length === 0)) && !draft ? null : displayedScreenshots.length === 0 ? (
+        ) : hideUnverifiedOrder ||
+          ((!data || (error && screenshots.length === 0)) && !draft) ? null : displayedScreenshots.length === 0 ? (
           <AdminEmptyState
             title="등록된 스크린샷이 없습니다."
             description="서비스의 주요 기능 및 화면을 보여주는 스크린샷을 등록해 보세요."

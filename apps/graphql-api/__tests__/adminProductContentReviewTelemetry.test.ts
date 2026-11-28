@@ -177,6 +177,23 @@ it('redacts integer IDs in copied diagnostic data while preserving unrelated num
   });
 });
 
+it('drops diagnostics for malformed inline screenshot ID objects', () => {
+  const request = {
+    method: 'POST',
+    data: {
+      query: `mutation ScreenshotOrder {
+        reorderProductScreenshots(
+          productId: { fixture: "not an ID" }
+          orderedIds: []
+          expectedOrderIds: []
+        )
+      }`,
+    },
+  };
+  expect(sentryRequestRedaction.beforeSend({ request })).toBeNull();
+  expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
+});
+
 it.each([
   {
     product: 'fixture-product',

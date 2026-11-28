@@ -83,6 +83,11 @@ function redactSensitiveArguments(
   // fields entirely, and would lose the earlier secret before redaction runs.
   const collectLiteralOccurrences = (value: ValueNode, collectValue = collectSecret, screenshotOrder = false) => {
     visit(value, {
+      ObjectValue() {
+        if (!screenshotOrder) return;
+        screenshotOrderBudget.exceeded = true;
+        return false;
+      },
       ObjectField(node) {
         collectPropertyName(node.name.value);
       },
