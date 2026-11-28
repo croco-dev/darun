@@ -13,6 +13,7 @@ import { useForm, UseFormReturnType } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { getReusableCreationUploadUrl, type CompletedCreationUpload } from '../creationUpload';
+import { queueProductScreenshotRefresh } from '../queueProductScreenshotRefresh';
 
 gql`
   mutation AddProductScreenshotOnNewProductScreenshotForm($slug: String!, $input: AddProductScreenshotInput!) {
@@ -117,11 +118,13 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
       onCompleted: ({ addProductScreenshot }) => {
         if (mounted.current && addProductScreenshot?.product?.id) {
           notifySavedWithRefresh(() =>
-            client.query({
-              query: GetProductScreenshotsOnDetailSectionDocument,
-              variables: { slug: productSlug },
-              fetchPolicy: 'network-only',
-            })
+            queueProductScreenshotRefresh(client, productSlug, () =>
+              client.query({
+                query: GetProductScreenshotsOnDetailSectionDocument,
+                variables: { slug: productSlug },
+                fetchPolicy: 'network-only',
+              })
+            )
           );
           completedUpload.current = null;
           registrationRequests.current.clear();

@@ -1,17 +1,20 @@
 'use client';
 
 import { gql } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { VISUAL_UI_ELEMENTS, VISUAL_UI_ELEMENTS_MAX_COUNT } from '@darun/products-domain/visual-ui-elements';
+import { queueProductScreenshotRefresh } from '@darun/products-feature';
 import {
   GetProductScreenshotsOnDetailSectionDocument,
   DeleteProductScreenshotOnDetailSectionDocument,
   UpdateProductScreenshotOnDetailSectionDocument,
+  ReorderProductScreenshotsOnDetailSectionDocument,
   type VisualPlatform,
   type VisualScreenType,
   type VisualUiElement,
 } from '@darun/provider-graphql';
-import { Button, ImageOff, Loader2, Pencil, Plus, Trash2 } from '@darun/ui';
+import { ArrowDown, ArrowUp, Button, ImageOff, Loader2, Pencil, Plus, Trash2 } from '@darun/ui';
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -23,12 +26,15 @@ import {
 } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
 import { notifications } from '@mantine/notifications';
-import { useId, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 
 gql`
   query GetProductScreenshotsOnDetailSection($slug: String!) {
     tempProductBySlug(slug: $slug) {
       id
+      coverScreenshot {
+        id
+      }
       screenshots {
         id
         imageUrl
@@ -39,6 +45,10 @@ gql`
         uiElements
       }
     }
+  }
+
+  mutation ReorderProductScreenshotsOnDetailSection($productId: ID!, $orderedIds: [ID!]!, $expectedOrderIds: [ID!]!) {
+    reorderProductScreenshots(productId: $productId, orderedIds: $orderedIds, expectedOrderIds: $expectedOrderIds)
   }
 
   mutation DeleteProductScreenshotOnDetailSection($id: String!) {
@@ -97,6 +107,17 @@ type ScreenshotMetadataDraft = {
   platform: VisualPlatform | '';
   screenType: VisualScreenType | '';
 };
+
+type ScreenshotOrderDraft = {
+  slug: string;
+  productId: string;
+  savedCoverId: string | undefined;
+  expectedOrderIds: string[];
+  rows: ScreenshotCardFields[];
+};
+
+const orderControlClass =
+  'inline-flex min-h-8 items-center justify-center gap-1 rounded px-2 text-dark-700 hover:bg-surface-200 aria-disabled:opacity-40 focus-visible:outline-offset-2';
 
 const PLATFORM_SELECT_OPTIONS: Array<{
   value: VisualPlatform | '';
@@ -393,30 +414,42 @@ function ScreenshotMetadataEditor({
 export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshotSectionProps) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [orderDraft, setOrderDraft] = useState<ScreenshotOrderDraft | null>(null);
+  const [orderFailure, setOrderFailure] = useState<{ draft: ScreenshotOrderDraft; conflict: boolean } | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+  const moveFocus = useRef<HTMLButtonElement | null>(null);
 
   const { client, data, loading, error, observable } = useQuery(GetProductScreenshotsOnDetailSectionDocument, {
     variables: { slug },
   });
+  const [reorderScreenshots] = useMutation(ReorderProductScreenshotsOnDetailSectionDocument);
 
-  const refreshScreenshots = async (afterSave = false) => {
-    if (observable.variables.slug !== slug) {
-      // The edit may have committed after the mounted list switched products.
-      if (afterSave) {
-        await client
-          .query({
+  useLayoutEffect(() => {
+    moveFocus.current?.focus();
+    moveFocus.current = null;
+  }, [orderDraft]);
+
+  const refreshScreenshots = (afterSave = false) =>
+    queueProductScreenshotRefresh(client, slug, async () => {
+      try {
+        if (observable.variables.slug === slug) {
+          const request = observable.refetch();
+          await (afterSave ? request.retain() : request);
+        } else if (afterSave) {
+          // A committed edit refreshes its own product after the mounted list switches products.
+          await client.query({
             query: GetProductScreenshotsOnDetailSectionDocument,
             variables: { slug },
             fetchPolicy: 'network-only',
-          })
-          .catch(() => undefined);
+          });
+        } else {
+          return false;
+        }
+        return true;
+      } catch {
+        return false;
       }
-      return;
-    }
-    // The list reports its own error. A committed edit refreshes its cache even after navigation.
-    const request = observable.refetch();
-    await (afterSave ? request.retain() : request).catch(() => undefined);
-  };
-
+    });
   const [deleteScreenshot] = useMutation(DeleteProductScreenshotOnDetailSectionDocument, {
     onError: err => {
       notifications.show({
@@ -470,6 +503,78 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         ]
       : []
   );
+  const product = data?.tempProductBySlug;
+  const draft = orderDraft?.slug === slug && (!product || orderDraft.productId === product.id) ? orderDraft : null;
+  const failure = orderFailure && orderFailure.draft === draft ? orderFailure : null;
+  const savedCoverId = product?.coverScreenshot?.id;
+  const orderChanged =
+    draft !== null &&
+    (draft.rows[0]?.id !== draft.savedCoverId ||
+      draft.rows.some(({ id }, index) => id !== draft.expectedOrderIds[index]));
+  const orderConflict = Boolean(
+    draft &&
+    (failure?.conflict ||
+      (data &&
+        !error &&
+        (!product ||
+          screenshots.length !== draft.expectedOrderIds.length ||
+          screenshots.some(({ id }, index) => id !== draft.expectedOrderIds[index]))))
+  );
+  const currentRows = new Map(screenshots.map(screenshot => [screenshot.id, screenshot]));
+  const displayedScreenshots = draft?.rows.map(row => currentRows.get(row.id) ?? row) ?? screenshots;
+  const coverId = orderChanged ? draft.rows[0]?.id : savedCoverId;
+  const orderControlsDisabled = savingOrder || loading || Boolean(error) || deletingId !== null || orderConflict;
+
+  const moveScreenshot = (from: number, to: number, button: HTMLButtonElement) => {
+    if (!product?.id || orderControlsDisabled || to < 0 || to >= displayedScreenshots.length) return;
+    if (from === to && displayedScreenshots[to].id === coverId) return;
+    if (document.activeElement === button) moveFocus.current = button;
+    const rows = [...displayedScreenshots];
+    const [moved] = rows.splice(from, 1);
+    rows.splice(to, 0, moved);
+    setOrderDraft({
+      slug,
+      productId: product.id,
+      savedCoverId: draft?.savedCoverId ?? savedCoverId,
+      expectedOrderIds: draft?.expectedOrderIds ?? screenshots.map(({ id }) => id),
+      rows,
+    });
+  };
+
+  const saveOrder = async () => {
+    if (!draft || !orderChanged || orderControlsDisabled) return;
+    setSavingOrder(true);
+    setOrderFailure(null);
+    try {
+      const result = await reorderScreenshots({
+        variables: {
+          productId: draft.productId,
+          orderedIds: draft.rows.map(({ id }) => id),
+          expectedOrderIds: draft.expectedOrderIds,
+        },
+      });
+      if (!result.data?.reorderProductScreenshots) throw new Error('Missing screenshot order confirmation');
+      await refreshScreenshots(true);
+      setOrderDraft(current => (current === draft ? null : current));
+      notifications.show({ message: '스크린샷 순서를 저장했습니다.', color: 'teal' });
+    } catch (error) {
+      setOrderFailure({
+        draft,
+        conflict:
+          CombinedGraphQLErrors.is(error) &&
+          error.errors.some(({ extensions }) => extensions?.code === 'product-screenshot/order-changed'),
+      });
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  const loadLatestOrder = async () => {
+    if (loading || savingOrder || !draft) return;
+    if (await refreshScreenshots()) {
+      setOrderDraft(current => (current === draft ? null : current));
+    }
+  };
 
   return (
     <AdminPanel>
@@ -490,6 +595,40 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         }
       />
       <AdminSectionBody>
+        {draft && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {orderConflict && !savingOrder && (
+              <p role="alert" className="w-full text-sm text-cherry-700">
+                다른 작업으로 스크린샷 목록이나 순서가 바뀌었습니다. 최신 목록을 불러온 뒤 다시 정렬해 주세요.
+              </p>
+            )}
+            {failure && !orderConflict && (
+              <p role="alert" className="w-full text-sm text-cherry-700">
+                순서를 저장하지 못했습니다. 변경한 순서를 유지했습니다.
+              </p>
+            )}
+            {orderConflict && !savingOrder ? (
+              <Button size="sm" type="button" onClick={() => void loadLatestOrder()} disabled={loading || savingOrder}>
+                최신 목록으로 다시 시작
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                type="button"
+                onClick={() => void saveOrder()}
+                disabled={!orderChanged || orderControlsDisabled}
+              >
+                {savingOrder ? '순서 저장 중…' : '순서 저장'}
+              </Button>
+            )}
+            <Button size="sm" type="button" variant="text" onClick={() => setOrderDraft(null)} disabled={savingOrder}>
+              순서 변경 취소
+            </Button>
+            <span role="status" className="text-xs text-dark-600">
+              {orderChanged && !orderConflict ? '저장하지 않은 순서 변경이 있습니다.' : ''}
+            </span>
+          </div>
+        )}
         {loading && data && (
           <p role="status" className="mb-4 text-xs text-dark-500">
             스크린샷을 새로 불러오는 중입니다.
@@ -513,7 +652,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         )}
         {loading && !data ? (
           <AdminLoadingState />
-        ) : !data || (error && screenshots.length === 0) ? null : screenshots.length === 0 ? (
+        ) : (!data || (error && screenshots.length === 0)) && !draft ? null : displayedScreenshots.length === 0 ? (
           <AdminEmptyState
             title="등록된 스크린샷이 없습니다."
             description="서비스의 주요 기능 및 화면을 보여주는 스크린샷을 등록해 보세요."
@@ -532,9 +671,9 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
             }
           />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-            {screenshots.map(screenshot => (
-              <div
+          <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3" aria-label="스크린샷 순서">
+            {displayedScreenshots.map((screenshot, index) => (
+              <li
                 key={screenshot.id}
                 className="group relative flex flex-col overflow-hidden rounded-lg border border-dark-200 bg-surface-100/30 p-2 transition hover:border-dark-300 hover:shadow-card"
               >
@@ -555,7 +694,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                     <button
                       type="button"
                       onClick={() => setEditingId(current => (current === screenshot.id ? null : screenshot.id))}
-                      disabled={deletingId !== null}
+                      disabled={deletingId !== null || !currentRows.has(screenshot.id)}
                       className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-surface-100 hover:text-dark-900 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-900/60"
                       title={editingId === screenshot.id ? '메타데이터 편집 닫기' : '메타데이터 수정'}
                       aria-label={editingId === screenshot.id ? '메타데이터 편집 닫기' : '메타데이터 수정'}
@@ -566,7 +705,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                     <button
                       type="button"
                       onClick={() => handleDelete(screenshot.id)}
-                      disabled={deletingId !== null}
+                      disabled={deletingId !== null || !currentRows.has(screenshot.id)}
                       className="inline-flex min-h-[32px] min-w-[32px] items-center justify-center rounded p-1 text-dark-400 transition hover:bg-cherry-50 hover:text-cherry-600 active:scale-95 disabled:opacity-50 motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cherry-600/60"
                       title={deletingId === screenshot.id ? '삭제 중...' : '스크린샷 삭제'}
                       aria-label={deletingId === screenshot.id ? '삭제 중' : '스크린샷 삭제'}
@@ -584,16 +723,55 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
                     ? screenshot.uiElements.map(value => UI_ELEMENT_LABELS[value]).join(', ')
                     : 'UI 요소 미분류'}
                 </p>
-                {editingId === screenshot.id && (
+                {coverId === screenshot.id && (
+                  <p className="px-1 text-xs font-medium text-dark-800">
+                    {orderChanged ? '대표 화면 예정' : '대표 화면'}
+                  </p>
+                )}
+                {displayedScreenshots.length > 1 && (
+                  <div
+                    role="group"
+                    aria-label={`${index + 1}번 스크린샷 순서 조정`}
+                    className="mt-1 flex flex-wrap items-center gap-1 text-xs"
+                  >
+                    <button
+                      type="button"
+                      className={orderControlClass}
+                      aria-label="위로 이동"
+                      aria-disabled={orderControlsDisabled || index === 0}
+                      onClick={event => moveScreenshot(index, index - 1, event.currentTarget)}
+                    >
+                      <ArrowUp size={14} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className={orderControlClass}
+                      aria-label="아래로 이동"
+                      aria-disabled={orderControlsDisabled || index === displayedScreenshots.length - 1}
+                      onClick={event => moveScreenshot(index, index + 1, event.currentTarget)}
+                    >
+                      <ArrowDown size={14} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className={orderControlClass}
+                      aria-disabled={orderControlsDisabled || (index === 0 && coverId === screenshot.id)}
+                      onClick={event => moveScreenshot(index, 0, event.currentTarget)}
+                    >
+                      첫 화면으로
+                    </button>
+                  </div>
+                )}
+                {editingId === screenshot.id && currentRows.has(screenshot.id) && (
                   <ScreenshotMetadataEditor
                     screenshot={screenshot}
                     refreshScreenshots={() => refreshScreenshots(true)}
                     onClose={() => setEditingId(current => (current === screenshot.id ? null : current))}
                   />
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         )}
       </AdminSectionBody>
     </AdminPanel>

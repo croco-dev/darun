@@ -8,6 +8,7 @@ import {
   normalizeVisualUiElements,
   productIdempotencyKeyConflict,
   productScreenshotNotFound,
+  productScreenshotOrderChanged,
 } from '@darun/products-domain';
 import { ProductScreenshotRepositoryToken, productScreenshotInsertFailed } from '@darun/products-domain';
 import { Drizzle, DrizzleToken } from '@darun/provider-database';
@@ -24,10 +25,12 @@ import { productScreenshotUiElements } from '../entities/ProductScreenshotUiElem
 import { screenshotCleanupIntents } from '../entities/ScreenshotCleanupIntentSchema';
 import { visualSaves } from '../entities/VisualPopularitySchema';
 import { beginProductContentWrite } from './productContentSync';
+import { lockProductSource } from './productSourceMutex';
 import { recordVisualView } from './recordVisualView';
 import { writeVisualSave } from './writeVisualSave';
 
 type ScreenshotRow = typeof productScreenshots.$inferSelect;
+const galleryOrder = [desc(productScreenshots.priority), asc(productScreenshots.id)];
 
 type VisualScreenshotRow = ScreenshotRow & {
   productName: string | null;
@@ -139,8 +142,7 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
           .select()
           .from(productScreenshots)
           .where(inArray(productScreenshots.productId, [...productIds]))
-          // Match feature screenshots: highest priority first, then stable ID order.
-          .orderBy(desc(productScreenshots.priority), asc(productScreenshots.id));
+          .orderBy(...galleryOrder);
 
         const groupByDocs = groupBy(docs, doc => doc.productId);
         return productIds.map(productId => groupByDocs[productId] || []);
@@ -206,6 +208,32 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
   async findManyByProductIdSortByPriorityDesc(productId: string): Promise<ProductScreenshot[]> {
     const docs = await this.productIdLoader.load(productId);
     return docs.map(toDomain);
+  }
+
+  async reorder(productId: string, orderedIds: readonly string[], expectedOrderIds: readonly string[]): Promise<void> {
+    await this.db.transaction(async tx => {
+      await lockProductSource(tx, productId);
+      const current = await tx
+        .select({ id: productScreenshots.id })
+        .from(productScreenshots)
+        .where(eq(productScreenshots.productId, productId))
+        .orderBy(...galleryOrder);
+      if (
+        current.length !== expectedOrderIds.length ||
+        current.some(({ id }, index) => id !== expectedOrderIds[index])
+      ) {
+        throw productScreenshotOrderChanged();
+      }
+      if (orderedIds.length < 2) return;
+
+      await tx.execute(sql`
+        UPDATE ${productScreenshots} AS screenshot
+        SET priority = (${orderedIds.length} + 1 - ordered.position)::integer
+        FROM jsonb_array_elements_text(${JSON.stringify(orderedIds)}::jsonb)
+          WITH ORDINALITY AS ordered(id, position)
+        WHERE screenshot.product_id = ${productId} AND screenshot.id = ordered.id
+      `);
+    });
   }
 
   async findById(id: string): Promise<ProductScreenshot | null> {

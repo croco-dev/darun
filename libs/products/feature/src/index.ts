@@ -13,6 +13,7 @@ export { NewProductFeatureForm } from './NewProductFeatureForm';
 export { NewProductForm } from './NewProductForm';
 export { NewProductLinkForm } from './NewProductLinkForm';
 export { NewProductScreenForm } from './NewProductScreenshotForm';
+export { queueProductScreenshotRefresh } from './queueProductScreenshotRefresh';
 export { ProductListRefreshButton } from './ProductListRefreshButton';
 export { ProductTagsForm } from './ProductTagsForm';
 export { PublishProductButton } from './PublishProductButton';

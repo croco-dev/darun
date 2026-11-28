@@ -23,6 +23,7 @@ const groups = {
     '__tests__/adminJobHistory.pg.test.ts': 'ADMIN_JOB_HISTORY_TEST_DATABASE_URL',
     '__tests__/adminProductContentReview.pg.test.ts': 'PRODUCT_CONTENT_REVIEW_TEST_DATABASE_URL',
     '__tests__/adminProductUsageConditions.pg.test.ts': 'PRODUCT_USAGE_CONDITIONS_TEST_DATABASE_URL',
+    '__tests__/productScreenshotOrder.pg.test.ts': 'PRODUCT_SCREENSHOT_ORDER_TEST_DATABASE_URL',
     '__tests__/adminProductFlowPagination.pg.test.ts': 'ADMIN_FLOW_TEST_DATABASE_URL',
     '__tests__/screenshotFlowPagination.pg.test.ts': 'RELATED_FLOW_TEST_DATABASE_URL',
   },

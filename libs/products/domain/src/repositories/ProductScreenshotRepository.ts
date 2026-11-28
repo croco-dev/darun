@@ -23,6 +23,7 @@ export type VisualSort = 'LATEST' | 'POPULAR';
 
 export interface ProductScreenshotRepository {
   findManyByProductIdSortByPriorityDesc(productId: string): Promise<ProductScreenshot[]>;
+  reorder(productId: string, orderedIds: readonly string[], expectedOrderIds: readonly string[]): Promise<void>;
   findById(id: string): Promise<ProductScreenshot | null>;
   insert(productScreenshot: ProductScreenshot, requestId?: string): Promise<ProductScreenshot>;
   deleteById(id: string): Promise<void>;

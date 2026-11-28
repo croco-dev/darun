@@ -47,6 +47,7 @@ export {
   productPublishReviewChanged,
   productScreenshotInsertFailed,
   productScreenshotNotFound,
+  productScreenshotOrderChanged,
   productSlugAlreadyExists,
   productUpdateFailed,
 } from './errors/productError';
@@ -247,6 +248,7 @@ export {
   VISUAL_QUERY_MAX_LENGTH,
 } from './usecases/ProductScreenshotMetadata';
 export { UpdateProductScreenshot } from './usecases/UpdateProductScreenshot';
+export { ReorderProductScreenshots } from './usecases/ReorderProductScreenshots';
 export { GetVisualScreenshots, VISUAL_SCREENSHOTS_MAX_FIRST } from './usecases/GetVisualScreenshots';
 export { GetVisualScreenshotById } from './usecases/GetVisualScreenshotById';
 export { TrackVisualScreenshotView } from './usecases/TrackVisualScreenshotView';

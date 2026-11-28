@@ -4,6 +4,9 @@ import { Kind, parse, print, visit, type DocumentNode, type ValueNode } from 'gr
 
 const SECRET_ARGUMENTS: Record<string, true> = { apiKey: true, braveApiKey: true, exclusionNote: true };
 const PRIVATE_REVIEW_FIELDS = ['memo', 'referenceUrl'] as const;
+const PRIVATE_SCREENSHOT_ORDER_ARGUMENTS = new Set(['productId', 'orderedIds', 'expectedOrderIds']);
+const SCREENSHOT_ORDER_ID_BUDGET = 256;
+const SCREENSHOT_ORDER_CHARACTER_BUDGET = 8192;
 const ADMIN_JOB_PAGE_FIELDS = new Set(['translationJobPage', 'productDescriptionJobPage']);
 const REDACTED = '[REDACTED]';
 // Sentry names its protocol identity fields exactly where it uses them, so
@@ -19,10 +22,17 @@ const TRACE_IDENTITY_KEYS: Record<string, true> = {
 // Set-Cookie headers embed the cookie name, which is user input.
 const SPAN_COOKIE_ATTRIBUTE_PREFIXES = ['http.request.header.cookie.', 'http.request.header.set_cookie.'];
 
-function redactSensitiveArguments(document: DocumentNode, variables?: Record<string, unknown>) {
+const createScreenshotOrderBudget = () => ({ ids: 0, characters: 0, exceeded: false });
+
+function redactSensitiveArguments(
+  document: DocumentNode,
+  variables: Record<string, unknown> | undefined,
+  screenshotOrderBudget: ReturnType<typeof createScreenshotOrderBudget>
+) {
   const secretVariables = new Set<string>();
   const reviewInputVariables = new Set<string>();
   const reviewFieldVariables = new Set<string>();
+  const screenshotOrderVariables = new Set<string>();
   const secrets = new Set<string>();
   const propertyNames = new Set<string>();
   const collectSecret = (value: unknown) => {
@@ -42,10 +52,35 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
     propertyNames.add(name);
     propertyNames.add(JSON.stringify(name).slice(1, -1));
   };
+  const collectScreenshotOrderId = (value: unknown): void => {
+    if (screenshotOrderBudget.exceeded) return;
+    const ids = Array.isArray(value) ? value : [value];
+    screenshotOrderBudget.ids += ids.length;
+    if (screenshotOrderBudget.ids > SCREENSHOT_ORDER_ID_BUDGET) {
+      screenshotOrderBudget.exceeded = true;
+      return;
+    }
+    for (const raw of ids) {
+      const id = typeof raw === 'number' && Number.isInteger(raw) ? String(raw) : raw;
+      if (typeof id !== 'string') {
+        if (id && typeof id === 'object') {
+          screenshotOrderBudget.exceeded = true;
+          return;
+        }
+        continue;
+      }
+      screenshotOrderBudget.characters += id.length;
+      if (screenshotOrderBudget.characters > SCREENSHOT_ORDER_CHARACTER_BUDGET) {
+        screenshotOrderBudget.exceeded = true;
+        return;
+      }
+      collectSecret(id);
+    }
+  };
   // Literal collection walks the original value node: the JS object conversion
   // collapses duplicate ObjectFields to their last value, drops nested Variable
   // fields entirely, and would lose the earlier secret before redaction runs.
-  const collectLiteralOccurrences = (value: ValueNode, collectValue = collectSecret) => {
+  const collectLiteralOccurrences = (value: ValueNode, collectValue = collectSecret, screenshotOrder = false) => {
     visit(value, {
       ObjectField(node) {
         collectPropertyName(node.name.value);
@@ -56,8 +91,12 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
       EnumValue(node) {
         collectValue(node.value);
       },
+      IntValue(node) {
+        if (screenshotOrder) collectValue(node.value);
+      },
       Variable(node) {
         secretVariables.add(node.name.value);
+        if (screenshotOrder) screenshotOrderVariables.add(node.name.value);
         collectValue(variables?.[node.name.value]);
       },
     });
@@ -92,14 +131,19 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
       const privateJobCursor = node.name.value === 'after' && fieldName && ADMIN_JOB_PAGE_FIELDS.has(fieldName);
       const privateReview = node.name.value === 'input' && fieldName === 'recordAdminProductContentReview';
       const privateConditions = node.name.value === 'input' && fieldName === 'saveAdminProductUsageConditions';
+      const privateScreenshotOrder =
+        fieldName === 'reorderProductScreenshots' && PRIVATE_SCREENSHOT_ORDER_ARGUMENTS.has(node.name.value);
       if (
         !privateJobCursor &&
         !privateReview &&
         !privateConditions &&
+        !privateScreenshotOrder &&
         !Object.prototype.hasOwnProperty.call(SECRET_ARGUMENTS, node.name.value)
       )
         return;
-      if (node.value.kind === Kind.VARIABLE) {
+      if (privateScreenshotOrder) {
+        collectLiteralOccurrences(node.value, collectScreenshotOrderId, true);
+      } else if (node.value.kind === Kind.VARIABLE) {
         secretVariables.add(node.value.name.value);
         const value = variables?.[node.value.name.value];
         if (privateReview) {
@@ -119,7 +163,9 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
   redactedDocument = visit(redactedDocument, {
     VariableDefinition(node) {
       if (!secretVariables.has(node.variable.name.value) || !node.defaultValue) return;
-      if (reviewInputVariables.has(node.variable.name.value)) {
+      if (screenshotOrderVariables.has(node.variable.name.value)) {
+        collectLiteralOccurrences(node.defaultValue, collectScreenshotOrderId, true);
+      } else if (reviewInputVariables.has(node.variable.name.value)) {
         collectReviewLiteral(node.defaultValue);
       } else {
         collectLiteralOccurrences(
@@ -135,7 +181,7 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
     if (redactedVariables && name in redactedVariables) redactedVariables[name] = REDACTED;
   }
   return {
-    query: print(redactedDocument),
+    query: screenshotOrderBudget.exceeded ? '' : print(redactedDocument),
     variables: redactedVariables,
     secrets,
     propertyNames,
@@ -394,7 +440,7 @@ function redactCredentialEvent<T extends Sentry.Event>(
 }
 
 /** Final egress policy for both error events and real HTTP transactions (including their spans). */
-function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T {
+function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T | null {
   // Captured scopes are consumed by the SDK before these hooks. They are not
   // envelope fields and may contain cyclic client/span state; never traverse them.
   const sendingEvent = { ...event, sdkProcessingMetadata: { ...event.sdkProcessingMetadata } };
@@ -402,7 +448,9 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T {
   delete sendingEvent.sdkProcessingMetadata.capturedSpanIsolationScope;
   const secrets = new Set<string>();
   const propertyNames = new Set<string>();
+  const screenshotOrderBudget = createScreenshotOrderBudget();
   const collectOperation = (body: unknown): void => {
+    if (screenshotOrderBudget.exceeded) return;
     if (Array.isArray(body)) {
       for (const operation of body) collectOperation(operation);
       return;
@@ -413,7 +461,7 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T {
         ? (body.variables as Record<string, unknown>)
         : undefined;
     try {
-      const redacted = redactSensitiveArguments(parse(body.query), variables);
+      const redacted = redactSensitiveArguments(parse(body.query), variables, screenshotOrderBudget);
       for (const secret of redacted.secrets) secrets.add(secret);
       for (const name of redacted.propertyNames) propertyNames.add(name);
     } catch {
@@ -433,6 +481,7 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T {
     collectOperation({ query, variables });
   };
   const collect = (value: unknown): void => {
+    if (screenshotOrderBudget.exceeded) return;
     if (typeof value === 'string') {
       if (/^\s*[\[{]/.test(value)) {
         try {
@@ -451,6 +500,8 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T {
   };
   // RequestData and the SDK metadata may each hold a copy; spans can also carry a GET URL.
   collect(sendingEvent);
+  // Dropping the event also drops copies of the input embedded in exception or SDK data.
+  if (screenshotOrderBudget.exceeded) return null;
   const { redactText, redactKey, redactSpanCookieName } = createCredentialRedactors(secrets, propertyNames);
   const redacted = redactCredentialEvent(sendingEvent, redactText, redactKey, redactSpanCookieName);
   for (const request of [redacted.request, redacted.sdkProcessingMetadata?.normalizedRequest]) {
@@ -486,7 +537,9 @@ export const createSentryApolloLogPlugin = ({
       if (!reportableErrors.length) return;
 
       // Use Apollo's parsed document, not variable names or field aliases supplied by clients.
-      const redacted = redactSensitiveArguments(ctx.document, ctx.request.variables);
+      const screenshotOrderBudget = createScreenshotOrderBudget();
+      const redacted = redactSensitiveArguments(ctx.document, ctx.request.variables, screenshotOrderBudget);
+      if (screenshotOrderBudget.exceeded) return;
       const { redactText, redactKey, redactSpanCookieName } = createCredentialRedactors(
         redacted.secrets,
         redacted.propertyNames

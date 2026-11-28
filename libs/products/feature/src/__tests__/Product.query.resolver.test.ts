@@ -151,6 +151,7 @@ const createProductTagRepository = (): ProductTagRepository => ({
 });
 
 const createProductScreenshotRepository = (): ProductScreenshotRepository => ({
+  reorder: vi.fn<ProductScreenshotRepository['reorder']>(),
   findManyByProductIdSortByPriorityDesc: vi
     .fn<ProductScreenshotRepository['findManyByProductIdSortByPriorityDesc']>()
     .mockResolvedValue([]),

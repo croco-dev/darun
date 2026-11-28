@@ -8,6 +8,7 @@ export enum ProductError {
   PublishReviewChanged = 'product/publish-review-changed',
   DeleteFailed = 'product/delete-failed',
   ScreenshotNotFound = 'product-screenshot/not-found',
+  ScreenshotOrderChanged = 'product-screenshot/order-changed',
   InvalidArgs = 'product/invalid-args',
   IdempotencyKeyConflict = 'IDEMPOTENCY_KEY_CONFLICT',
   CompanyNotFound = 'product/company-not-found',
@@ -25,6 +26,8 @@ export const productPublishReviewChanged = () =>
   createDomainError(ProductError.PublishReviewChanged, '검토 이후 서비스 정보가 바뀌었습니다. 다시 확인해 주세요.');
 export const productDeleteFailed = () => createDomainError(ProductError.DeleteFailed);
 export const productScreenshotNotFound = () => createDomainError(ProductError.ScreenshotNotFound);
+export const productScreenshotOrderChanged = () =>
+  createDomainError(ProductError.ScreenshotOrderChanged, '스크린샷 목록이나 순서가 바뀌었습니다.');
 export const productInvalidArgs = (message?: string) => createDomainError(ProductError.InvalidArgs, message);
 export const productIdempotencyKeyConflict = (message?: string) =>
   createDomainError(ProductError.IdempotencyKeyConflict, message);

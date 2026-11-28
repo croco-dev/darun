@@ -1,6 +1,8 @@
 import 'reflect-metadata';
 import { HeaderMap, type ApolloServer } from '@apollo/server';
 import type { PostgresqlProductContentReviews, PostgresqlProductUsageConditions } from '@darun/products-datasource';
+import type { ReorderProductScreenshots } from '@darun/products-domain';
+import { ProductScreenshotOrderMutationResolver } from '@darun/products-feature/server';
 import { AuthRole, createAuthChecker, createServer } from '@darun/utils-apollo-server';
 import { createSentryApolloLogPlugin, sentryRequestRedaction } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/node';
@@ -27,6 +29,21 @@ beforeAll(async () => {
       });
     },
   } as PostgresqlProductUsageConditions);
+  const order = new ProductScreenshotOrderMutationResolver({
+    async execute(productId, orderedIds, expectedOrderIds) {
+      throw Object.assign(
+        new Error(`Synthetic screenshot order storage failure: ${productId} ${orderedIds.join(',')}`),
+        {
+          params: { productId, orderedIds, expectedOrderIds },
+        }
+      );
+    },
+  } as ReorderProductScreenshots);
+  const resolvers = new Map([
+    [AdminProductContentReviewsResolver, resolver],
+    [AdminProductUsageConditionsResolver, conditions],
+    [ProductScreenshotOrderMutationResolver, order],
+  ] as const);
   Sentry.init({
     dsn: 'https://synthetic@telemetry.invalid/1',
     defaultIntegrations: false,
@@ -36,14 +53,19 @@ beforeAll(async () => {
     transport: () => ({ send: vi.fn(async () => ({})), flush: async () => true }),
     ...sentryRequestRedaction,
     beforeSend: event => {
-      events.push(sentryRequestRedaction.beforeSend(event));
+      const redacted = sentryRequestRedaction.beforeSend(event);
+      if (redacted) events.push(redacted);
       return null;
     },
   });
   server = createServer({
     options: {
-      resolvers: [AdminProductContentReviewsResolver, AdminProductUsageConditionsResolver],
-      container: { get: target => (target === AdminProductContentReviewsResolver ? resolver : conditions) },
+      resolvers: [
+        AdminProductContentReviewsResolver,
+        AdminProductUsageConditionsResolver,
+        ProductScreenshotOrderMutationResolver,
+      ],
+      container: { get: target => resolvers.get(target as Parameters<typeof resolvers.get>[0]) },
       authChecker: createAuthChecker(),
     },
     config: { playground: false, plugins: [createSentryApolloLogPlugin()] },
@@ -121,6 +143,29 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
   }
 );
 
+it.each([
+  {
+    product: 'fixture-product',
+    ordered: Array.from({ length: 256 }, (_, index) => `fixture-screen-${index}`),
+    expected: ['fixture-screen'],
+  },
+  { product: 'a'.repeat(8193), ordered: ['fixture-screen'], expected: ['fixture-screen'] },
+])('drops over-budget screenshot order diagnostics without changing the authorization error', async variables => {
+  const query = `mutation ScreenshotOrder($product: ID!, $ordered: [ID!]!, $expected: [ID!]!) {
+    reorderProductScreenshots(productId: $product, orderedIds: $ordered, expectedOrderIds: $expected)
+  }`;
+  events.length = 0;
+  const response = await server.executeOperation({ query, variables }, { contextValue: { getRoles: async () => [] } });
+  if (response.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+  expect(response.body.singleResult.errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+  await Sentry.flush(2000);
+  expect(events).toHaveLength(0);
+
+  const request = { method: 'POST', data: { query, variables } };
+  expect(sentryRequestRedaction.beforeSend({ request, message: 'Storage failure' })).toBeNull();
+  expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
+});
+
 it.each(['variables', 'inline', 'default'] as const)('사용 조건의 %s 입력을 전송 전에 가린다', async encoding => {
   const excerpt = `private-condition-${randomUUID()} 한글+`;
   const input = {
@@ -159,3 +204,49 @@ it.each(['variables', 'inline', 'default'] as const)('사용 조건의 %s 입력
   expect(events[0].exception?.values?.[0].value).toContain('Synthetic usage conditions storage failure');
   expect(JSON.stringify(events[0])).not.toContain(excerpt);
 });
+
+it.each(['variables', 'inline', 'integer variables', 'integer inline', 'integer defaults'] as const)(
+  '스크린샷 순서의 %s 입력을 전송 전에 가린다',
+  async encoding => {
+    const integers = encoding.startsWith('integer');
+    const productId = integers ? 71358129 : `private-product-${randomUUID()}`;
+    const first = integers ? 82936576 : `private-first-${randomUUID()}`;
+    const second = integers ? 65184972 : `private-second-${randomUUID()}`;
+    const variables = { product: productId, next: [second, first], before: [first, second] };
+    const inline = encoding.endsWith('inline');
+    const defaults = encoding.endsWith('defaults');
+    const declaration = inline
+      ? ''
+      : `($product: ID!${defaults ? ` = ${productId}` : ''}, $next: [ID!]!${defaults ? ` = ${JSON.stringify(variables.next)}` : ''}, $before: [ID!]!${defaults ? ` = ${JSON.stringify(variables.before)}` : ''})`;
+    const body = {
+      query: `mutation ScreenshotOrderTelemetry${declaration} {
+      saved: reorderProductScreenshots(
+        productId: ${inline ? JSON.stringify(variables.product) : '$product'}
+        orderedIds: ${inline ? JSON.stringify(variables.next) : '$next'}
+        expectedOrderIds: ${inline ? JSON.stringify(variables.before) : '$before'}
+      )
+    }`,
+      ...(!inline && !defaults && { variables }),
+    };
+
+    events.length = 0;
+    await Sentry.withIsolationScope(async scope => {
+      scope.addEventProcessor(event => ({ ...event, request: { method: 'POST', data: body } }));
+      const headers = new HeaderMap();
+      headers.set('content-type', 'application/json');
+      const response = await server.executeHTTPGraphQLRequest({
+        httpGraphQLRequest: { method: 'POST', headers, search: '', body },
+        context: async () => ({ getRoles: async () => [AuthRole.Admin] }),
+      });
+      if (response.body.kind !== 'complete') throw new Error('Expected a complete GraphQL response');
+      expect(JSON.parse(response.body.string).errors[0].extensions.code).toBe('INTERNAL_SERVER_ERROR');
+      await Sentry.flush(2000);
+    });
+
+    expect(events).toHaveLength(1);
+    expect(events[0].extra?.query).toContain('ScreenshotOrderTelemetry');
+    expect(events[0].exception?.values?.[0].value).toContain('Synthetic screenshot order storage failure');
+    const serialized = JSON.stringify(events[0]);
+    for (const id of [productId, first, second]) expect(serialized).not.toContain(String(id));
+  }
+);
