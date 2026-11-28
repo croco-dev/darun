@@ -34,6 +34,65 @@ type AdminProductCategorySelection {
   productId: ID!
 }
 
+type AdminProductContentReviewDetail {
+  description: String
+  due: Boolean!
+  features: [AdminProductContentReviewFeature!]!
+  id: ID!
+  name: String!
+  revision: String!
+  status: AdminProductContentReviewStatus!
+  summary: String!
+}
+
+type AdminProductContentReviewFeature {
+  id: ID!
+  name: String!
+  summary: String
+}
+
+enum AdminProductContentReviewFilter {
+  ALL
+  CHANGED
+  DUE
+  UNREVIEWED
+}
+
+type AdminProductContentReviewHistory {
+  nextCursor: String
+  records: [AdminProductContentReviewRecord!]!
+}
+
+type AdminProductContentReviewListItem {
+  due: Boolean!
+  id: ID!
+  name: String!
+  nextReviewOn: String
+  slug: String!
+  status: AdminProductContentReviewStatus!
+}
+
+type AdminProductContentReviewPage {
+  items: [AdminProductContentReviewListItem!]!
+  nextCursor: String
+}
+
+type AdminProductContentReviewRecord {
+  id: ID!
+  memo: String!
+  nextReviewOn: String
+  referenceUrl: String
+  reviewedAt: DateTimeISO!
+  reviewedRevision: String!
+  reviewerId: ID!
+}
+
+enum AdminProductContentReviewStatus {
+  CHANGED
+  CURRENT
+  UNREVIEWED
+}
+
 type AdminProductFlowConnection {
   edges: [AdminProductFlowEdge!]!
   pageInfo: PageInfo!
@@ -337,6 +396,7 @@ type Mutation {
   materializeResearchedProduct(input: MaterializeResearchedProductInput!): Product!
   publishMagazine(input: PublishMagazineInput!): PublishMagazinePayload!
   publishProduct(input: PublishProductInput!): PublishProductPayload!
+  recordAdminProductContentReview(input: RecordAdminProductContentReviewInput!): AdminProductContentReviewRecord!
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
   requestProductResearch(input: RequestProductResearchInput!): ProductResearchJob!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
@@ -566,6 +626,9 @@ type PublishedMagazineEdge {
 
 type Query {
   adminProductCategorySelection(slug: String!): AdminProductCategorySelection
+  adminProductContentReview(slug: String!): AdminProductContentReviewDetail
+  adminProductContentReviewHistory(before: String, productId: ID!): AdminProductContentReviewHistory!
+  adminProductContentReviewPage(after: String, filter: AdminProductContentReviewFilter!): AdminProductContentReviewPage!
   adminProductFlow(id: String!): VisualFlow
   adminProductFlowSummaries(after: String, first: Int! = 24, productSlug: String!): AdminProductFlowConnection!
   adminProductFlows(productSlug: String!): [VisualFlow!]!
@@ -622,6 +685,15 @@ type Query {
   visualScreenshot(id: String!): VisualScreenshot
   visualScreenshotSaveStatus(id: String!): VisualSaveStatusPayload!
   visualScreenshots(after: String, first: Int! = 24, page: Int, platform: VisualPlatform, productSlug: String, query: String, screenType: VisualScreenType, sort: VisualSort, uiElements: [VisualUiElement!]): VisualScreenshotConnection!
+}
+
+input RecordAdminProductContentReviewInput {
+  expectedRevision: String!
+  memo: String!
+  nextReviewOn: String
+  productId: ID!
+  referenceUrl: String
+  requestId: String!
 }
 
 input RegisterProductCompanyInput {

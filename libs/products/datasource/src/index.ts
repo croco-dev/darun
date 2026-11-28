@@ -1,5 +1,6 @@
 export { PostgresqlProductRepository } from './repositories/PostgresqlProductRepository';
 export { PostgresqlProductPublishReview } from './repositories/PostgresqlProductPublishReview';
+export { PostgresqlProductContentReviews } from './repositories/PostgresqlProductContentReviews';
 export { PostgresqlProductLinkRepository } from './repositories/PostgresqlProductLinkRepository';
 export { PostgresqlProductTagRepository } from './repositories/PostgresqlProductTagRepository';
 export { PostgresqlProductResearchJobRepository } from './repositories/PostgresqlProductResearchJobRepository';

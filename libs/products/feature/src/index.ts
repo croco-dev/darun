@@ -39,3 +39,5 @@ export { ProductInfo, useProductInfo } from './ProductInfo';
 export { TranslateProductButton } from './TranslateProductButton';
 
 export { getProductDescriptionRequestId, acknowledgeProductDescriptionRequest } from './productDescriptionRequests';
+export { ProductContentReviewPanel } from './ProductContentReview/ProductContentReviewPanel';
+export { ProductContentReviewList } from './ProductContentReview/ProductContentReviewList';

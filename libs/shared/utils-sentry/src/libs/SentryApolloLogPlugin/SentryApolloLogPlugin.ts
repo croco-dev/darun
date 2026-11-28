@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node';
 import { Kind, parse, print, visit, type DocumentNode, type ValueNode } from 'graphql';
 
 const SECRET_ARGUMENTS: Record<string, true> = { apiKey: true, braveApiKey: true, exclusionNote: true };
+const PRIVATE_REVIEW_FIELDS = ['memo', 'referenceUrl'] as const;
 const ADMIN_JOB_PAGE_FIELDS = new Set(['translationJobPage', 'productDescriptionJobPage']);
 const REDACTED = '[REDACTED]';
 // Sentry names its protocol identity fields exactly where it uses them, so
@@ -20,6 +21,8 @@ const SPAN_COOKIE_ATTRIBUTE_PREFIXES = ['http.request.header.cookie.', 'http.req
 
 function redactSensitiveArguments(document: DocumentNode, variables?: Record<string, unknown>) {
   const secretVariables = new Set<string>();
+  const reviewInputVariables = new Set<string>();
+  const reviewFieldVariables = new Set<string>();
   const secrets = new Set<string>();
   const propertyNames = new Set<string>();
   const collectSecret = (value: unknown) => {
@@ -42,36 +45,69 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
   // Literal collection walks the original value node: the JS object conversion
   // collapses duplicate ObjectFields to their last value, drops nested Variable
   // fields entirely, and would lose the earlier secret before redaction runs.
-  const collectLiteralOccurrences = (value: ValueNode) => {
+  const collectLiteralOccurrences = (value: ValueNode, collectValue = collectSecret) => {
     visit(value, {
       ObjectField(node) {
         collectPropertyName(node.name.value);
       },
       StringValue(node) {
-        collectSecret(node.value);
+        collectValue(node.value);
       },
       EnumValue(node) {
-        collectSecret(node.value);
+        collectValue(node.value);
       },
       Variable(node) {
         secretVariables.add(node.name.value);
-        collectSecret(variables?.[node.name.value]);
+        collectValue(variables?.[node.name.value]);
       },
     });
+  };
+  const collectReviewValue = (value: unknown) => {
+    collectSecret(value);
+    if (typeof value === 'string') collectSecret(value.trim());
+  };
+  const collectReviewInput = (value: unknown) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      collectSecret(value);
+      return;
+    }
+    const input = value as Record<string, unknown>;
+    for (const name of PRIVATE_REVIEW_FIELDS) collectReviewValue(input[name]);
+  };
+  const collectReviewLiteral = (value: ValueNode) => {
+    if (value.kind !== Kind.OBJECT) {
+      collectLiteralOccurrences(value);
+      return;
+    }
+    for (const field of value.fields) {
+      if (!PRIVATE_REVIEW_FIELDS.some(name => name === field.name.value)) continue;
+      if (field.value.kind === Kind.VARIABLE) reviewFieldVariables.add(field.value.name.value);
+      collectLiteralOccurrences(field.value, collectReviewValue);
+    }
   };
   let redactedDocument = visit(document, {
     Argument(node, _key, _parent, _path, ancestors) {
       const field = ancestors[ancestors.length - 1];
-      const privateJobCursor =
-        node.name.value === 'after' &&
-        field &&
-        'kind' in field &&
-        field.kind === Kind.FIELD &&
-        ADMIN_JOB_PAGE_FIELDS.has(field.name.value);
-      if (!privateJobCursor && !Object.prototype.hasOwnProperty.call(SECRET_ARGUMENTS, node.name.value)) return;
+      const fieldName = field && 'kind' in field && field.kind === Kind.FIELD ? field.name.value : undefined;
+      const privateJobCursor = node.name.value === 'after' && fieldName && ADMIN_JOB_PAGE_FIELDS.has(fieldName);
+      const privateReview = node.name.value === 'input' && fieldName === 'recordAdminProductContentReview';
+      if (
+        !privateJobCursor &&
+        !privateReview &&
+        !Object.prototype.hasOwnProperty.call(SECRET_ARGUMENTS, node.name.value)
+      )
+        return;
       if (node.value.kind === Kind.VARIABLE) {
         secretVariables.add(node.value.name.value);
-        collectSecret(variables?.[node.value.name.value]);
+        const value = variables?.[node.value.name.value];
+        if (privateReview) {
+          reviewInputVariables.add(node.value.name.value);
+          collectReviewInput(value);
+        } else {
+          collectSecret(value);
+        }
+      } else if (privateReview) {
+        collectReviewLiteral(node.value);
       } else {
         collectLiteralOccurrences(node.value);
       }
@@ -81,7 +117,14 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
   redactedDocument = visit(redactedDocument, {
     VariableDefinition(node) {
       if (!secretVariables.has(node.variable.name.value) || !node.defaultValue) return;
-      collectLiteralOccurrences(node.defaultValue);
+      if (reviewInputVariables.has(node.variable.name.value)) {
+        collectReviewLiteral(node.defaultValue);
+      } else {
+        collectLiteralOccurrences(
+          node.defaultValue,
+          reviewFieldVariables.has(node.variable.name.value) ? collectReviewValue : collectSecret
+        );
+      }
       return { ...node, defaultValue: { kind: Kind.STRING, value: REDACTED } };
     },
   });

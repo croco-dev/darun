@@ -12,6 +12,9 @@ export default function ProductListPage() {
       rightSide={
         <div className="flex gap-2">
           <ProductListRefreshButton />
+          <Button as={Link} href="/product-reviews" variant="contained" color="secondary">
+            검토 목록
+          </Button>
           <Button
             as={Link}
             href="/products/new"
