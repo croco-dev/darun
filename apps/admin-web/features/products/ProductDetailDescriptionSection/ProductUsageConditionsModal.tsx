@@ -57,7 +57,13 @@ const emptyItem: Item = {
   checkedOn: '',
 };
 
-export function ProductUsageConditionsModal({ slug, onClose }: { slug: string; onClose: () => void }) {
+const failureMessages = {
+  stale: '다른 편집자가 사용 조건을 변경했습니다. 작성 중인 입력은 유지됩니다.',
+  invalid: '문장과 발췌 길이, 공개 출처 URL, 확인 날짜를 확인해 주세요.',
+  save: '사용 조건을 저장하지 못했습니다. 다시 시도해 주세요.',
+};
+
+export function ProductUsageConditionsModal({ slug, onClose }: Readonly<{ slug: string; onClose: () => void }>) {
   const { data, error, loading, refetch } = useQuery(AdminProductUsageConditionsDocument, {
     variables: { slug },
     fetchPolicy: 'network-only',
@@ -72,50 +78,55 @@ export function ProductUsageConditionsModal({ slug, onClose }: { slug: string; o
   };
   const conditions = data?.adminProductUsageConditions;
 
+  let content = <AdminEmptyState title="상품을 찾을 수 없습니다." />;
+  if (loading) {
+    content = <AdminLoadingState title="사용 조건을 불러오는 중입니다." />;
+  } else if (error) {
+    content = (
+      <div role="alert" className="space-y-3">
+        <p>사용 조건을 불러오지 못했습니다.</p>
+        <Button type="button" variant="base" color="secondary" onClick={refresh}>
+          다시 시도
+        </Button>
+      </div>
+    );
+  } else if (conditions) {
+    content = (
+      <UsageConditionsForm
+        key={`${conditions.productId}:${conditions.revision}`}
+        conditions={conditions}
+        saving={saving}
+        onClose={close}
+        onRefresh={refresh}
+        onSave={async items => {
+          if (pending.current) return;
+          pending.current = true;
+          try {
+            await save({
+              variables: {
+                input: {
+                  productId: conditions.productId,
+                  expectedRevision: conditions.revision,
+                  items,
+                },
+              },
+            });
+            notifications.show({
+              message: '사용 조건을 저장했습니다. 다음 소개 생성부터 반영됩니다.',
+              color: 'teal',
+            });
+            onClose();
+          } finally {
+            pending.current = false;
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <AdminModal opened onClose={close} title="사용 조건 편집" maxWidth="max-w-2xl">
-      {loading ? (
-        <AdminLoadingState title="사용 조건을 불러오는 중입니다." />
-      ) : error ? (
-        <div role="alert" className="space-y-3">
-          <p>사용 조건을 불러오지 못했습니다.</p>
-          <Button type="button" variant="base" color="secondary" onClick={refresh}>
-            다시 시도
-          </Button>
-        </div>
-      ) : conditions ? (
-        <UsageConditionsForm
-          key={`${conditions.productId}:${conditions.revision}`}
-          conditions={conditions}
-          saving={saving}
-          onClose={close}
-          onRefresh={refresh}
-          onSave={async items => {
-            if (pending.current) return;
-            pending.current = true;
-            try {
-              await save({
-                variables: {
-                  input: {
-                    productId: conditions.productId,
-                    expectedRevision: conditions.revision,
-                    items,
-                  },
-                },
-              });
-              notifications.show({
-                message: '사용 조건을 저장했습니다. 다음 소개 생성부터 반영됩니다.',
-                color: 'teal',
-              });
-              onClose();
-            } finally {
-              pending.current = false;
-            }
-          }}
-        />
-      ) : (
-        <AdminEmptyState title="상품을 찾을 수 없습니다." />
-      )}
+      {content}
     </AdminModal>
   );
 }
@@ -126,13 +137,13 @@ function UsageConditionsForm({
   onClose,
   onRefresh,
   onSave,
-}: {
+}: Readonly<{
   conditions: SavedConditions;
   saving: boolean;
   onClose: () => void;
   onRefresh: () => void;
   onSave: (items: Item[]) => Promise<void>;
-}) {
+}>) {
   const [rows, setRows] = useState(() =>
     conditions.items.map(({ statement, sourceUrl, excerpt, checkedOn }, id) => ({
       id,
@@ -143,7 +154,7 @@ function UsageConditionsForm({
     }))
   );
   const nextId = useRef(rows.length);
-  const [failure, setFailure] = useState<'stale' | 'invalid' | 'save' | null>(null);
+  const [failure, setFailure] = useState<keyof typeof failureMessages | null>(null);
   const change = (id: number, field: keyof Item, value: string) => {
     setRows(current => current.map(row => (row.id === id ? { ...row, [field]: value } : row)));
     if (failure !== 'stale') setFailure(null);
@@ -164,7 +175,9 @@ function UsageConditionsForm({
       );
     } catch (error) {
       const code = CombinedGraphQLErrors.is(error) ? error.errors[0]?.extensions?.code : undefined;
-      setFailure(code === 'PRODUCT_USAGE_CONDITIONS_STALE' ? 'stale' : code === 'BAD_USER_INPUT' ? 'invalid' : 'save');
+      if (code === 'PRODUCT_USAGE_CONDITIONS_STALE') setFailure('stale');
+      else if (code === 'BAD_USER_INPUT') setFailure('invalid');
+      else setFailure('save');
     }
   };
 
@@ -234,13 +247,7 @@ function UsageConditionsForm({
       )}
       {failure && (
         <div role="alert" className="space-y-2 text-sm text-cherry-700">
-          <p>
-            {failure === 'stale'
-              ? '다른 편집자가 사용 조건을 변경했습니다. 작성 중인 입력은 유지됩니다.'
-              : failure === 'invalid'
-                ? '문장과 발췌 길이, 공개 출처 URL, 확인 날짜를 확인해 주세요.'
-                : '사용 조건을 저장하지 못했습니다. 다시 시도해 주세요.'}
-          </p>
+          <p>{failureMessages[failure]}</p>
           {failure === 'stale' && (
             <Button type="button" variant="base" color="secondary" onClick={onRefresh}>
               입력을 버리고 최신 조건 불러오기

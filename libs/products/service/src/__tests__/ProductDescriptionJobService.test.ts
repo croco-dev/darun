@@ -184,6 +184,19 @@ describe('ProductDescriptionJobService durable attempts', () => {
       })
     );
   });
+  it('조건 snapshot 저장 오류는 내용을 가리고 기존 재시도 판단을 적용한다', async () => {
+    const f = fixture();
+    f.generate.execute.mockResolvedValueOnce({
+      ...f.candidate,
+      usageConditions: { version: 1, revision: 'revision', editorId: 'editor', items: [] },
+    });
+    f.repository.completeJobLease.mockRejectedValueOnce(new RetryableError('private SQL parameter', 503));
+
+    await f.service.executeJob('old-job', 'product', { leaseToken: 'attempt' });
+
+    expect(f.repository.retryJobLease).toHaveBeenCalledWith('old-job', 'attempt', '소개 후보를 저장하지 못했습니다.');
+    expect(f.repository.completeJobLease).toHaveBeenCalledTimes(1);
+  });
   it('중복 claim 거절은 공급자 호출을 만들지 않는다', async () => {
     const f = fixture();
     f.repository.claimJobLease.mockResolvedValueOnce(null);

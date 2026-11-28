@@ -33,7 +33,7 @@ export function normalizeProductUsageConditions(items: ProductUsageCondition[]):
     if (sourceUrl.length > MAX_PRODUCT_USAGE_SOURCE_URL_LENGTH || /[\x00-\x1f\x7f]/.test(sourceUrl)) return null;
     const url = safeReaderFacingUrl(sourceUrl);
     if (!url || url.length > MAX_PRODUCT_USAGE_SOURCE_URL_LENGTH) return null;
-    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(checkedOn)) return null;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(checkedOn)) return null;
     const date = new Date(`${checkedOn}T00:00:00Z`);
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== checkedOn) return null;
     result.push({ statement, sourceUrl: url, excerpt, checkedOn });
@@ -41,13 +41,16 @@ export function normalizeProductUsageConditions(items: ProductUsageCondition[]):
   return result;
 }
 
+const htmlEntities: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
 export function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return text.replace(/[&<>"']/g, character => htmlEntities[character]);
 }
 
 export function renderProductUsageConditions(snapshot?: ProductUsageConditionsSnapshot | null): string {
