@@ -3,7 +3,7 @@
 import { gql } from '@apollo/client';
 import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { useMutation } from '@apollo/client/react';
-import { PRODUCT_DESCRIPTION_MEDIA_ELEMENTS } from '@darun/products-domain/info';
+import { PRODUCT_DESCRIPTION_MEDIA_ELEMENTS, splitProductUsageConditions } from '@darun/products-domain/info';
 import {
   EditProductOnEditProductDescriptionDocument,
   TempProductBySlugOnEditProductDescriptionDocument,
@@ -96,7 +96,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const hasCurrentDescription = Boolean(product && !descriptionError);
   const descriptionReady = hasCurrentDescription || conflict !== null;
   const description = product?.description ?? null;
-  const formDescription = description ?? '';
+  const { body: formDescription, block: usageConditionsBlock } = splitProductUsageConditions(description ?? '');
   const sourceRef = useRef({ slug, description });
   const lastObservedSourceRef = useRef({ slug, description });
   const productSessionRef = useRef({ slug });
@@ -125,7 +125,9 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
   const resetDraft = useCallback(
     (pendingDescription: string | null) => {
       sourceRef.current = { slug, description: pendingDescription };
-      const savedValues = { description: pendingDescription ?? '' };
+      const savedValues = {
+        description: splitProductUsageConditions(pendingDescription ?? '').body,
+      };
       setInitialValues(savedValues);
       setValues(savedValues);
       resetDirty(savedValues);
@@ -143,7 +145,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     if (productSessionRef.current.slug !== slug) {
       productSessionRef.current = { slug };
       resetDraft(description);
-    } else if (getValues().description === (sourceRef.current.description ?? '')) {
+    } else if (getValues().description === splitProductUsageConditions(sourceRef.current.description ?? '').body) {
       resetDraft(description);
     } else {
       setHasObservedChange(description !== sourceRef.current.description);
@@ -246,6 +248,7 @@ export function useEditProductDescription({ slug, onSaved, onSubmit, onCancel }:
     verificationPending,
     retryDescription: () => void refetch(),
     form,
+    usageConditionsBlock,
     submit,
     onCancel,
     hasServerChange,

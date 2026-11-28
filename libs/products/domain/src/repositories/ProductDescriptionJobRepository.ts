@@ -4,6 +4,7 @@ import type {
   ProductDescriptionJobSummary,
   ProductDescriptionJobStatus,
 } from '../entities/ProductDescriptionJobEntity';
+import type { ProductUsageConditionsSnapshot } from '../services/ProductUsageConditions';
 
 export const ProductDescriptionJobRepositoryToken = new Token<ProductDescriptionJobRepository>(
   'ProductDescriptionJobRepository'
@@ -18,6 +19,7 @@ export type UpdateProductDescriptionJobOptions = {
   baseDescriptionHash?: string | null;
   candidateDocument?: string | null;
   candidateHtml?: string | null;
+  usageConditions?: ProductUsageConditionsSnapshot | null;
   writerModel?: string | null;
   reviewerModel?: string | null;
   writerPromptVersion?: string | null;

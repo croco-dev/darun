@@ -1,12 +1,13 @@
 import 'reflect-metadata';
 import { HeaderMap, type ApolloServer } from '@apollo/server';
-import type { PostgresqlProductContentReviews } from '@darun/products-datasource';
+import type { PostgresqlProductContentReviews, PostgresqlProductUsageConditions } from '@darun/products-datasource';
 import { AuthRole, createAuthChecker, createServer } from '@darun/utils-apollo-server';
 import { createSentryApolloLogPlugin, sentryRequestRedaction } from '@darun/utils-sentry';
 import * as Sentry from '@sentry/node';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { AdminProductContentReviewsResolver } from '../src/app/graphql/AdminProductContentReviews.resolver';
+import { AdminProductUsageConditionsResolver } from '../src/app/graphql/AdminProductUsageConditions.resolver';
 
 const events: Sentry.Event[] = [];
 let server: ApolloServer;
@@ -19,6 +20,13 @@ beforeAll(async () => {
       });
     },
   } as PostgresqlProductContentReviews);
+  const conditions = new AdminProductUsageConditionsResolver({
+    async save({ items }) {
+      throw Object.assign(new Error(`Synthetic usage conditions storage failure: ${items[0].excerpt}`), {
+        params: items,
+      });
+    },
+  } as PostgresqlProductUsageConditions);
   Sentry.init({
     dsn: 'https://synthetic@telemetry.invalid/1',
     defaultIntegrations: false,
@@ -34,8 +42,8 @@ beforeAll(async () => {
   });
   server = createServer({
     options: {
-      resolvers: [AdminProductContentReviewsResolver],
-      container: { get: () => resolver },
+      resolvers: [AdminProductContentReviewsResolver, AdminProductUsageConditionsResolver],
+      container: { get: target => (target === AdminProductContentReviewsResolver ? resolver : conditions) },
       authChecker: createAuthChecker(),
     },
     config: { playground: false, plugins: [createSentryApolloLogPlugin()] },
@@ -112,3 +120,42 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
     }
   }
 );
+
+it.each(['variables', 'inline', 'default'] as const)('사용 조건의 %s 입력을 전송 전에 가린다', async encoding => {
+  const excerpt = `private-condition-${randomUUID()} 한글+`;
+  const input = {
+    productId: 'fixture-product',
+    items: [
+      {
+        statement: 'iOS 18에서 지원합니다.',
+        sourceUrl: 'https://example.com/help',
+        excerpt,
+        checkedOn: '2026-11-28',
+      },
+    ],
+  };
+  const literal = `{ productId: "fixture-product", items: [{statement: "iOS 18에서 지원합니다.", sourceUrl: "https://example.com/help", excerpt: ${JSON.stringify(excerpt)}, checkedOn: "2026-11-28"}] }`;
+  const body = {
+    query: `mutation UsageConditionsTelemetry${encoding === 'inline' ? '' : `($input: SaveAdminProductUsageConditionsInput!${encoding === 'default' ? ` = ${literal}` : ''})`} {
+      saved: saveAdminProductUsageConditions(input: ${encoding === 'inline' ? literal : '$input'}) { revision }
+    }`,
+    ...(encoding === 'variables' ? { variables: { input } } : {}),
+  };
+  events.length = 0;
+  await Sentry.withIsolationScope(async scope => {
+    scope.addEventProcessor(event => ({ ...event, request: { method: 'POST', data: body } }));
+    const headers = new HeaderMap();
+    headers.set('content-type', 'application/json');
+    const response = await server.executeHTTPGraphQLRequest({
+      httpGraphQLRequest: { method: 'POST', headers, search: '', body },
+      context: async () => ({ getRoles: async () => [AuthRole.Admin], getUserIdOrThrow: async () => 'fixture-editor' }),
+    });
+    if (response.body.kind !== 'complete') throw new Error('Expected a complete GraphQL response');
+    expect(JSON.parse(response.body.string).errors[0].extensions.code).toBe('INTERNAL_SERVER_ERROR');
+    await Sentry.flush(2000);
+  });
+  expect(events).toHaveLength(1);
+  expect(events[0].extra?.query).toContain('UsageConditionsTelemetry');
+  expect(events[0].exception?.values?.[0].value).toContain('Synthetic usage conditions storage failure');
+  expect(JSON.stringify(events[0])).not.toContain(excerpt);
+});

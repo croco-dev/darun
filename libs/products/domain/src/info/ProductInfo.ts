@@ -1,4 +1,11 @@
 const PRODUCT_INFO_MAX_LENGTH = 255;
+export {
+  MAX_PRODUCT_USAGE_CONDITIONS,
+  MAX_PRODUCT_USAGE_EXCERPT_LENGTH,
+  MAX_PRODUCT_USAGE_SOURCE_URL_LENGTH,
+  MAX_PRODUCT_USAGE_STATEMENT_LENGTH,
+  splitProductUsageConditions,
+} from './ProductDescriptionConditions';
 export const PRODUCT_DESCRIPTION_MEDIA_ELEMENTS = ['img', 'video', 'iframe', 'table', 'hr'] as const;
 
 export function getProductInfoLengthError(field: 'name' | 'summary', value: string | undefined): string | null {

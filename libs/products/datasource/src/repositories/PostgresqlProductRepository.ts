@@ -10,6 +10,7 @@ import {
   productUpdateFailed,
   productSlugAlreadyExists,
 } from '@darun/products-domain';
+import { splitProductUsageConditions } from '@darun/products-domain/info';
 import { Drizzle } from '@darun/provider-database';
 import { DrizzleToken } from '@darun/provider-database';
 import DataLoader from 'dataloader';
@@ -234,11 +235,18 @@ export class PostgresqlProductRepository implements ProductRepository {
         throw productNotFound();
       }
 
+      const nextProduct = modifier(prevProduct);
       const updated = await tx
         .update(products)
-        .set({ ...modifier(prevProduct), updatedAt: new Date() })
+        .set({ ...nextProduct, updatedAt: new Date() })
         .where(eq(products.id, id))
-        .returning();
+        .returning()
+        .catch((error: unknown) => {
+          if (splitProductUsageConditions(nextProduct.description ?? '').block) {
+            throw new Error('Could not update product content');
+          }
+          throw error;
+        });
       if (!updated[0]) {
         throw productUpdateFailed();
       }

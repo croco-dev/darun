@@ -1,3 +1,5 @@
+import type { ProductUsageConditionsSnapshot } from '../services/ProductUsageConditions';
+
 export type ProductDescriptionJobStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'superseded';
 
 export type ProductDescriptionJobEntity = {
@@ -11,6 +13,7 @@ export type ProductDescriptionJobEntity = {
   baseDescriptionHash?: string | null;
   candidateDocument?: string | null;
   candidateHtml?: string | null;
+  usageConditions?: ProductUsageConditionsSnapshot | null;
   writerModel?: string | null;
   reviewerModel?: string | null;
   writerPromptVersion?: string | null;
@@ -28,4 +31,7 @@ export type ProductDescriptionJobEntity = {
   updatedAt: Date;
 };
 
-export type ProductDescriptionJobSummary = Omit<ProductDescriptionJobEntity, 'candidateDocument' | 'candidateHtml'>;
+export type ProductDescriptionJobSummary = Omit<
+  ProductDescriptionJobEntity,
+  'candidateDocument' | 'candidateHtml' | 'usageConditions'
+>;

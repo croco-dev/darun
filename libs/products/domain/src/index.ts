@@ -1,4 +1,10 @@
 export { Product } from './entities/Product';
+export {
+  escapeHtml,
+  normalizeProductUsageConditions,
+  type ProductUsageCondition,
+  type ProductUsageConditionsSnapshot,
+} from './services/ProductUsageConditions';
 export type { VisualSaveCursor } from './repositories/VisualSaveCursor';
 export { ProductFeature } from './entities/ProductFeature';
 export { ProductFeatureScreenshot } from './entities/ProductFeatureScreenshot';

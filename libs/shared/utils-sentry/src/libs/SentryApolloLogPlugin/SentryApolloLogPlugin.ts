@@ -91,9 +91,11 @@ function redactSensitiveArguments(document: DocumentNode, variables?: Record<str
       const fieldName = field && 'kind' in field && field.kind === Kind.FIELD ? field.name.value : undefined;
       const privateJobCursor = node.name.value === 'after' && fieldName && ADMIN_JOB_PAGE_FIELDS.has(fieldName);
       const privateReview = node.name.value === 'input' && fieldName === 'recordAdminProductContentReview';
+      const privateConditions = node.name.value === 'input' && fieldName === 'saveAdminProductUsageConditions';
       if (
         !privateJobCursor &&
         !privateReview &&
+        !privateConditions &&
         !Object.prototype.hasOwnProperty.call(SECRET_ARGUMENTS, node.name.value)
       )
         return;
@@ -467,7 +469,9 @@ export const sentryRequestRedaction = {
 
 export const createSentryApolloLogPlugin = ({
   ignoredDomainErrorCodes = [],
-}: { ignoredDomainErrorCodes?: readonly string[] } = {}): ApolloServerPlugin => ({
+}: {
+  ignoredDomainErrorCodes?: readonly string[];
+} = {}): ApolloServerPlugin => ({
   requestDidStart: async () => ({
     didEncounterErrors: async ctx => {
       if (!ctx.operation || !ctx.document) {

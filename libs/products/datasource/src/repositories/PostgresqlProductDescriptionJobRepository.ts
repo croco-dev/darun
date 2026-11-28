@@ -76,11 +76,12 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
       ...this.toSummary(row),
       candidateDocument: row.candidateDocument,
       candidateHtml: row.candidateHtml,
+      usageConditions: row.usageConditions,
     };
   }
 
   private toSummary(
-    row: Omit<ProductDescriptionJobRow, 'candidateDocument' | 'candidateHtml' | 'requestKey'>
+    row: Omit<ProductDescriptionJobRow, 'candidateDocument' | 'candidateHtml' | 'requestKey' | 'usageConditions'>
   ): ProductDescriptionJobSummary {
     return {
       id: row.id,
@@ -156,7 +157,9 @@ export class PostgresqlProductDescriptionJobRepository implements ProductDescrip
 
   /** Lease scheduling compares against the database clock, not the worker clock. */
   private async dbNow(tx: JobDbTx): Promise<Date> {
-    const rows = (await tx.execute(sql`select clock_timestamp() as "now"`)) as { now: Date | string }[];
+    const rows = (await tx.execute(sql`select clock_timestamp() as "now"`)) as {
+      now: Date | string;
+    }[];
     const raw = rows[0]?.now;
     return raw instanceof Date ? raw : new Date(raw!);
   }

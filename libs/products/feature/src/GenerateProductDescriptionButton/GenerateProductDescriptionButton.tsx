@@ -1,5 +1,6 @@
 'use client';
 
+import { splitProductUsageConditions } from '@darun/products-domain/info';
 import { Button, RefreshCw, Sparkles } from '@darun/ui';
 import { AdminInput, AdminModal } from '@darun/ui-admin';
 import DOMPurify from 'dompurify';
@@ -10,6 +11,7 @@ interface GenerateProductDescriptionButtonProps {
   descriptionJobId?: string;
   onJobChange?: (id: string) => void;
   onSaved?: (productId: string) => void;
+  onEditUsageConditions?: () => void;
 }
 
 export function GenerateProductDescriptionButton({
@@ -17,6 +19,7 @@ export function GenerateProductDescriptionButton({
   descriptionJobId,
   onJobChange,
   onSaved,
+  onEditUsageConditions,
 }: GenerateProductDescriptionButtonProps) {
   const {
     handleGenerate,
@@ -32,6 +35,7 @@ export function GenerateProductDescriptionButton({
     handleReopenJob,
     staleApplyNotice,
   } = useGenerateProductDescriptionButton(slug, descriptionJobId, onJobChange, onSaved);
+  const { body, block } = splitProductUsageConditions(candidateJob?.candidateHtml ?? '');
 
   const handleClick = () => {
     handleGenerate().catch(() => {});
@@ -79,12 +83,34 @@ export function GenerateProductDescriptionButton({
           )}
 
           {isPreviewOpen && (
-            <div
-              className="max-h-[60vh] overflow-y-auto rounded-lg border border-dark-200 bg-surface-50 p-4 text-sm text-dark-800"
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(candidateJob?.candidateHtml ?? ''),
-              }}
-            />
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto rounded-lg border border-dark-200 bg-surface-50 p-4 text-sm text-dark-800 [overflow-wrap:anywhere]">
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }} />
+              {block && (
+                <div className="space-y-2 border-t border-dark-200 pt-3 [&_a]:underline [&_a]:underline-offset-2">
+                  <p className="text-xs font-semibold text-dark-600">생성 당시 편집자가 작성한 문구</p>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(block),
+                    }}
+                  />
+                  {onEditUsageConditions && (
+                    <Button
+                      type="button"
+                      variant="base"
+                      color="secondary"
+                      size="sm"
+                      disabled={isApplying}
+                      onClick={() => {
+                        closePreview();
+                        onEditUsageConditions();
+                      }}
+                    >
+                      사용 조건 편집
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           <div className="flex justify-end gap-2 pt-2 border-t border-dark-200">

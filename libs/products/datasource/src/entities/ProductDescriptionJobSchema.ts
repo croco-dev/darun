@@ -1,4 +1,5 @@
-import { index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import type { ProductUsageConditionsSnapshot } from '@darun/products-domain';
+import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 export const productDescriptionJobs = pgTable(
   'product_description_jobs',
@@ -16,6 +17,7 @@ export const productDescriptionJobs = pgTable(
     baseDescriptionHash: text('base_description_hash'),
     candidateDocument: text('candidate_document'),
     candidateHtml: text('candidate_html'),
+    usageConditions: jsonb('usage_conditions_snapshot').$type<ProductUsageConditionsSnapshot>(),
     writerModel: text('writer_model'),
     reviewerModel: text('reviewer_model'),
     writerPromptVersion: text('writer_prompt_version'),
