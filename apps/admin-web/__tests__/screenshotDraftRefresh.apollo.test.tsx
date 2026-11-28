@@ -288,6 +288,20 @@ it.each(['retry', 're-entry'])('reads again through %s when only the post-save r
   expect(orderWrites).toHaveLength(1);
 });
 
+it('keeps unsaved metadata while a failed post-order lookup hides and then refreshes the list', async () => {
+  const { queries } = mountSection(['A', 'B', 'C']);
+  await editA(queries);
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await finishQuery(queries, true);
+  await waitFor(() => expect(screen.queryByRole('list', { name: '스크린샷 순서' })).toBeNull());
+
+  fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
+  await finishQuery(queries);
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expectDraft();
+});
+
 it('refreshes the reopened gallery if an earlier retained read of the saved order fails', async () => {
   const { queries, orderWrites, section, view } = mountSection(['A', 'B', 'C']);
   await finishQuery(queries);

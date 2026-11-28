@@ -117,12 +117,31 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
           queueProductScreenshotRefresh(
             client,
             productSlug,
-            () =>
-              client.query({
-                query: GetProductScreenshotsOnDetailSectionDocument,
-                variables: { slug: productSlug },
-                fetchPolicy: 'network-only',
-              }),
+            async () => {
+              const activeReads = client.refetchQueries({
+                include: [GetProductScreenshotsOnDetailSectionDocument],
+                onQueryUpdated(query) {
+                  if (query.variables['slug'] !== productSlug) return false;
+                  // Replace an active pre-commit read so it cannot publish its older snapshot.
+                  return query
+                    .reobserve({
+                      fetchPolicy: 'network-only',
+                      nextFetchPolicy: query.options.nextFetchPolicy ?? query.options.fetchPolicy,
+                      context: { ...query.options.context, queryDeduplication: false },
+                    })
+                    .retain();
+                },
+              });
+              if (activeReads.queries.length > 0) await activeReads;
+              else {
+                await client.query({
+                  query: GetProductScreenshotsOnDetailSectionDocument,
+                  variables: { slug: productSlug },
+                  fetchPolicy: 'network-only',
+                  context: { queryDeduplication: false },
+                });
+              }
+            },
             productId
           );
         if (!mounted.current) {

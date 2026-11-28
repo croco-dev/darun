@@ -79,7 +79,7 @@ function fixture(holdWrites = false, failures = 0) {
                       }
                     : {
                         addProductScreenshot: {
-                          product: { id: 'product-1', screenshots: [] },
+                          product: { id: 'product-1' },
                         },
                       },
             });
@@ -280,7 +280,7 @@ describe.each(cases)('$name upload lifetime', c => {
     expect(notifications.show).not.toHaveBeenCalled();
   });
 
-  it('ignores a late saved mutation response after the form has unmounted', async () => {
+  it('does not navigate or notify after a late saved mutation response', async () => {
     upload.mockResolvedValue('https://fixture.invalid/uploaded.png');
     const f = fixture(true);
     const { result, unmount } = renderHook(c.useForm, { wrapper: f.wrapper });
@@ -294,7 +294,11 @@ describe.each(cases)('$name upload lifetime', c => {
       f.completeWrites[0]();
       await submitted;
     });
-    expect(f.operations).toEqual([c.operation]);
+    expect(f.operations).toEqual(
+      c.operation === 'AddProductScreenshotOnNewProductScreenshotForm'
+        ? [c.operation, 'GetProductScreenshotsOnDetailSection']
+        : [c.operation]
+    );
     expect(navigate).not.toHaveBeenCalled();
     expect(notifications.show).not.toHaveBeenCalled();
   });

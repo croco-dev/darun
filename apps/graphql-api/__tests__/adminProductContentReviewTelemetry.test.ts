@@ -78,7 +78,7 @@ afterAll(async () => {
   await Sentry.close(2000);
 });
 
-it.each(['variables', 'inline', 'default', 'field defaults', 'overlapping defaults'] as const)(
+it.each(['variables', 'inline', 'default', 'field defaults', 'overlapping defaults', 'overlapping variables'] as const)(
   '검토 기록 %s 입력을 전송 전에 가린다',
   async encoding => {
     const memo = `private-review-${randomUUID()} 한글+`;
@@ -90,8 +90,8 @@ it.each(['variables', 'inline', 'default', 'field defaults', 'overlapping defaul
       memo: `  ${memo}\n`,
       referenceUrl: ` ${referenceUrl}\t`,
     };
-    const overlaps = encoding === 'overlapping defaults';
-    const nestedVariables = encoding === 'field defaults' || overlaps;
+    const overlaps = encoding === 'overlapping defaults' || encoding === 'overlapping variables';
+    const nestedVariables = encoding === 'field defaults' || encoding === 'overlapping defaults';
     const memoArgument = nestedVariables ? '$memo' : JSON.stringify(input.memo);
     const urlArgument = nestedVariables ? '$url' : JSON.stringify(input.referenceUrl);
     const literal = `{ productId: "fixture", expectedRevision: "7", requestId: "${input.requestId}", memo: ${memoArgument}, referenceUrl: ${urlArgument} }`;
@@ -101,15 +101,18 @@ it.each(['variables', 'inline', 'default', 'field defaults', 'overlapping defaul
       : encoding === 'inline'
         ? ''
         : `($review: RecordAdminProductContentReviewInput!${encoding === 'default' ? ` = ${literal}` : ''})`;
+    const otherVariable = nestedVariables ? '$memo' : '$review';
     const unselectedOperation = overlaps
-      ? 'mutation Other($memo: ID! = 71358129) { reorderProductScreenshots(productId: $memo, orderedIds: [], expectedOrderIds: []) }'
+      ? `mutation Other(${otherVariable}: ID! = 71358129) {
+          reorderProductScreenshots(productId: ${otherVariable}, orderedIds: [], expectedOrderIds: [])
+        }`
       : '';
     const body = {
       query: `mutation ReviewTelemetry${declaration} {
       recorded: recordAdminProductContentReview(input: ${literalInput ? literal : '$review'}) { id }
     } ${unselectedOperation}`,
       ...(overlaps && { operationName: 'ReviewTelemetry' }),
-      ...(encoding === 'variables' ? { variables: { review: input } } : {}),
+      ...((encoding === 'variables' || encoding === 'overlapping variables') && { variables: { review: input } }),
     };
     events.length = 0;
     const url = 'http://127.0.0.1:7017/graphql';
@@ -192,6 +195,23 @@ it('drops diagnostics for malformed inline screenshot ID objects', () => {
   };
   expect(sentryRequestRedaction.beforeSend({ request })).toBeNull();
   expect(sentryRequestRedaction.beforeSendTransaction({ request, type: 'transaction' })).toBeNull();
+});
+
+it('keeps the public coercion error and drops diagnostics for an invalid numeric ID variable', async () => {
+  const query = `mutation ScreenshotOrder($product: ID!) {
+    reorderProductScreenshots(productId: $product, orderedIds: [], expectedOrderIds: [])
+  }`;
+  const variables = { product: 71358.129 };
+  events.length = 0;
+  const response = await server.executeOperation(
+    { query, variables },
+    { contextValue: { getRoles: async () => [AuthRole.Admin] } }
+  );
+  if (response.body.kind !== 'single') throw new Error('Expected a single GraphQL response');
+  expect(response.body.singleResult.errors?.[0]?.extensions?.code).toBe('BAD_USER_INPUT');
+  await Sentry.flush(2000);
+  expect(events).toHaveLength(0);
+  expect(sentryRequestRedaction.beforeSend({ request: { method: 'POST', data: { query, variables } } })).toBeNull();
 });
 
 it.each([

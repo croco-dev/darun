@@ -657,8 +657,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         )}
         {loading && !data ? (
           <AdminLoadingState />
-        ) : hideUnverifiedOrder ||
-          ((!data || (error && screenshots.length === 0)) && !draft) ? null : displayedScreenshots.length === 0 ? (
+        ) : (!data || (error && screenshots.length === 0)) && !draft ? null : displayedScreenshots.length === 0 ? (
           <AdminEmptyState
             title="등록된 스크린샷이 없습니다."
             description="서비스의 주요 기능 및 화면을 보여주는 스크린샷을 등록해 보세요."
@@ -677,7 +676,11 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
             }
           />
         ) : (
-          <ol className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3" aria-label="스크린샷 순서">
+          <ol
+            hidden={hideUnverifiedOrder}
+            className={hideUnverifiedOrder ? 'hidden' : 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3'}
+            aria-label="스크린샷 순서"
+          >
             {displayedScreenshots.map((screenshot, index) => (
               <li
                 key={screenshot.id}

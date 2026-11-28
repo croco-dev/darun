@@ -1,6 +1,15 @@
 import { ApolloServerPlugin } from '@apollo/server';
 import * as Sentry from '@sentry/node';
-import { Kind, parse, print, visit, type DocumentNode, type ValueNode } from 'graphql';
+import {
+  Kind,
+  parse,
+  print,
+  separateOperations,
+  visit,
+  type DefinitionNode,
+  type DocumentNode,
+  type ValueNode,
+} from 'graphql';
 
 const SECRET_ARGUMENTS: Record<string, true> = { apiKey: true, braveApiKey: true, exclusionNote: true };
 const PRIVATE_REVIEW_FIELDS = ['memo', 'referenceUrl'] as const;
@@ -27,8 +36,10 @@ const createScreenshotOrderBudget = () => ({ ids: 0, characters: 0, exceeded: fa
 function redactSensitiveArguments(
   document: DocumentNode,
   variables: Record<string, unknown> | undefined,
-  screenshotOrderBudget: ReturnType<typeof createScreenshotOrderBudget>
+  screenshotOrderBudget: ReturnType<typeof createScreenshotOrderBudget>,
+  operationName?: string
 ) {
+  const activeDefinitions = operationName ? new Set(separateOperations(document)[operationName]?.definitions) : null;
   const secretVariables = new Set<string>();
   const reviewInputVariables = new Set<string>();
   const reviewFieldVariables = new Set<string>();
@@ -63,7 +74,7 @@ function redactSensitiveArguments(
     for (const raw of ids) {
       const id = typeof raw === 'number' && Number.isInteger(raw) ? String(raw) : raw;
       if (typeof id !== 'string') {
-        if (id && typeof id === 'object') {
+        if (id != null) {
           screenshotOrderBudget.exceeded = true;
           return;
         }
@@ -81,7 +92,12 @@ function redactSensitiveArguments(
   // Literal collection walks the original value node: the JS object conversion
   // collapses duplicate ObjectFields to their last value, drops nested Variable
   // fields entirely, and would lose the earlier secret before redaction runs.
-  const collectLiteralOccurrences = (value: ValueNode, collectValue = collectSecret, screenshotOrder = false) => {
+  const collectLiteralOccurrences = (
+    value: ValueNode,
+    collectValue = collectSecret,
+    screenshotOrder = false,
+    collectVariables = true
+  ) => {
     visit(value, {
       ObjectValue() {
         if (!screenshotOrder) return;
@@ -105,10 +121,16 @@ function redactSensitiveArguments(
           screenshotOrderBudget.integers.add(integer);
         }
       },
+      FloatValue() {
+        if (screenshotOrder) screenshotOrderBudget.exceeded = true;
+      },
+      BooleanValue() {
+        if (screenshotOrder) screenshotOrderBudget.exceeded = true;
+      },
       Variable(node) {
         secretVariables.add(node.name.value);
         if (screenshotOrder) screenshotOrderVariables.add(node.name.value);
-        collectValue(variables?.[node.name.value]);
+        if (collectVariables) collectValue(variables?.[node.name.value]);
       },
     });
   };
@@ -153,7 +175,9 @@ function redactSensitiveArguments(
       )
         return;
       if (privateScreenshotOrder) {
-        collectLiteralOccurrences(node.value, collectScreenshotOrderId, true);
+        const inActiveOperation =
+          !activeDefinitions || ancestors.some(ancestor => activeDefinitions.has(ancestor as DefinitionNode));
+        collectLiteralOccurrences(node.value, collectScreenshotOrderId, true, inActiveOperation);
       } else if (node.value.kind === Kind.VARIABLE) {
         secretVariables.add(node.value.name.value);
         const value = variables?.[node.value.name.value];
@@ -476,7 +500,9 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T | n
         ? (body.variables as Record<string, unknown>)
         : undefined;
     try {
-      const redacted = redactSensitiveArguments(parse(body.query), variables, screenshotOrderBudget);
+      const operationName =
+        'operationName' in body && typeof body.operationName === 'string' ? body.operationName : undefined;
+      const redacted = redactSensitiveArguments(parse(body.query), variables, screenshotOrderBudget, operationName);
       for (const secret of redacted.secrets) secrets.add(secret);
       for (const name of redacted.propertyNames) propertyNames.add(name);
     } catch {
@@ -493,7 +519,7 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T | n
     } catch {
       // Apollo rejects malformed variables; the original search is never sent.
     }
-    collectOperation({ query, variables });
+    collectOperation({ query, variables, operationName: params.get('operationName') });
   };
   const collect = (value: unknown): void => {
     if (screenshotOrderBudget.exceeded) return;
@@ -559,7 +585,12 @@ export const createSentryApolloLogPlugin = ({
 
       // Use Apollo's parsed document, not variable names or field aliases supplied by clients.
       const screenshotOrderBudget = createScreenshotOrderBudget();
-      const redacted = redactSensitiveArguments(ctx.document, ctx.request.variables, screenshotOrderBudget);
+      const redacted = redactSensitiveArguments(
+        ctx.document,
+        ctx.request.variables,
+        screenshotOrderBudget,
+        ctx.operation.name?.value
+      );
       if (screenshotOrderBudget.exceeded) return;
       const { redactText, redactKey, redactSpanCookieName } = createCredentialRedactors(
         redacted.secrets,
