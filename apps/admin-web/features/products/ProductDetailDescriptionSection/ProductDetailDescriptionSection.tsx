@@ -9,6 +9,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useCallback } from 'react';
 import { DraftPreview } from '../../content/DraftPreview';
 import { useRefreshTranslationFreshness } from '../../llm-jobs/useRefreshTranslationFreshness';
+import { ProductUsageConditionsModal } from './ProductUsageConditionsModal';
 
 type ProductDetailDescriptionSectionProps = {
   slug: string;
@@ -16,6 +17,7 @@ type ProductDetailDescriptionSectionProps = {
 
 export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescriptionSectionProps) => {
   const [isEditModalOpened, { open: openEditModal, close: closeEditModal }] = useDisclosure(false);
+  const [isConditionsModalOpened, { open: openConditionsModal, close: closeConditionsModal }] = useDisclosure(false);
   const refreshTranslation = useRefreshTranslationFreshness();
   const refreshProductTranslation = (productId: string) => refreshTranslation({ productId });
   const router = useRouter();
@@ -44,7 +46,11 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
                 descriptionJobId={descriptionJobId}
                 onJobChange={onJobChange}
                 onSaved={refreshProductTranslation}
+                onEditUsageConditions={openConditionsModal}
               />
+              <Button type="button" onClick={openConditionsModal} variant="contained" color="secondary" size="sm">
+                사용 조건 편집
+              </Button>
               <Button
                 type="button"
                 onClick={openEditModal}
@@ -65,6 +71,7 @@ export const ProductDetailDescriptionSection = ({ slug }: ProductDetailDescripti
           <ProductDescription slug={slug} />
         </AdminSectionBody>
       </AdminPanel>
+      {isConditionsModalOpened && <ProductUsageConditionsModal slug={slug} onClose={closeConditionsModal} />}
       <AdminModal opened={isEditModalOpened} onClose={closeEditModal} title="설명 수정">
         <EditProductDescription
           slug={slug}

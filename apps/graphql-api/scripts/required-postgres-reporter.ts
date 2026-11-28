@@ -22,6 +22,7 @@ const groups = {
     '__tests__/productDetailFreshness.pg.test.ts': 'PRODUCT_DETAIL_TEST_DATABASE_URL',
     '__tests__/adminJobHistory.pg.test.ts': 'ADMIN_JOB_HISTORY_TEST_DATABASE_URL',
     '__tests__/adminProductContentReview.pg.test.ts': 'PRODUCT_CONTENT_REVIEW_TEST_DATABASE_URL',
+    '__tests__/adminProductUsageConditions.pg.test.ts': 'PRODUCT_USAGE_CONDITIONS_TEST_DATABASE_URL',
     '__tests__/adminProductFlowPagination.pg.test.ts': 'ADMIN_FLOW_TEST_DATABASE_URL',
     '__tests__/screenshotFlowPagination.pg.test.ts': 'RELATED_FLOW_TEST_DATABASE_URL',
   },

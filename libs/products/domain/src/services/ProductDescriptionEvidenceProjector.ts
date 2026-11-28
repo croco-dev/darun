@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { BlockList, isIP } from 'node:net';
+import type { ProductUsageConditionsSnapshot } from './ProductUsageConditions';
 
 export type ProductDescriptionEvidenceItem =
   | {
@@ -70,6 +71,7 @@ export type ProductDescriptionEvidence = {
 export type ProductDescriptionEvidenceHashVersion = 'v2';
 
 export type AssembledProductDescriptionEvidence = {
+  usageConditions?: ProductUsageConditionsSnapshot | null;
   evidence: ProductDescriptionEvidence;
   evidenceHashVersion: ProductDescriptionEvidenceHashVersion;
   /** v2 canonical 입력의 sha256. */
@@ -189,6 +191,7 @@ export type ProductDescriptionEvidenceSources = {
     name: string;
     summary: string;
     description: string;
+    usageConditions?: ProductUsageConditionsSnapshot | null;
     categoryIds: string[];
   };
   /** product.categoryIds 순서와 1:1로 정렬된 category 조회 결과. 행 부재는 null. */
@@ -373,6 +376,7 @@ export function projectProductDescriptionEvidence(
       items,
     },
     evidenceHashVersion: 'v2',
+    usageConditions: sources.product.usageConditions,
     evidenceHash: computeSha256(JSON.stringify(canonicalEvidenceData)),
     legacyEvidenceHash: computeSha256(JSON.stringify(legacyCanonicalEvidenceData)),
     baseDescriptionHash: `document:v1:${computeSha256((sources.product.description || '').replace(/\r\n/g, '\n'))}`,

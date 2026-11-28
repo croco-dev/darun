@@ -2,6 +2,11 @@ import { Inject, Service } from 'typedi';
 import { Product } from '../entities/Product';
 import { productDescriptionEditConflict } from '../errors/productDescriptionError';
 import { productInvalidArgs } from '../errors/productError';
+import {
+  splitProductUsageConditions,
+  USAGE_CONDITIONS_HTML_END,
+  USAGE_CONDITIONS_HTML_START,
+} from '../info/ProductDescriptionConditions';
 import { getProductInfoLengthError } from '../info/ProductInfo';
 import type { ProductRepository } from '../repositories/ProductRepository';
 import { ProductRepositoryToken } from '../repositories/ProductRepository';
@@ -25,7 +30,7 @@ export class EditProduct {
     id: string;
     name?: string;
     summary?: string;
-    description?: string;
+    description?: string | null;
     expectedDescriptionHash?: string | null;
     logoUrl?: string;
   }): Promise<Product> {
@@ -38,10 +43,20 @@ export class EditProduct {
         if (currentHash !== expectedDescriptionHash) throw productDescriptionEditConflict();
       }
 
+      let nextDescription = description;
+      if (description !== undefined) {
+        const { block } = splitProductUsageConditions(product.description ?? '');
+        const body = block && description?.endsWith(block) ? description.slice(0, -block.length) : description;
+        if (body?.includes(USAGE_CONDITIONS_HTML_START.trim()) || body?.includes(USAGE_CONDITIONS_HTML_END.trim())) {
+          throw productInvalidArgs('사용 조건은 전용 편집 화면에서 수정해 주세요.');
+        }
+        nextDescription = block ? (body ?? '') + block : body;
+      }
+
       product.update({
         name,
         summary,
-        description,
+        description: nextDescription,
         logoUrl,
       });
 

@@ -1,15 +1,13 @@
-import { safeReaderFacingUrl, type EvidenceBackedText, type ProductDescriptionDocument } from '@darun/products-domain';
+import {
+  escapeHtml,
+  safeReaderFacingUrl,
+  type EvidenceBackedText,
+  type ProductDescriptionDocument,
+} from '@darun/products-domain';
+
+export { escapeHtml };
 
 export const PRODUCT_DESCRIPTION_RENDERER_VERSION = 'v3';
-
-export function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 export function formatEditorByline(date: Date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-US', {

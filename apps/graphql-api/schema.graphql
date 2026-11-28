@@ -151,6 +151,27 @@ type AdminProductResearchJobSummary {
   status: String!
 }
 
+type AdminProductUsageCondition {
+  checkedOn: String!
+  excerpt: String!
+  sourceUrl: String!
+  statement: String!
+}
+
+input AdminProductUsageConditionInput {
+  checkedOn: String!
+  excerpt: String!
+  sourceUrl: String!
+  statement: String!
+}
+
+type AdminProductUsageConditions {
+  editorId: ID
+  items: [AdminProductUsageCondition!]!
+  productId: ID!
+  revision: String
+}
+
 type ApplyProductDescriptionCandidatePayload {
   alreadyApplied: Boolean!
   job: ProductDescriptionJob!
@@ -409,6 +430,7 @@ type Mutation {
   retryProductDescriptionJob(id: String!, requestId: String): ProductDescriptionJob!
   retryProductResearch(input: RetryProductResearchInput, jobId: String!): ProductResearchJob
   retryTranslationJob(id: String!): TranslationJob!
+  saveAdminProductUsageConditions(input: SaveAdminProductUsageConditionsInput!): AdminProductUsageConditions!
   setProductAlternativeExclusion(exclusionNote: String, input: SetProductAlternativeExclusionInput!): Boolean!
   setVisualFlowSave(input: SetVisualSaveInput!): SetVisualSavePayload!
   setVisualScreenshotSave(input: SetVisualSaveInput!): SetVisualSavePayload!
@@ -634,6 +656,7 @@ type Query {
   adminProductFlows(productSlug: String!): [VisualFlow!]!
   adminProductPublishReview(slug: String!): AdminProductPublishReview
   adminProductResearchJobs(after: String, first: Int! = 20): AdminProductResearchJobPage!
+  adminProductUsageConditions(slug: String!): AdminProductUsageConditions
   allCompanies(page: Int!): CompanyPagination!
   allProducts(after: String, before: String, first: Int, last: Int): ProductConnection!
   categories(first: Int!, locale: String! = "ko"): [Category!]!
@@ -757,6 +780,12 @@ input ReviewedResearchFeatureInput {
   emoji: String
   name: String!
   summary: String!
+}
+
+input SaveAdminProductUsageConditionsInput {
+  expectedRevision: String
+  items: [AdminProductUsageConditionInput!]!
+  productId: ID!
 }
 
 """제품 스크린샷"""

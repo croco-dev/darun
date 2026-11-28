@@ -9,10 +9,12 @@ import {
   type ProductDescriptionGenerator,
   ProductDescriptionGeneratorToken,
 } from '../services/ProductDescriptionGenerator';
+import { renderProductUsageConditions, type ProductUsageConditionsSnapshot } from '../services/ProductUsageConditions';
 
 export type GenerateProductDescriptionCandidateResult = {
   candidateDocument: ProductDescriptionDocument;
   candidateHtml: string;
+  usageConditions?: ProductUsageConditionsSnapshot | null;
   evidenceHashVersion: ProductDescriptionEvidenceHashVersion;
   evidenceHash: string;
   baseDescriptionHash: string;
@@ -52,14 +54,16 @@ export class GenerateProductDescriptionCandidate {
     if (
       currentSnapshot.evidenceHashVersion !== startSnapshot.evidenceHashVersion ||
       currentSnapshot.evidenceHash !== startSnapshot.evidenceHash ||
-      currentSnapshot.baseDescriptionHash !== startSnapshot.baseDescriptionHash
+      currentSnapshot.baseDescriptionHash !== startSnapshot.baseDescriptionHash ||
+      currentSnapshot.usageConditions?.revision !== startSnapshot.usageConditions?.revision
     ) {
       throw new Error('stale: 제품 정보가 생성 도중 변경되었습니다.');
     }
 
     return {
       candidateDocument: generationResult.document,
-      candidateHtml: generationResult.candidateHtml,
+      candidateHtml: generationResult.candidateHtml + renderProductUsageConditions(startSnapshot.usageConditions),
+      usageConditions: startSnapshot.usageConditions,
       evidenceHashVersion: startSnapshot.evidenceHashVersion,
       evidenceHash: startSnapshot.evidenceHash,
       baseDescriptionHash: startSnapshot.baseDescriptionHash,

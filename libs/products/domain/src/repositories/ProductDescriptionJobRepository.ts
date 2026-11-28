@@ -18,6 +18,7 @@ export type UpdateProductDescriptionJobOptions = {
   baseDescriptionHash?: string | null;
   candidateDocument?: string | null;
   candidateHtml?: string | null;
+  usageConditions?: ProductDescriptionJobEntity['usageConditions'];
   writerModel?: string | null;
   reviewerModel?: string | null;
   writerPromptVersion?: string | null;

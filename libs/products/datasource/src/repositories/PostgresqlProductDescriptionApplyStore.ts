@@ -63,7 +63,10 @@ export class PostgresqlProductDescriptionApplyStore implements ProductDescriptio
           .update(products)
           .set({ description: input.candidateHtml, updatedAt: new Date() })
           .where(eq(products.id, input.productId))
-          .returning();
+          .returning()
+          .catch(() => {
+            throw new Error('Could not write product description');
+          });
         if (!row) throw productNotFound();
         const checkpoint = await finishContentWrite();
         return toProduct({ ...row, ...checkpoint });

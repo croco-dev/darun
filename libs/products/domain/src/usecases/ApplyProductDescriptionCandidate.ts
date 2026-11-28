@@ -57,7 +57,11 @@ export class ApplyProductDescriptionCandidate {
           : job.evidenceHashVersion == null &&
             !snapshot.evidence.items.some(item => item.kind === 'link') &&
             snapshot.legacyEvidenceHash === job.evidenceHash;
-      if (!evidenceMatches || snapshot.baseDescriptionHash !== job.baseDescriptionHash) {
+      if (
+        !evidenceMatches ||
+        snapshot.baseDescriptionHash !== job.baseDescriptionHash ||
+        snapshot.usageConditions?.revision !== job.usageConditions?.revision
+      ) {
         throw productDescriptionStaleCandidate();
       }
       const updatedProduct = await store.applyLocked({ productId: product.id, candidateHtml: job.candidateHtml });

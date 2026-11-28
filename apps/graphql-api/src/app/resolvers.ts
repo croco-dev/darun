@@ -30,12 +30,14 @@ import { NonEmptyArray } from 'type-graphql';
 import { AdminProductContentReviewsResolver } from './graphql/AdminProductContentReviews.resolver';
 import { AdminProductPublishReviewFieldResolver } from './graphql/AdminProductPublishReview.field.resolver';
 import { AdminProductPublishReviewQueryResolver } from './graphql/AdminProductPublishReview.query.resolver';
+import { AdminProductUsageConditionsResolver } from './graphql/AdminProductUsageConditions.resolver';
 import { HealthResolver } from './graphql/Health.resolver';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export const resolvers: NonEmptyArray<Function> = [
   HealthResolver,
   AdminProductContentReviewsResolver,
+  AdminProductUsageConditionsResolver,
   AdminProductCategoriesResolver,
   AdminProductPublishReviewQueryResolver,
   AdminProductPublishReviewFieldResolver,

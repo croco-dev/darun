@@ -36,6 +36,7 @@ const EditProductDescriptionForm = bind(
     retryDescription,
     hasServerChange,
     latestDescription,
+    usageConditionsBlock,
     conflictRefresh,
     refreshAfterConflict,
     acceptLatestDescription,
@@ -67,6 +68,9 @@ const EditProductDescriptionForm = bind(
           <AdminEmptyState title="상품을 찾을 수 없습니다." />
         )}
       </div>
+      {usageConditionsBlock && (
+        <p className="mt-3 text-sm text-dark-600">사용 조건은 설명 화면의 ‘사용 조건 편집’에서 관리합니다.</p>
+      )}
       {!hasServerChange && (
         <ProductDescriptionVerification
           pending={verificationPending}
@@ -131,7 +135,7 @@ const EditProductDescriptionForm = bind(
       <AdminActions>
         {descriptionReady &&
           renderPreview?.(
-            () => normalizeProductDescriptionDraft(form.getValues().description ?? ''),
+            () => normalizeProductDescriptionDraft(form.getValues().description ?? '') + usageConditionsBlock,
             loading || imageUploading
           )}
         {onCancel && (

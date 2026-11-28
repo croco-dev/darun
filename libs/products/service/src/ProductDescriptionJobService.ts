@@ -120,7 +120,12 @@ export class ProductDescriptionJobService {
   async executeJob(
     jobId: string,
     productId: string,
-    options?: { leaseToken?: string; signal?: AbortSignal; stageBudgetMs?: number; deadline?: Date }
+    options?: {
+      leaseToken?: string;
+      signal?: AbortSignal;
+      stageBudgetMs?: number;
+      deadline?: Date;
+    }
   ): Promise<void> {
     const repository = this.productDescriptionJobRepository;
     const job = await repository.findJobById(jobId);
@@ -133,6 +138,7 @@ export class ProductDescriptionJobService {
     });
     if (!claim) return;
     let stageSignal: AbortSignal | undefined;
+    let savingUsageConditions = false;
 
     try {
       const candidateResult = await withAbortableStage(
@@ -152,11 +158,13 @@ export class ProductDescriptionJobService {
           message: '소개 생성 작업 실행 시간이 초과되었습니다.',
         }
       );
+      savingUsageConditions = Boolean(candidateResult.usageConditions);
       await repository.completeJobLease(jobId, leaseToken, 'completed', {
         error: null,
         message: 'AI 소개 생성이 완료되었습니다.',
         commitBefore: options?.deadline ? new Date(options.deadline.getTime() - JOB_COMMIT_MARGIN_MS) : undefined,
         candidateHtml: candidateResult.candidateHtml,
+        usageConditions: candidateResult.usageConditions,
         candidateDocument: JSON.stringify(candidateResult.candidateDocument),
         evidenceHash: candidateResult.evidenceHash,
         evidenceHashVersion: candidateResult.evidenceHashVersion,
@@ -169,7 +177,11 @@ export class ProductDescriptionJobService {
       });
     } catch (error) {
       if (stageSignal?.aborted || isAbortError(error) || options?.signal?.aborted) return;
-      const message = error instanceof Error ? error.message : '알 수 없는 오류';
+      const message = savingUsageConditions
+        ? '소개 후보를 저장하지 못했습니다.'
+        : error instanceof Error
+          ? error.message
+          : '알 수 없는 오류';
       if (isRetryableError(error)) {
         await repository.retryJobLease(jobId, leaseToken, message);
       } else {

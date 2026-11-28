@@ -3,7 +3,7 @@ export class Product {
   public name: string;
   public slug: string;
   public summary: string;
-  public description?: string;
+  public description?: string | null;
   public logoUrl: string;
   public publishedAt?: Date;
   public updatedAt?: Date;
@@ -26,7 +26,7 @@ export class Product {
     slug: string;
     name: string;
     summary: string;
-    description?: string;
+    description?: string | null;
     logoUrl: string;
     publishedAt?: Date;
     updatedAt?: Date;
@@ -61,7 +61,7 @@ export class Product {
   }: {
     name?: string;
     summary?: string;
-    description?: string;
+    description?: string | null;
     logoUrl?: string;
     categoryIds?: string[];
   }) {

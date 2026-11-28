@@ -1,5 +1,6 @@
+import type { ProductUsageConditionsSnapshot } from '@darun/products-domain';
 import { sql } from 'drizzle-orm';
-import { bigint, pgTable, varchar, timestamp, text, json } from 'drizzle-orm/pg-core';
+import { bigint, pgTable, varchar, timestamp, text, json, jsonb } from 'drizzle-orm/pg-core';
 import { ulid } from 'ulid';
 
 export const products = pgTable('products', {
@@ -11,6 +12,7 @@ export const products = pgTable('products', {
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   summary: varchar('summary', { length: 255 }).notNull(),
   description: text('description'),
+  usageConditions: jsonb('usage_conditions').$type<ProductUsageConditionsSnapshot>(),
   logoUrl: varchar('logo_url', { length: 255 }).notNull(),
   ownedCompanyId: varchar('owned_company_id', { length: 26 }),
   categoryIds: json('category_ids').$type<string[]>().notNull().default([]),
