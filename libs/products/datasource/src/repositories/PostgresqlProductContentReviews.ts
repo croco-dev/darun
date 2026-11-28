@@ -73,7 +73,15 @@ export class PostgresqlProductContentReviews {
 
   async history(productId: string, before: bigint | null) {
     const rows = await this.db
-      .select()
+      .select({
+        id: reviews.id,
+        reviewedRevision: reviews.reviewedRevision,
+        reviewerId: reviews.reviewerId,
+        reviewedAt: reviews.reviewedAt,
+        memo: reviews.memo,
+        referenceUrl: reviews.referenceUrl,
+        nextReviewOn: reviews.nextReviewOn,
+      })
       .from(reviews)
       .where(and(eq(reviews.productId, productId), before === null ? undefined : lt(reviews.id, before)))
       .orderBy(desc(reviews.id))

@@ -87,6 +87,7 @@ test('sibling transports invalidate the cached admin cancellation regression', (
       'apps/admin-web/__tests__/transportCancellation.test.ts',
       'apps/admin-web/app/container.ts',
       'apps/admin-web/features/llm-jobs/llmJobHistoryCompatibility.ts',
+      'apps/admin-web/features/products/productContentReviewRefreshLink.ts',
       'apps/service-web/app/container.ts',
       'apps/service-web/lib/seo/url.ts',
       'apps/visual-web/app/container.ts',

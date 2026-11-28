@@ -1,29 +1,12 @@
 'use client';
 
-import { gql } from '@apollo/client';
-import { useQuery } from '@apollo/client/react';
-import { AdminProductContentReviewInboxDocument, type AdminProductContentReviewFilter } from '@darun/provider-graphql';
+import type { AdminProductContentReviewFilter } from '@darun/provider-graphql';
 import { Button } from '@darun/ui';
 import { AdminPanel, AdminSectionBody } from '@darun/ui-admin';
 import { Link } from '@darun/utils-router';
-import { useState } from 'react';
+import { bind } from '@darun/utils-structure-react';
 import { ReviewStatus } from './ReviewStatus';
-
-gql`
-  query AdminProductContentReviewInbox($filter: AdminProductContentReviewFilter!, $after: String) {
-    adminProductContentReviewPage(filter: $filter, after: $after) {
-      items {
-        id
-        name
-        slug
-        status
-        due
-        nextReviewOn
-      }
-      nextCursor
-    }
-  }
-`;
+import { useProductContentReviewList } from './useProductContentReviewList';
 
 const filters: Record<AdminProductContentReviewFilter, string> = {
   ALL: '전체',
@@ -32,15 +15,21 @@ const filters: Record<AdminProductContentReviewFilter, string> = {
   DUE: '확인일 도래',
 };
 
-export function ProductContentReviewList() {
-  const [filter, setFilter] = useState<AdminProductContentReviewFilter>('ALL');
-  const [cursors, setCursors] = useState<string[]>([]);
-  const { data, loading, error, refetch } = useQuery(AdminProductContentReviewInboxDocument, {
-    variables: { filter, after: cursors[cursors.length - 1] ?? null },
-    fetchPolicy: 'no-cache',
-  });
-  const page = data?.adminProductContentReviewPage;
+export const ProductContentReviewList = bind(useProductContentReviewList, ProductContentReviewListView, {
+  displayName: 'ProductContentReviewList',
+});
 
+function ProductContentReviewListView({
+  filter,
+  page,
+  loading,
+  error,
+  pageNumber,
+  selectFilter,
+  retry,
+  previous,
+  next,
+}: ReturnType<typeof useProductContentReviewList>) {
   return (
     <AdminPanel>
       <AdminSectionBody>
@@ -52,10 +41,7 @@ export function ProductContentReviewList() {
                 type="radio"
                 name="review-filter"
                 checked={filter === value}
-                onChange={() => {
-                  setFilter(value);
-                  setCursors([]);
-                }}
+                onChange={() => selectFilter(value)}
               />
               {filters[value]}
             </label>
@@ -67,7 +53,7 @@ export function ProductContentReviewList() {
           ) : error ? (
             <p className="py-4">
               검토 대상을 불러오지 못했습니다.{' '}
-              <Button type="button" size="sm" onClick={() => void refetch().catch(() => {})}>
+              <Button type="button" size="sm" onClick={retry}>
                 다시 조회
               </Button>
             </p>
@@ -101,23 +87,11 @@ export function ProductContentReviewList() {
           aria-label="서비스 검토 목록 페이지"
           className="flex flex-wrap items-center gap-3 border-t border-dark-200 pt-3"
         >
-          <Button
-            type="button"
-            size="sm"
-            disabled={loading || !cursors.length}
-            onClick={() => setCursors(current => current.slice(0, -1))}
-          >
+          <Button type="button" size="sm" disabled={loading || pageNumber === 1} onClick={previous}>
             이전 페이지
           </Button>
-          <span>{cursors.length + 1} 페이지</span>
-          <Button
-            type="button"
-            size="sm"
-            disabled={loading || Boolean(error) || !page?.nextCursor}
-            onClick={() => {
-              if (page?.nextCursor) setCursors([...cursors, page.nextCursor]);
-            }}
-          >
+          <span>{pageNumber} 페이지</span>
+          <Button type="button" size="sm" disabled={loading || Boolean(error) || !page?.nextCursor} onClick={next}>
             다음 페이지
           </Button>
         </nav>
