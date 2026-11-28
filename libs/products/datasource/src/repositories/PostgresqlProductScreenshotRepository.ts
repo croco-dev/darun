@@ -210,15 +210,23 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
     return docs.map(toDomain);
   }
 
-  async reorder(productId: string, orderedIds: readonly string[], expectedOrderIds: readonly string[]): Promise<void> {
+  async reorder(
+    productId: string,
+    orderedIds: readonly string[],
+    expectedOrderIds: readonly string[],
+    expectedCoverId: string | null
+  ): Promise<void> {
     await this.db.transaction(async tx => {
       await lockProductSource(tx, productId);
       const current = await tx
-        .select({ id: productScreenshots.id })
+        .select({ id: productScreenshots.id, priority: productScreenshots.priority })
         .from(productScreenshots)
         .where(eq(productScreenshots.productId, productId))
         .orderBy(...galleryOrder);
+      // Visual uses the highest ID among screenshots sharing the highest priority.
+      const currentCoverId = current.findLast(({ priority }) => priority === current[0]?.priority)?.id ?? null;
       if (
+        currentCoverId !== expectedCoverId ||
         current.length !== expectedOrderIds.length ||
         current.some(({ id }, index) => id !== expectedOrderIds[index])
       ) {

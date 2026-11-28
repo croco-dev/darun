@@ -419,7 +419,7 @@ type Mutation {
   publishProduct(input: PublishProductInput!): PublishProductPayload!
   recordAdminProductContentReview(input: RecordAdminProductContentReviewInput!): AdminProductContentReviewRecord!
   registerProductCompany(input: RegisterProductCompanyInput!, slug: String!): RegisterProductCompanyPayload!
-  reorderProductScreenshots(expectedOrderIds: [ID!]!, orderedIds: [ID!]!, productId: ID!): Boolean!
+  reorderProductScreenshots(expectedCoverId: ID, expectedOrderIds: [ID!]!, orderedIds: [ID!]!, productId: ID!): Boolean!
   requestProductResearch(input: RequestProductResearchInput!): ProductResearchJob!
   requestProductTranslation(productId: String, slug: String): TranslationJob!
   requestTranslation(entityId: String!, entityType: String!, fields: [String!]!): TranslationJob!

@@ -47,8 +47,18 @@ gql`
     }
   }
 
-  mutation ReorderProductScreenshotsOnDetailSection($productId: ID!, $orderedIds: [ID!]!, $expectedOrderIds: [ID!]!) {
-    reorderProductScreenshots(productId: $productId, orderedIds: $orderedIds, expectedOrderIds: $expectedOrderIds)
+  mutation ReorderProductScreenshotsOnDetailSection(
+    $productId: ID!
+    $orderedIds: [ID!]!
+    $expectedOrderIds: [ID!]!
+    $expectedCoverId: ID
+  ) {
+    reorderProductScreenshots(
+      productId: $productId
+      orderedIds: $orderedIds
+      expectedOrderIds: $expectedOrderIds
+      expectedCoverId: $expectedCoverId
+    )
   }
 
   mutation DeleteProductScreenshotOnDetailSection($id: String!) {
@@ -111,7 +121,7 @@ type ScreenshotMetadataDraft = {
 type ScreenshotOrderDraft = {
   slug: string;
   productId: string;
-  savedCoverId: string | undefined;
+  savedCoverId: string | null;
   expectedOrderIds: string[];
   rows: ScreenshotCardFields[];
 };
@@ -511,7 +521,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
   const hideUnverifiedOrder = unreadSavedOrder === product?.id && Boolean(error || loading);
   const draft = orderDraft?.slug === slug && (!product || orderDraft.productId === product.id) ? orderDraft : null;
   const failure = orderFailure && orderFailure.draft === draft ? orderFailure : null;
-  const savedCoverId = product?.coverScreenshot?.id;
+  const savedCoverId = product?.coverScreenshot?.id ?? null;
   const orderChanged =
     draft !== null &&
     (draft.rows[0]?.id !== draft.savedCoverId ||
@@ -522,6 +532,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
       (data &&
         !error &&
         (!product ||
+          savedCoverId !== draft.savedCoverId ||
           screenshots.length !== draft.expectedOrderIds.length ||
           screenshots.some(({ id }, index) => id !== draft.expectedOrderIds[index]))))
   );
@@ -556,6 +567,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
           productId: draft.productId,
           orderedIds: draft.rows.map(({ id }) => id),
           expectedOrderIds: draft.expectedOrderIds,
+          expectedCoverId: draft.savedCoverId,
         },
       });
       if (!result.data?.reorderProductScreenshots) throw new Error('Missing screenshot order confirmation');

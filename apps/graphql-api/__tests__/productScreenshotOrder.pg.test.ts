@@ -18,11 +18,14 @@ const url = process.env.PRODUCT_SCREENSHOT_ORDER_TEST_DATABASE_URL;
 const suite = url ? describe : describe.skip;
 const productId = 'gallery';
 const original = ['a', 'b', 'c'];
+const originalCover = 'c';
 const reordered = ['c', 'a', 'b'];
 
 const reorderMutation = `
-  mutation Reorder($productId: ID!, $orderedIds: [ID!]!, $expectedOrderIds: [ID!]!) {
-    reorderProductScreenshots(productId: $productId, orderedIds: $orderedIds, expectedOrderIds: $expectedOrderIds)
+  mutation Reorder($productId: ID!, $orderedIds: [ID!]!, $expectedOrderIds: [ID!]!, $expectedCoverId: ID) {
+    reorderProductScreenshots(
+      productId: $productId, orderedIds: $orderedIds, expectedOrderIds: $expectedOrderIds, expectedCoverId: $expectedCoverId
+    )
   }
 `;
 
@@ -31,6 +34,7 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
   let server: ReturnType<typeof createServer>;
 
   beforeAll(async () => {
+    vi.stubEnv('CURSOR_SIGNATURE_SECRET', 'screenshot-order-fixture-only');
     const target = new URL(url!);
     if (target.hostname !== '127.0.0.1' || target.pathname !== '/darun_screenshot_order') {
       throw new Error('Requires isolated local darun_screenshot_order database');
@@ -69,6 +73,7 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
   });
 
   afterAll(async () => {
+    vi.unstubAllEnvs();
     await server?.stop();
     await sql?.end();
   });
@@ -82,44 +87,55 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
     return body.singleResult;
   }
 
-  function reorder(orderedIds = reordered, expectedOrderIds = original, admin = true) {
-    return execute(reorderMutation, { productId, orderedIds, expectedOrderIds }, admin);
+  function reorder(
+    orderedIds = reordered,
+    expectedOrderIds = original,
+    expectedCoverId: string | null = originalCover,
+    admin = true
+  ) {
+    return execute(reorderMutation, { productId, orderedIds, expectedOrderIds, expectedCoverId }, admin);
   }
 
   const priorities = () => sql`select id, priority from product_screenshots order by id`;
 
   it('publishes the new reading order, cover and previews while retaining screenshot metadata and content revision', async () => {
-    const initial = await execute(
-      '{ tempProductBySlug(slug: "gallery") { screenshots { id } coverScreenshot { id } } }'
-    );
+    await sql`update product_screenshots set priority = 1 where id = 'a'`;
+    const adminQuery = '{ tempProductBySlug(slug: "gallery") { screenshots { id } coverScreenshot { id } } }';
+    const initial = await execute(adminQuery);
     expect(initial.errors).toBeUndefined();
     expect(initial.data).toEqual({
-      tempProductBySlug: { screenshots: [{ id: 'a' }, { id: 'b' }, { id: 'c' }], coverScreenshot: { id: 'c' } },
+      tempProductBySlug: { screenshots: [{ id: 'a' }, { id: 'b' }, { id: 'c' }], coverScreenshot: { id: 'a' } },
     });
     const before = await sql`select content_revision from products where id = ${productId}`;
     const beforeMetadata = await sql`select id, image_url, image_alt, created_at from product_screenshots order by id`;
 
-    const result = await reorder(['b', 'c', 'a']);
+    const result = await reorder(reordered, original, 'a');
     expect(result.errors).toBeUndefined();
     expect(result.data).toEqual({ reorderProductScreenshots: true });
 
+    const screenshots = reordered.map(id => ({ id }));
+    const coverScreenshot = { id: reordered[0] };
+    const adminRead = await execute(adminQuery);
+    expect(adminRead.errors).toBeUndefined();
+    expect(adminRead.data).toEqual({ tempProductBySlug: { screenshots, coverScreenshot } });
+
     const publicRead = await execute(
-      '{ productBySlug(slug: "gallery") { screenshots { id } coverScreenshot { id } previewScreenshots { id } } }',
+      `{
+      productBySlug(slug: "gallery") { screenshots { id } }
+      visualApps(productSlug: "gallery", first: 3) { edges { node { coverScreenshot { id } previewScreenshots { id } } } }
+    }`,
       {},
       false
     );
     expect(publicRead.errors).toBeUndefined();
     expect(publicRead.data).toEqual({
-      productBySlug: {
-        screenshots: [{ id: 'b' }, { id: 'c' }, { id: 'a' }],
-        coverScreenshot: { id: 'b' },
-        previewScreenshots: [{ id: 'b' }, { id: 'c' }, { id: 'a' }],
-      },
+      productBySlug: { screenshots },
+      visualApps: { edges: [{ node: { coverScreenshot, previewScreenshots: screenshots } }] },
     });
     expect(await priorities()).toEqual([
-      { id: 'a', priority: 1 },
-      { id: 'b', priority: 3 },
-      { id: 'c', priority: 2 },
+      { id: 'a', priority: 2 },
+      { id: 'b', priority: 1 },
+      { id: 'c', priority: 3 },
       { id: 'x', priority: 9 },
     ]);
     expect(await sql`select id, image_url, image_alt, created_at from product_screenshots order by id`).toEqual(
@@ -131,7 +147,9 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
 
   it('rejects unauthorized, duplicate, missing and foreign IDs without changing any priorities', async () => {
     const before = await priorities();
-    expect((await reorder(reordered, original, false)).errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
+    expect((await reorder(reordered, original, originalCover, false)).errors?.[0]?.extensions?.code).toBe(
+      'UNAUTHORIZED'
+    );
     for (const ids of [
       ['c', 'c', 'a'],
       ['c', 'a'],
@@ -139,10 +157,25 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
     ]) {
       expect((await reorder(ids)).errors?.[0]?.extensions?.code).toBe('product/invalid-args');
     }
+    for (const cover of [null, 'x']) {
+      expect((await reorder(reordered, original, cover)).errors?.[0]?.extensions?.code).toBe('product/invalid-args');
+    }
     expect((await reorder(['x', 'c', 'a'], ['a', 'x', 'c'])).errors?.[0]?.extensions?.code).toBe(
       'product-screenshot/order-changed'
     );
     expect(await priorities()).toEqual(before);
+  });
+
+  it('rejects a stale draft after a cover-only change leaves the legacy gallery ID order intact', async () => {
+    const saved = await reorder(original);
+    expect(saved.errors).toBeUndefined();
+    expect(saved.data).toEqual({ reorderProductScreenshots: true });
+    const afterSave = await priorities();
+    expect((await reorder()).errors?.[0]?.extensions?.code).toBe('product-screenshot/order-changed');
+    expect(await priorities()).toEqual(afterSave);
+    const retried = await reorder(reordered, original, 'a');
+    expect(retried.errors).toBeUndefined();
+    expect(retried.data).toEqual({ reorderProductScreenshots: true });
   });
 
   it('accepts only one concurrent reorder from the same snapshot and detects an added or removed screenshot', async () => {
@@ -160,14 +193,14 @@ suite('product screenshot ordering through Apollo and PostgreSQL', () => {
 
     await sql`insert into product_screenshots (id, product_id, image_url, image_alt) values ('d', ${productId}, '/d.png', 'D')`;
     const afterAdd = await priorities();
-    expect((await reorder(original, winningOrder)).errors?.[0]?.extensions?.code).toBe(
+    expect((await reorder(original, winningOrder, winningOrder[0])).errors?.[0]?.extensions?.code).toBe(
       'product-screenshot/order-changed'
     );
     expect(await priorities()).toEqual(afterAdd);
 
     await sql`delete from product_screenshots where id = 'b'`;
     const afterDelete = await priorities();
-    expect((await reorder(original, winningOrder)).errors?.[0]?.extensions?.code).toBe(
+    expect((await reorder(original, winningOrder, winningOrder[0])).errors?.[0]?.extensions?.code).toBe(
       'product-screenshot/order-changed'
     );
     expect(await priorities()).toEqual(afterDelete);

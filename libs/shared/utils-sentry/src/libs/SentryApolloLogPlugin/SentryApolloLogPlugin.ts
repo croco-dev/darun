@@ -1,19 +1,20 @@
 import { ApolloServerPlugin } from '@apollo/server';
 import * as Sentry from '@sentry/node';
 import {
+  getOperationAST,
   Kind,
   parse,
   print,
-  separateOperations,
   visit,
   type DefinitionNode,
   type DocumentNode,
+  type FragmentDefinitionNode,
   type ValueNode,
 } from 'graphql';
 
 const SECRET_ARGUMENTS: Record<string, true> = { apiKey: true, braveApiKey: true, exclusionNote: true };
 const PRIVATE_REVIEW_FIELDS = ['memo', 'referenceUrl'] as const;
-const PRIVATE_SCREENSHOT_ORDER_ARGUMENTS = new Set(['productId', 'orderedIds', 'expectedOrderIds']);
+const PRIVATE_SCREENSHOT_ORDER_ARGUMENTS = new Set(['productId', 'orderedIds', 'expectedOrderIds', 'expectedCoverId']);
 const SCREENSHOT_ORDER_ID_BUDGET = 256;
 const SCREENSHOT_ORDER_CHARACTER_BUDGET = 8192;
 const ADMIN_JOB_PAGE_FIELDS = new Set(['translationJobPage', 'productDescriptionJobPage']);
@@ -33,13 +34,36 @@ const SPAN_COOKIE_ATTRIBUTE_PREFIXES = ['http.request.header.cookie.', 'http.req
 
 const createScreenshotOrderBudget = () => ({ ids: 0, characters: 0, exceeded: false, integers: new Set<number>() });
 
+function collectActiveDefinitions(document: DocumentNode, operationName: string) {
+  const active = new Set<DefinitionNode>();
+  const operation = getOperationAST(document, operationName);
+  if (!operation) return active;
+
+  const fragments = new Map<string, FragmentDefinitionNode>();
+  for (const definition of document.definitions) {
+    if (definition.kind === Kind.FRAGMENT_DEFINITION) fragments.set(definition.name.value, definition);
+  }
+
+  active.add(operation);
+  // Set iteration includes fragments inserted while visiting earlier definitions.
+  for (const definition of active) {
+    visit(definition, {
+      FragmentSpread(node) {
+        const fragment = fragments.get(node.name.value);
+        if (fragment) active.add(fragment);
+      },
+    });
+  }
+  return active;
+}
+
 function redactSensitiveArguments(
   document: DocumentNode,
   variables: Record<string, unknown> | undefined,
   screenshotOrderBudget: ReturnType<typeof createScreenshotOrderBudget>,
   operationName?: string
 ) {
-  const activeDefinitions = operationName ? new Set(separateOperations(document)[operationName]?.definitions) : null;
+  let activeDefinitions: Set<DefinitionNode> | undefined;
   const secretVariables = new Set<string>();
   const reviewInputVariables = new Set<string>();
   const reviewFieldVariables = new Set<string>();
@@ -175,8 +199,9 @@ function redactSensitiveArguments(
       )
         return;
       if (privateScreenshotOrder) {
+        const active = operationName ? (activeDefinitions ??= collectActiveDefinitions(document, operationName)) : null;
         const inActiveOperation =
-          !activeDefinitions || ancestors.some(ancestor => activeDefinitions.has(ancestor as DefinitionNode));
+          !active || ancestors.some(ancestor => 'kind' in ancestor && active.has(ancestor as DefinitionNode));
         collectLiteralOccurrences(node.value, collectScreenshotOrderId, true, inActiveOperation);
       } else if (node.value.kind === Kind.VARIABLE) {
         secretVariables.add(node.value.name.value);

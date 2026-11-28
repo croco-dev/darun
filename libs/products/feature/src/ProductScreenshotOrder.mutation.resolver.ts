@@ -13,9 +13,10 @@ export class ProductScreenshotOrderMutationResolver {
   async reorderProductScreenshots(
     @Arg('productId', () => ID) productId: string,
     @Arg('orderedIds', () => [ID]) orderedIds: string[],
-    @Arg('expectedOrderIds', () => [ID]) expectedOrderIds: string[]
+    @Arg('expectedOrderIds', () => [ID]) expectedOrderIds: string[],
+    @Arg('expectedCoverId', () => ID, { nullable: true }) expectedCoverId: string | null
   ): Promise<boolean> {
-    await this.reorderScreenshots.execute(productId, orderedIds, expectedOrderIds);
+    await this.reorderScreenshots.execute(productId, orderedIds, expectedOrderIds, expectedCoverId ?? null);
     return true;
   }
 }

@@ -30,11 +30,13 @@ beforeAll(async () => {
     },
   } as PostgresqlProductUsageConditions);
   const order = new ProductScreenshotOrderMutationResolver({
-    async execute(productId, orderedIds, expectedOrderIds) {
+    async execute(productId, orderedIds, expectedOrderIds, expectedCoverId) {
       throw Object.assign(
-        new Error(`Synthetic screenshot order storage failure: ${productId} ${orderedIds.join(',')}`),
+        new Error(
+          `Synthetic screenshot order storage failure: ${productId} ${orderedIds.join(',')} ${expectedCoverId}`
+        ),
         {
-          params: { productId, orderedIds, expectedOrderIds },
+          params: { productId, orderedIds, expectedOrderIds, expectedCoverId },
         }
       );
     },
@@ -276,48 +278,60 @@ it.each(['variables', 'inline', 'default'] as const)('사용 조건의 %s 입력
   expect(JSON.stringify(events[0])).not.toContain(excerpt);
 });
 
-it.each(['variables', 'inline', 'integer variables', 'integer inline', 'integer defaults'] as const)(
-  '스크린샷 순서의 %s 입력을 전송 전에 가린다',
-  async encoding => {
-    const integers = encoding.startsWith('integer');
-    const productId = integers ? 71358129 : `private-product-${randomUUID()}`;
-    const first = integers ? 82936576 : `private-first-${randomUUID()}`;
-    const second = integers ? 65184972 : `private-second-${randomUUID()}`;
-    const variables = { product: productId, next: [second, first], before: [first, second] };
-    const inline = encoding.endsWith('inline');
-    const defaults = encoding.endsWith('defaults');
-    const declaration = inline
-      ? ''
-      : `($product: ID!${defaults ? ` = ${productId}` : ''}, $next: [ID!]!${defaults ? ` = ${JSON.stringify(variables.next)}` : ''}, $before: [ID!]!${defaults ? ` = ${JSON.stringify(variables.before)}` : ''})`;
-    const body = {
-      query: `mutation ScreenshotOrderTelemetry${declaration} {
-      saved: reorderProductScreenshots(
+it.each([
+  'variables',
+  'inline',
+  'integer variables',
+  'integer inline',
+  'integer defaults',
+  'named active fragment',
+] as const)('스크린샷 순서의 %s 입력을 전송 전에 가린다', async encoding => {
+  const integers = encoding.startsWith('integer');
+  const productId = integers ? 71358129 : `private-product-${randomUUID()}`;
+  const first = integers ? 82936576 : `private-first-${randomUUID()}`;
+  const second = integers ? 65184972 : `private-second-${randomUUID()}`;
+  const cover = integers ? 56487219 : `private-cover-${randomUUID()}`;
+  const variables = { product: productId, next: [second, first], before: [first, second], cover };
+  const inline = encoding.endsWith('inline');
+  const defaults = encoding.endsWith('defaults');
+  const declaration = inline
+    ? ''
+    : `($product: ID!${defaults ? ` = ${productId}` : ''}, $next: [ID!]!${defaults ? ` = ${JSON.stringify(variables.next)}` : ''}, $before: [ID!]!${defaults ? ` = ${JSON.stringify(variables.before)}` : ''}, $cover: ID${defaults ? ` = ${cover}` : ''})`;
+  const field = `saved: reorderProductScreenshots(
         productId: ${inline ? JSON.stringify(variables.product) : '$product'}
         orderedIds: ${inline ? JSON.stringify(variables.next) : '$next'}
         expectedOrderIds: ${inline ? JSON.stringify(variables.before) : '$before'}
-      )
-    }`,
-      ...(!inline && !defaults && { variables }),
-    };
+        expectedCoverId: ${inline ? JSON.stringify(cover) : '$cover'}
+      )`;
+  const usesFragment = encoding === 'named active fragment';
+  const body = {
+    query: usesFragment
+      ? `mutation ScreenshotOrderTelemetry${declaration} { ...Outer }
+           fragment Outer on Mutation { ...OnOrder }
+           fragment OnOrder on Mutation { ${field} }
+           mutation Other { reorderProductScreenshots(productId: "fixture", orderedIds: [], expectedOrderIds: []) }`
+      : `mutation ScreenshotOrderTelemetry${declaration} { ${field} }`,
+    ...(usesFragment && { operationName: 'ScreenshotOrderTelemetry' }),
+    ...(!inline && !defaults && { variables }),
+  };
 
-    events.length = 0;
-    await Sentry.withIsolationScope(async scope => {
-      scope.addEventProcessor(event => ({ ...event, request: { method: 'POST', data: body } }));
-      const headers = new HeaderMap();
-      headers.set('content-type', 'application/json');
-      const response = await server.executeHTTPGraphQLRequest({
-        httpGraphQLRequest: { method: 'POST', headers, search: '', body },
-        context: async () => ({ getRoles: async () => [AuthRole.Admin] }),
-      });
-      if (response.body.kind !== 'complete') throw new Error('Expected a complete GraphQL response');
-      expect(JSON.parse(response.body.string).errors[0].extensions.code).toBe('INTERNAL_SERVER_ERROR');
-      await Sentry.flush(2000);
+  events.length = 0;
+  await Sentry.withIsolationScope(async scope => {
+    scope.addEventProcessor(event => ({ ...event, request: { method: 'POST', data: body } }));
+    const headers = new HeaderMap();
+    headers.set('content-type', 'application/json');
+    const response = await server.executeHTTPGraphQLRequest({
+      httpGraphQLRequest: { method: 'POST', headers, search: '', body },
+      context: async () => ({ getRoles: async () => [AuthRole.Admin] }),
     });
+    if (response.body.kind !== 'complete') throw new Error('Expected a complete GraphQL response');
+    expect(JSON.parse(response.body.string).errors[0].extensions.code).toBe('INTERNAL_SERVER_ERROR');
+    await Sentry.flush(2000);
+  });
 
-    expect(events).toHaveLength(1);
-    expect(events[0].extra?.query).toContain('ScreenshotOrderTelemetry');
-    expect(events[0].exception?.values?.[0].value).toContain('Synthetic screenshot order storage failure');
-    const serialized = JSON.stringify(events[0]);
-    for (const id of [productId, first, second]) expect(serialized).not.toContain(String(id));
-  }
-);
+  expect(events).toHaveLength(1);
+  expect(events[0].extra?.query).toContain('ScreenshotOrderTelemetry');
+  expect(events[0].exception?.values?.[0].value).toContain('Synthetic screenshot order storage failure');
+  const serialized = JSON.stringify(events[0]);
+  for (const id of [productId, first, second, cover]) expect(serialized).not.toContain(String(id));
+});

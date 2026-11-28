@@ -181,7 +181,12 @@ it('previews moves and cancellation, then saves a new order and refetches the re
   fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
   await finishQuery(queries);
   expect(orderWrites).toEqual([
-    { productId: 'fixture-product', orderedIds: ['B', 'A', 'C'], expectedOrderIds: ['A', 'B', 'C'] },
+    {
+      productId: 'fixture-product',
+      orderedIds: ['B', 'A', 'C'],
+      expectedOrderIds: ['A', 'B', 'C'],
+      expectedCoverId: 'C',
+    },
   ]);
   expect(writes).toEqual([]);
   expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
@@ -219,7 +224,12 @@ it('can make the first listed screenshot the cover when legacy priorities are ti
   fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
   await finishQuery(queries);
   expect(orderWrites).toEqual([
-    { productId: 'fixture-product', orderedIds: ['A', 'B', 'C'], expectedOrderIds: ['A', 'B', 'C'] },
+    {
+      productId: 'fixture-product',
+      orderedIds: ['A', 'B', 'C'],
+      expectedOrderIds: ['A', 'B', 'C'],
+      expectedCoverId: 'C',
+    },
   ]);
   expect(await within(card('A')).findByText('대표 화면')).toBeTruthy();
 });
