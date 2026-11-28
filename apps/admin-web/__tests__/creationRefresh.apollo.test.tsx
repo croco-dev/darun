@@ -243,7 +243,7 @@ describe.each(cases)('$name creation with real Apollo client/link', c => {
   });
 });
 
-it('keeps the saved gallery order when screenshot registration finishes after the form closes', async () => {
+it.each([false, true])('reconciles a late registration with refresh failure=%s', async refreshFails => {
   upload.mockResolvedValue('https://example.com/uploaded.png');
   const query = documents.GetProductScreenshotsOnDetailSectionDocument;
   const variables = { slug: props.productSlug };
@@ -272,15 +272,25 @@ it('keeps the saved gallery order when screenshot registration finishes after th
   unmount();
 
   const current = gallery(['b', 'a', 'new']);
-  client.writeQuery({ query, variables, data: current });
+  const cached = refreshFails ? gallery(['b', 'a']) : current;
+  client.writeQuery({ query, variables, data: cached });
   await settle(() =>
     requests[1]!.resolve({
       addProductScreenshot: { product: gallery(['a', 'b', 'new']).tempProductBySlug },
     })
   );
   await waitFor(() => expect(requests).toHaveLength(3));
-  expect(client.readQuery({ query, variables })).toEqual(current);
-  await settle(() => requests[2]!.resolve(current));
+  expect(client.readQuery({ query, variables })).toEqual(cached);
+  if (refreshFails) {
+    await settle(() => requests[2]!.fail());
+    await waitFor(() => expect(client.readQuery({ query, variables })).toBeNull());
+    const reopened = client.query({ query, variables });
+    await waitFor(() => expect(requests).toHaveLength(4));
+    await settle(() => requests[3]!.resolve(current));
+    expect((await reopened).data).toEqual(current);
+  } else {
+    await settle(() => requests[2]!.resolve(current));
+  }
   expect(navigate).not.toHaveBeenCalled();
   expect(notifications.show).not.toHaveBeenCalled();
   subscription.unsubscribe();

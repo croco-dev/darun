@@ -111,14 +111,19 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     AddProductScreenshotOnNewProductScreenshotFormDocument,
     {
       onCompleted: ({ addProductScreenshot }) => {
-        if (!addProductScreenshot?.product?.id) return;
+        const productId = addProductScreenshot?.product?.id;
+        if (!productId) return;
         const refresh = () =>
-          queueProductScreenshotRefresh(client, productSlug, () =>
-            client.query({
-              query: GetProductScreenshotsOnDetailSectionDocument,
-              variables: { slug: productSlug },
-              fetchPolicy: 'network-only',
-            })
+          queueProductScreenshotRefresh(
+            client,
+            productSlug,
+            () =>
+              client.query({
+                query: GetProductScreenshotsOnDetailSectionDocument,
+                variables: { slug: productSlug },
+                fetchPolicy: 'network-only',
+              }),
+            productId
           );
         if (!mounted.current) {
           void refresh().catch(() => {});

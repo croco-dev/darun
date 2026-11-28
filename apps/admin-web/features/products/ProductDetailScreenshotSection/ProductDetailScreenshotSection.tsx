@@ -429,9 +429,11 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
     moveFocus.current = null;
   }, [orderDraft]);
 
-  const refreshScreenshots = (afterSave = false) =>
-    queueProductScreenshotRefresh(client, slug, async () => {
-      try {
+  const refreshScreenshots = (afterSave = false, savedProductId?: string) =>
+    queueProductScreenshotRefresh(
+      client,
+      slug,
+      async () => {
         if (observable.variables.slug === slug) {
           const request = observable.refetch();
           await (afterSave ? request.retain() : request);
@@ -446,10 +448,9 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
           return false;
         }
         return true;
-      } catch {
-        return false;
-      }
-    });
+      },
+      savedProductId
+    ).catch(() => false);
   const [deleteScreenshot] = useMutation(DeleteProductScreenshotOnDetailSectionDocument, {
     onError: err => {
       notifications.show({
@@ -554,13 +555,7 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         },
       });
       if (!result.data?.reorderProductScreenshots) throw new Error('Missing screenshot order confirmation');
-      if (!(await refreshScreenshots(true))) {
-        const id = client.cache.identify({ __typename: 'Product', id: draft.productId });
-        if (id) {
-          client.cache.evict({ id, fieldName: 'screenshots', broadcast: false });
-          client.cache.evict({ id, fieldName: 'coverScreenshot', broadcast: false });
-        }
-      }
+      await refreshScreenshots(true, draft.productId);
       setOrderDraft(current => (current === draft ? null : current));
       notifications.show({ message: '스크린샷 순서를 저장했습니다.', color: 'teal' });
     } catch (error) {
