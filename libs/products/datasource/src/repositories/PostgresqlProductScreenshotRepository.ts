@@ -224,7 +224,12 @@ export class PostgresqlProductScreenshotRepository implements ProductScreenshotR
         .where(eq(productScreenshots.productId, productId))
         .orderBy(...galleryOrder);
       // Visual uses the highest ID among screenshots sharing the highest priority.
-      const currentCoverId = current.findLast(({ priority }) => priority === current[0]?.priority)?.id ?? null;
+      const highestPriority = current[0]?.priority;
+      let currentCoverId: string | null = null;
+      for (const { id, priority } of current) {
+        if (priority !== highestPriority) break;
+        currentCoverId = id;
+      }
       if (
         currentCoverId !== expectedCoverId ||
         current.length !== expectedOrderIds.length ||
