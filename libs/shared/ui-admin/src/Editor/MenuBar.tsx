@@ -13,6 +13,7 @@ import { imageInsertionKey, insertUploadedImage } from './imageInsertion';
 import { LinkFields } from './LinkFields';
 import { applyLink, getCurrentLinkSelection, getLinkSelection, type LinkSelection } from './linkSelection';
 import { MenuItem, menuItemVariants } from './MenuItem';
+import { TableTools } from './TableTools';
 
 type MenuBarProps = {
   editor: Editor;
@@ -367,6 +368,7 @@ export function MenuBar({ editor, disabled = false, onImageUploadingChange }: Me
         >
           이미지 대체 텍스트 수정
         </button>
+        <TableTools editor={editor} disabled={toolbarDisabled} />
       </div>
       {linkDraft && (
         <LinkFields
