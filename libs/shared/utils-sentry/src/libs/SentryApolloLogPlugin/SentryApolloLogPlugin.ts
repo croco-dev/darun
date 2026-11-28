@@ -22,7 +22,7 @@ const TRACE_IDENTITY_KEYS: Record<string, true> = {
 // Set-Cookie headers embed the cookie name, which is user input.
 const SPAN_COOKIE_ATTRIBUTE_PREFIXES = ['http.request.header.cookie.', 'http.request.header.set_cookie.'];
 
-const createScreenshotOrderBudget = () => ({ ids: 0, characters: 0, exceeded: false });
+const createScreenshotOrderBudget = () => ({ ids: 0, characters: 0, exceeded: false, integers: new Set<number>() });
 
 function redactSensitiveArguments(
   document: DocumentNode,
@@ -74,6 +74,7 @@ function redactSensitiveArguments(
         screenshotOrderBudget.exceeded = true;
         return;
       }
+      if (typeof raw === 'number') screenshotOrderBudget.integers.add(raw);
       collectSecret(id);
     }
   };
@@ -92,7 +93,12 @@ function redactSensitiveArguments(
         collectValue(node.value);
       },
       IntValue(node) {
-        if (screenshotOrder) collectValue(node.value);
+        if (!screenshotOrder) return;
+        collectValue(node.value);
+        const integer = Number(node.value);
+        if (Number.isSafeInteger(integer) && !screenshotOrderBudget.exceeded) {
+          screenshotOrderBudget.integers.add(integer);
+        }
       },
       Variable(node) {
         secretVariables.add(node.name.value);
@@ -163,7 +169,9 @@ function redactSensitiveArguments(
   redactedDocument = visit(redactedDocument, {
     VariableDefinition(node) {
       if (!secretVariables.has(node.variable.name.value) || !node.defaultValue) return;
-      if (screenshotOrderVariables.has(node.variable.name.value)) {
+      let type = node.type;
+      while (type.kind !== Kind.NAMED_TYPE) type = type.type;
+      if (type.name.value === 'ID' && screenshotOrderVariables.has(node.variable.name.value)) {
         collectLiteralOccurrences(node.defaultValue, collectScreenshotOrderId, true);
       } else if (reviewInputVariables.has(node.variable.name.value)) {
         collectReviewLiteral(node.defaultValue);
@@ -271,6 +279,7 @@ function redactCredentialEvent<T extends Sentry.Event>(
   redactText: (value: string, input?: boolean) => string,
   redactKey: (key: string) => string,
   redactSpanCookieName: (name: string) => string,
+  screenshotOrderIntegers: ReadonlySet<number>,
   transactionHeader = event.request?.headers?.['x-transaction-id'] ??
     event.sdkProcessingMetadata?.normalizedRequest?.headers?.['x-transaction-id']
 ): T {
@@ -292,6 +301,7 @@ function redactCredentialEvent<T extends Sentry.Event>(
   };
   const walkInput = (value: unknown, consoleDiagnostic = false): unknown => {
     if (typeof value === 'string') return redactText(value, true);
+    if (typeof value === 'number' && screenshotOrderIntegers.has(value)) return REDACTED;
     if (Array.isArray(value)) return value.map(nested => walkInput(nested, consoleDiagnostic));
     if (value && typeof value === 'object') {
       return Object.fromEntries(
@@ -503,7 +513,13 @@ function redactSentryRequestCredentials<T extends Sentry.Event>(event: T): T | n
   // Dropping the event also drops copies of the input embedded in exception or SDK data.
   if (screenshotOrderBudget.exceeded) return null;
   const { redactText, redactKey, redactSpanCookieName } = createCredentialRedactors(secrets, propertyNames);
-  const redacted = redactCredentialEvent(sendingEvent, redactText, redactKey, redactSpanCookieName);
+  const redacted = redactCredentialEvent(
+    sendingEvent,
+    redactText,
+    redactKey,
+    redactSpanCookieName,
+    screenshotOrderBudget.integers
+  );
   for (const request of [redacted.request, redacted.sdkProcessingMetadata?.normalizedRequest]) {
     if (!request) continue;
     delete request.data;
@@ -564,6 +580,7 @@ export const createSentryApolloLogPlugin = ({
               redactText,
               redactKey,
               redactSpanCookieName,
+              screenshotOrderBudget.integers,
               transactionId
             );
             return { ...redactedEvent, request, sdkProcessingMetadata };

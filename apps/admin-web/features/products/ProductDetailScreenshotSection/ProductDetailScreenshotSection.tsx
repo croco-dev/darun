@@ -554,7 +554,13 @@ export const ProductDetailScreenshotSection = ({ slug }: ProductDetailScreenshot
         },
       });
       if (!result.data?.reorderProductScreenshots) throw new Error('Missing screenshot order confirmation');
-      await refreshScreenshots(true);
+      if (!(await refreshScreenshots(true))) {
+        const id = client.cache.identify({ __typename: 'Product', id: draft.productId });
+        if (id) {
+          client.cache.evict({ id, fieldName: 'screenshots', broadcast: false });
+          client.cache.evict({ id, fieldName: 'coverScreenshot', broadcast: false });
+        }
+      }
       setOrderDraft(current => (current === draft ? null : current));
       notifications.show({ message: '스크린샷 순서를 저장했습니다.', color: 'teal' });
     } catch (error) {

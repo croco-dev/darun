@@ -265,6 +265,24 @@ it('refreshes the saved order after reopening a gallery with a retained metadata
   expect(await within(card('B')).findByText('대표 화면')).toBeTruthy();
 });
 
+it('reads again on re-entry when saving succeeded but reading the saved order failed', async () => {
+  const { queries, orderWrites, section, view } = mountSection(['A', 'B', 'C']);
+  await finishQuery(queries);
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await finishQuery(queries, true);
+  await waitFor(() =>
+    expect(notifications.show).toHaveBeenCalledWith({ message: '스크린샷 순서를 저장했습니다.', color: 'teal' })
+  );
+
+  view.unmount();
+  render(section());
+  await finishQuery(queries);
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expect(within(card('B')).getByText('대표 화면')).toBeTruthy();
+  expect(orderWrites).toHaveLength(1);
+});
+
 it.each([{ ids: [] }, { ids: ['A'] }])('omits reorder actions for a gallery with $ids', async ({ ids }) => {
   const { queries } = mountSection(ids);
   await finishQuery(queries);

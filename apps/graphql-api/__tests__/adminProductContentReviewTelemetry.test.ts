@@ -78,7 +78,7 @@ afterAll(async () => {
   await Sentry.close(2000);
 });
 
-it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
+it.each(['variables', 'inline', 'default', 'field defaults', 'overlapping defaults'] as const)(
   '검토 기록 %s 입력을 전송 전에 가린다',
   async encoding => {
     const memo = `private-review-${randomUUID()} 한글+`;
@@ -90,7 +90,8 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
       memo: `  ${memo}\n`,
       referenceUrl: ` ${referenceUrl}\t`,
     };
-    const nestedVariables = encoding === 'field defaults';
+    const overlaps = encoding === 'overlapping defaults';
+    const nestedVariables = encoding === 'field defaults' || overlaps;
     const memoArgument = nestedVariables ? '$memo' : JSON.stringify(input.memo);
     const urlArgument = nestedVariables ? '$url' : JSON.stringify(input.referenceUrl);
     const literal = `{ productId: "fixture", expectedRevision: "7", requestId: "${input.requestId}", memo: ${memoArgument}, referenceUrl: ${urlArgument} }`;
@@ -100,10 +101,14 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
       : encoding === 'inline'
         ? ''
         : `($review: RecordAdminProductContentReviewInput!${encoding === 'default' ? ` = ${literal}` : ''})`;
+    const unselectedOperation = overlaps
+      ? 'mutation Other($memo: ID! = 71358129) { reorderProductScreenshots(productId: $memo, orderedIds: [], expectedOrderIds: []) }'
+      : '';
     const body = {
       query: `mutation ReviewTelemetry${declaration} {
       recorded: recordAdminProductContentReview(input: ${literalInput ? literal : '$review'}) { id }
-    }`,
+    } ${unselectedOperation}`,
+      ...(overlaps && { operationName: 'ReviewTelemetry' }),
       ...(encoding === 'variables' ? { variables: { review: input } } : {}),
     };
     events.length = 0;
@@ -142,6 +147,35 @@ it.each(['variables', 'inline', 'default', 'field defaults'] as const)(
     }
   }
 );
+
+it('redacts integer IDs in copied diagnostic data while preserving unrelated numbers', () => {
+  const product = 71358129;
+  const screenshot = 82936576;
+  const request = {
+    method: 'POST',
+    data: {
+      query: `mutation ScreenshotOrder($product: ID!, $screenshots: [ID!]!) {
+        reorderProductScreenshots(productId: $product, orderedIds: $screenshots, expectedOrderIds: $screenshots)
+      }`,
+      variables: { product, screenshots: [screenshot] },
+    },
+  };
+  const event = sentryRequestRedaction.beforeSend({
+    request,
+    extra: { product, screenshots: [screenshot], status: 17 },
+  });
+  expect(event?.extra).toEqual({ product: '[REDACTED]', screenshots: ['[REDACTED]'], status: 17 });
+  const transaction = sentryRequestRedaction.beforeSendTransaction({
+    request,
+    type: 'transaction',
+    contexts: { trace: { data: { product, screenshots: [screenshot], status: 17 } } },
+  });
+  expect(transaction?.contexts?.trace?.data).toEqual({
+    product: '[REDACTED]',
+    screenshots: ['[REDACTED]'],
+    status: 17,
+  });
+});
 
 it.each([
   {

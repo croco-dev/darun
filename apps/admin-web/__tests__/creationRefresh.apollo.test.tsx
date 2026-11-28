@@ -133,7 +133,7 @@ const cases = [
     variables: { slug: props.productSlug },
     read: { tempProductBySlug: null },
     write: {
-      addProductScreenshot: { product: { id: 'parent-id', screenshots: [] } },
+      addProductScreenshot: { product: { id: 'parent-id' } },
     },
     path: '/products/parent-app',
   },
@@ -241,4 +241,47 @@ describe.each(cases)('$name creation with real Apollo client/link', c => {
     expect(fixture.requests[2]!.name).toBe(fixture.requests[1]!.name);
     fixture.subscription.unsubscribe();
   });
+});
+
+it('keeps the saved gallery order when screenshot registration finishes after the form closes', async () => {
+  upload.mockResolvedValue('https://example.com/uploaded.png');
+  const query = documents.GetProductScreenshotsOnDetailSectionDocument;
+  const variables = { slug: props.productSlug };
+  const { client, requests, subscription, wrapper } = setup(query, variables);
+  const gallery = (ids: string[]) => ({
+    tempProductBySlug: {
+      __typename: 'Product' as const,
+      id: 'parent-id',
+      coverScreenshot: { __typename: 'Screenshot' as const, id: ids[0] },
+      screenshots: ids.map(id => ({
+        __typename: 'Screenshot' as const,
+        id,
+        title: id,
+        imageUrl: `/fixture-${id}.png`,
+        imageAlt: id,
+        platform: null,
+        screenType: null,
+        uiElements: [],
+      })),
+    },
+  });
+  await settle(() => requests[0]!.resolve(gallery(['a', 'b'])));
+  const { result, unmount } = renderHook(() => useNewProductScreenshotForm(props), { wrapper });
+  await settle(() => void result.current.submit({ file, imageAlt: '새 화면' }));
+  await waitFor(() => expect(requests).toHaveLength(2));
+  unmount();
+
+  const current = gallery(['b', 'a', 'new']);
+  client.writeQuery({ query, variables, data: current });
+  await settle(() =>
+    requests[1]!.resolve({
+      addProductScreenshot: { product: gallery(['a', 'b', 'new']).tempProductBySlug },
+    })
+  );
+  await waitFor(() => expect(requests).toHaveLength(3));
+  expect(client.readQuery({ query, variables })).toEqual(current);
+  await settle(() => requests[2]!.resolve(current));
+  expect(navigate).not.toHaveBeenCalled();
+  expect(notifications.show).not.toHaveBeenCalled();
+  subscription.unsubscribe();
 });

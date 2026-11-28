@@ -20,11 +20,6 @@ gql`
     addProductScreenshot(slug: $slug, input: $input) {
       product {
         id
-        screenshots {
-          id
-          imageAlt
-          imageUrl
-        }
       }
     }
   }
@@ -116,21 +111,24 @@ export function useNewProductScreenshotForm({ productSlug, children }: NewProduc
     AddProductScreenshotOnNewProductScreenshotFormDocument,
     {
       onCompleted: ({ addProductScreenshot }) => {
-        if (mounted.current && addProductScreenshot?.product?.id) {
-          notifySavedWithRefresh(() =>
-            queueProductScreenshotRefresh(client, productSlug, () =>
-              client.query({
-                query: GetProductScreenshotsOnDetailSectionDocument,
-                variables: { slug: productSlug },
-                fetchPolicy: 'network-only',
-              })
-            )
+        if (!addProductScreenshot?.product?.id) return;
+        const refresh = () =>
+          queueProductScreenshotRefresh(client, productSlug, () =>
+            client.query({
+              query: GetProductScreenshotsOnDetailSectionDocument,
+              variables: { slug: productSlug },
+              fetchPolicy: 'network-only',
+            })
           );
-          completedUpload.current = null;
-          registrationRequests.current.clear();
-          form.reset();
-          navigate(`/products/${encodeURIComponent(productSlug)}`);
+        if (!mounted.current) {
+          void refresh().catch(() => {});
+          return;
         }
+        notifySavedWithRefresh(refresh);
+        completedUpload.current = null;
+        registrationRequests.current.clear();
+        form.reset();
+        navigate(`/products/${encodeURIComponent(productSlug)}`);
       },
       onError: error => {
         if (!mounted.current) return;
