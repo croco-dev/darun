@@ -19,8 +19,12 @@ export function queueProductScreenshotRefresh<T>(
       // A committed change can leave a complete but obsolete gallery in cache.
       const id = savedProductId && client.cache.identify({ __typename: 'Product', id: savedProductId });
       if (id) {
-        client.cache.evict({ id, fieldName: 'screenshots', broadcast: false });
-        client.cache.evict({ id, fieldName: 'coverScreenshot', broadcast: false });
+        client.cache.batch({
+          update(cache) {
+            cache.evict({ id, fieldName: 'screenshots' });
+            cache.evict({ id, fieldName: 'coverScreenshot' });
+          },
+        });
       }
       throw error;
     });

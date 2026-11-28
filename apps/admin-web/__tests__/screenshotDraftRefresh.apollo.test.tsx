@@ -283,6 +283,25 @@ it('reads again on re-entry when saving succeeded but reading the saved order fa
   expect(orderWrites).toHaveLength(1);
 });
 
+it('refreshes the reopened gallery if an earlier retained read of the saved order fails', async () => {
+  const { queries, orderWrites, section, view } = mountSection(['A', 'B', 'C']);
+  await finishQuery(queries);
+  fireEvent.click(within(card('B')).getByRole('button', { name: '첫 화면으로' }));
+  fireEvent.click(screen.getByRole('button', { name: '순서 저장' }));
+  await waitFor(() => expect(queries).toHaveLength(1));
+
+  view.unmount();
+  render(section());
+  await screen.findByText('Saved alt B', { selector: 'span[title]' });
+  expect(visibleOrder()).toEqual(['Saved alt A', 'Saved alt B', 'Saved alt C']);
+  await finishQuery(queries, true);
+  await finishQuery(queries);
+
+  expect(visibleOrder()).toEqual(['Saved alt B', 'Saved alt A', 'Saved alt C']);
+  expect(within(card('B')).getByText('대표 화면')).toBeTruthy();
+  expect(orderWrites).toHaveLength(1);
+});
+
 it.each([{ ids: [] }, { ids: ['A'] }])('omits reorder actions for a gallery with $ids', async ({ ids }) => {
   const { queries } = mountSection(ids);
   await finishQuery(queries);
