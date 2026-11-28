@@ -34,7 +34,7 @@ function response(data: unknown, status = 200, contentType = 'application/json')
 function createClient(responses: Response[], links: ApolloLink[] = []) {
   const requests: Array<{ operationName: string; query: string; variables: unknown }> = [];
   const fetch = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
-    requests.push(JSON.parse(String(init?.body)));
+    requests.push(JSON.parse(init?.body as string));
     const next = responses.shift();
     if (!next) throw new Error('Unexpected replay');
     return next;

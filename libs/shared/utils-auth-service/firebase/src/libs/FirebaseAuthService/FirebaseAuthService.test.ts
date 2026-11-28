@@ -1,4 +1,5 @@
 import type { AuthStorage, AuthUser } from '@darun/utils-auth-service-core';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import type { User } from 'firebase/auth';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sdk } from '../../__tests__/firebaseSdk.fixture';
@@ -128,7 +129,9 @@ describe('FirebaseAuthService의 인증 결과 순서', () => {
     const b = deferred<ReturnType<typeof token>>();
     const current = user('same', a);
     const old = emit(current);
-    vi.mocked(current.getIdTokenResult).mockImplementationOnce(() => b.promise as ReturnType<User['getIdTokenResult']>);
+    mockedMethods(current).getIdTokenResult.mockImplementationOnce(
+      () => b.promise as ReturnType<User['getIdTokenResult']>
+    );
     const latest = emit(current);
     b.resolve(token('new-token'));
     await latest;
@@ -284,7 +287,7 @@ describe('FirebaseAuthService의 인증 결과 순서', () => {
     const failed = deferred<void>();
     sdk.auth.signOut.mockReturnValueOnce(failed.promise);
     const signOut = service.signOut();
-    vi.mocked(current.getIdTokenResult).mockResolvedValue(token('refreshed'));
+    mockedMethods(current).getIdTokenResult.mockResolvedValue(token('refreshed'));
     await emit(current);
     const tokenDuringSignOut = values.get('idToken');
     failed.reject(new Error('sign-out failed'));
@@ -323,7 +326,7 @@ describe('초기 토큰 조회 오류와 복구', () => {
     const pending = emit(current);
     result.reject(new Error('first failed'));
     await expect(pending).resolves.toBeDefined();
-    vi.mocked(current.getIdTokenResult).mockResolvedValueOnce(token('recovered'));
+    mockedMethods(current).getIdTokenResult.mockResolvedValueOnce(token('recovered'));
     await service.retryAuthState();
     expect(sdk.listeners.size).toBe(1);
     expect(values.get('idToken')).toBe('recovered');

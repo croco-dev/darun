@@ -3,6 +3,7 @@ import { ApolloServer } from '@apollo/server';
 import type { LlmSetting, LlmSettingRepository, LlmSettingWrite } from '@darun/translation-domain';
 import { LlmSettingService } from '@darun/translation-service';
 import { createSentryApolloLogPlugin, sentryRequestRedaction } from '@darun/utils-sentry';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import * as Sentry from '@sentry/node';
 import type * as GraphQL from 'graphql';
 import { buildSchemaSync } from 'type-graphql';
@@ -162,7 +163,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
       it(`${encoding}: ${failure} remains an explicit error without credentials in the entire event`, async () => {
         if (failure !== 'policy') vi.stubEnv('OPEN_ROUTER_API_KEY', 'synthetic-other-environment-key');
         if (failure === 'read')
-          vi.mocked(repository.findSetting).mockRejectedValue(new Error(`read failed ${storedKey}`));
+          mockedMethods(repository).findSetting.mockRejectedValue(new Error(`read failed ${storedKey}`));
         if (failure === 'write')
           vi.mocked(writeSetting).mockRejectedValue(
             new Error(`Failed query: insert llm_settings params ${apiKey},${braveApiKey},${storedKey}`)
@@ -202,7 +203,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
     }`;
     await execute(query, undefined, false);
     expectSecretFreeEvent();
-    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
     expect(writeSetting).not.toHaveBeenCalled();
     expect(events[0].exception?.values?.[0].value).toContain('Access denied');
   });
@@ -215,7 +216,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
     }`;
     const response = await execute(query, { [variable]: secret, providerCredential: { type: false, id: false } });
     expect(response.http.status).toBe(400);
-    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
     expect(writeSetting).not.toHaveBeenCalled();
     expect(processorEvents).toHaveLength(1);
     for (const event of [...processorEvents, ...events]) {
@@ -243,7 +244,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
       model,
     });
     expect(response.http.status).toBe(400);
-    expect(repository.findSetting).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
     expect(writeSetting).not.toHaveBeenCalled();
     if (response.body.kind !== 'single') throw new Error('Expected single GraphQL response');
     // The public response keeps the original rejection and its echoed property name.
@@ -279,7 +280,7 @@ describe('registered Apollo Sentry plugin and real LLM setting resolver', () => 
             extensions: expect.objectContaining({ code: 'BAD_USER_INPUT' }),
           }),
         ]);
-        expect(repository.findSetting).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).findSetting).not.toHaveBeenCalled();
         expect(writeSetting).not.toHaveBeenCalled();
         expect(events).toHaveLength(1);
         const event = events[0];

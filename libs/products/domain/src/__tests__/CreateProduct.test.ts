@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
+import { describe, expect, it } from 'vitest';
 import { Product } from '../entities/Product';
 import { productSlugAlreadyExists } from '../errors/productError';
 import { CreateProduct } from '../usecases/CreateProduct';
@@ -8,7 +9,7 @@ describe('CreateProduct', () => {
   describe('execute', () => {
     it('slug가 없으면 제품을 생성하고 반환한다', async () => {
       const repository = createMockRepository();
-      vi.mocked(repository.findOneBySlug).mockResolvedValue(null);
+      mockedMethods(repository).findOneBySlug.mockResolvedValue(null);
       const inserted = new Product({
         id: 'prod-1',
         name: '테스트',
@@ -16,7 +17,7 @@ describe('CreateProduct', () => {
         logoUrl: 'https://example.com/logo.png',
         summary: '요약',
       });
-      vi.mocked(repository.insert).mockResolvedValue(inserted);
+      mockedMethods(repository).insert.mockResolvedValue(inserted);
 
       const usecase = new CreateProduct(repository as never);
       const result = await usecase.execute({
@@ -26,8 +27,8 @@ describe('CreateProduct', () => {
         summary: '요약',
       });
 
-      expect(repository.findOneBySlug).toHaveBeenCalledWith('test');
-      expect(repository.insert).toHaveBeenCalledOnce();
+      expect(mockedMethods(repository).findOneBySlug).toHaveBeenCalledWith('test');
+      expect(mockedMethods(repository).insert).toHaveBeenCalledOnce();
       expect(result).toBe(inserted);
     });
 
@@ -43,14 +44,14 @@ describe('CreateProduct', () => {
             logoUrl: 'https://example.com/logo.png',
           })
         ).rejects.toMatchObject({ code: 'product/invalid-args' });
-        expect(repository.findOneBySlug).not.toHaveBeenCalled();
-        expect(repository.insert).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).findOneBySlug).not.toHaveBeenCalled();
+        expect(mockedMethods(repository).insert).not.toHaveBeenCalled();
       }
     );
 
     it.each(['app-42', 'a'.repeat(100)])('유효한 slug %s는 변환 없이 저장한다', async slug => {
       const repository = createMockRepository();
-      vi.mocked(repository.insert).mockImplementation(async product => product);
+      mockedMethods(repository).insert.mockImplementation(async product => product);
       expect(
         await new CreateProduct(repository).execute({
           name: '서비스',
@@ -70,7 +71,7 @@ describe('CreateProduct', () => {
         logoUrl: 'https://example.com/logo.png',
         summary: '기존 요약',
       });
-      vi.mocked(repository.findOneBySlug).mockResolvedValue(existing);
+      mockedMethods(repository).findOneBySlug.mockResolvedValue(existing);
 
       const usecase = new CreateProduct(repository as never);
 
@@ -86,8 +87,8 @@ describe('CreateProduct', () => {
 
     it('insert가 null을 반환하면 에러를 던진다', async () => {
       const repository = createMockRepository();
-      vi.mocked(repository.findOneBySlug).mockResolvedValue(null);
-      vi.mocked(repository.insert).mockResolvedValue(null);
+      mockedMethods(repository).findOneBySlug.mockResolvedValue(null);
+      mockedMethods(repository).insert.mockResolvedValue(null);
 
       const usecase = new CreateProduct(repository as never);
 
@@ -107,8 +108,8 @@ describe('CreateProduct', () => {
       ['연결 장애', new Error('connection failed')],
     ])('%s 오류를 변경하지 않고 전달한다', async (_name, error) => {
       const repository = createMockRepository();
-      vi.mocked(repository.findOneBySlug).mockResolvedValue(null);
-      vi.mocked(repository.insert).mockRejectedValue(error);
+      mockedMethods(repository).findOneBySlug.mockResolvedValue(null);
+      mockedMethods(repository).insert.mockRejectedValue(error);
 
       const usecase = new CreateProduct(repository as never);
 

@@ -80,7 +80,11 @@ suite('카테고리 역채우기 (격리 PostgreSQL 필요)', () => {
       { id: 'manual', category_ids: ['cat-manual', 'cat-productivity'], content_revision: '1' },
       { id: 'unmapped', category_ids: ['cat-manual'], content_revision: '0' },
     ]);
-    expect(after.intents.map(row => [row['product_id'], row['source_revision'], row['kind']]).sort()).toEqual([
+    expect(
+      after.intents
+        .map(row => [row['product_id'], row['source_revision'], row['kind']])
+        .sort((left, right) => left.join().localeCompare(right.join()))
+    ).toEqual([
       ['empty', '1', 'search'],
       ['manual', '1', 'search'],
     ]);

@@ -5,7 +5,6 @@ import { useQuery } from '@apollo/client/react';
 import { TempAllMagazinesOnMagazinesListDocument } from '@darun/provider-graphql';
 import { useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempAllMagazinesOnMagazinesList($page: Int!) {
     tempAllMagazines(page: $page) {

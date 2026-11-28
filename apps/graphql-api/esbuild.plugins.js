@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { sentryEsbuildPlugin } = require('@sentry/esbuild-plugin');
 const ts = require('typescript');
 const fs = require('fs');
@@ -10,7 +10,7 @@ const reflectMetadataSource = fs.readFileSync(require.resolve('reflect-metadata'
 const FIND_COMMENT_REGEXP = /(\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/)|(\/\/.*)/g;
 
 const parseTsConfig = (tsconfig, cwd = process.cwd()) => {
-  const fileName = ts.findConfigFile(cwd, ts.sys.fileExists, tsconfig);
+  const fileName = ts.findConfigFile(cwd, path => ts.sys.fileExists(path), tsconfig);
   if (!fileName) {
     throw new Error(`Fail to load tsconfig file (${tsconfig})!`);
   }
@@ -20,11 +20,13 @@ const parseTsConfig = (tsconfig, cwd = process.cwd()) => {
   }
   const result = ts.parseConfigFileTextToJson(fileName, text);
   if (result.error) {
-    throw new Error(`Fail to parser tsconfig file: ` + result.error.messageText);
+    throw new Error(`Fail to parser tsconfig file: ` + ts.flattenDiagnosticMessageText(result.error.messageText, '\n'));
   }
   const parsedConfig = ts.parseJsonConfigFileContent(result.config, ts.sys, path.dirname(fileName));
   if (parsedConfig.errors[0]) {
-    throw new Error(`Fail to parser tsconfig file: ` + parsedConfig.errors[0].messageText);
+    throw new Error(
+      `Fail to parser tsconfig file: ` + ts.flattenDiagnosticMessageText(parsedConfig.errors[0].messageText, '\n')
+    );
   }
   return parsedConfig;
 };

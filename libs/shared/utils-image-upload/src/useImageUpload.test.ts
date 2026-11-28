@@ -161,7 +161,6 @@ describe('image upload lifetime', () => {
 
   it('aborts the active transport and leaves a subsequent upload usable', async () => {
     const fetchUpload = vi.fn((_url: string, init: RequestInit) => {
-      void _url;
       return new Promise((_resolve, reject) => {
         init.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
       });

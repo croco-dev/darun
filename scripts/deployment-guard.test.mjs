@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 const { parse } = createRequire(import.meta.url)('yaml');
 const workflow = parse(readFileSync(new URL('../.github/workflows/Deploy.yaml', import.meta.url), 'utf8'));
@@ -19,7 +19,7 @@ test('all production triggers serialize the full deployment without cancelling i
 const head = 'a'.repeat(40);
 const old = 'b'.repeat(40);
 const script = fileURLToPath(new URL('./deployment-guard.mjs', import.meta.url));
-const guardStep = workflow.jobs.deploy.steps.find((step) => step.id === 'revision');
+const guardStep = workflow.jobs.deploy.steps.find(step => step.id === 'revision');
 
 test('the revision gate runs inside the lock before any dependency install or production access', () => {
   const steps = workflow.jobs.deploy.steps;
@@ -51,7 +51,12 @@ for (const event of ['push', 'repository_dispatch', 'workflow_dispatch']) {
   }
 }
 
-for (const [name, overrides, response, code] of [
+for (const [
+  name,
+  overrides,
+  response,
+  code,
+] of /** @type {Array<[string, Record<string, string>, string, number]>} */ ([
   ['API failure', {}, head, 503],
   ['invalid API response', {}, 'null', 200],
   ['missing revision', { GITHUB_SHA: '' }, head, 200],
@@ -62,7 +67,7 @@ for (const [name, overrides, response, code] of [
     head,
     403,
   ],
-]) {
+])) {
   test(`${name} fails closed without enabling production steps`, () => {
     const result = runGuard(overrides, response, code);
     assert.notEqual(result.status, 0);

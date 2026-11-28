@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, it, expect, vi } from 'vitest';
 import { Vote } from '../entities/Vote';
 import { votingRateLimitExceeded, votingDuplicateVote } from '../errors/VoteError';
@@ -65,7 +66,10 @@ describe('UpvoteProduct', () => {
     const repository: VoteRecordRepository = { incrementVote: vi.fn().mockResolvedValue(vote) };
     const useCase = new UpvoteProduct(repository);
     await expect(useCase.execute({ productId: 'product-1', voterIp: '192.168.1.1' })).resolves.toBe(vote);
-    expect(repository.incrementVote).toHaveBeenCalledWith('product-1', expect.stringMatching(/^[a-f0-9]{64}$/));
+    expect(mockedMethods(repository).incrementVote).toHaveBeenCalledWith(
+      'product-1',
+      expect.stringMatching(/^[a-f0-9]{64}$/)
+    );
   });
 
   it.each([votingDuplicateVote(), votingRateLimitExceeded()])('preserves atomic write errors', async error => {

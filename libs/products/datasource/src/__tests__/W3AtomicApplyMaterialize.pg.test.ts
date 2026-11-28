@@ -1131,7 +1131,10 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
     const job = await candidate(product.id);
     const usecase = apply();
     const results = await Promise.all([usecase.execute({ jobId: job.id }), usecase.execute({ jobId: job.id })]);
-    expect(results.map(result => result.alreadyApplied).sort()).toEqual([false, true]);
+    expect(results.map(result => result.alreadyApplied).sort((left, right) => Number(left) - Number(right))).toEqual([
+      false,
+      true,
+    ]);
     await db.update(products).set({ description: '<p>later human edit</p>' }).where(eq(products.id, product.id));
     await db
       .update(productDescriptionJobs)
@@ -1698,7 +1701,10 @@ suite('Product-first Apply and reviewed materialization (isolated PostgreSQL)', 
       new PostgresqlProductResearchMaterializationRepository(writerDb as never).materialize(b),
     ]);
     expect(first.product.id).toBe(second.product.id);
-    expect([first.alreadyCreated, second.alreadyCreated].sort()).toEqual([false, true]);
+    expect([first.alreadyCreated, second.alreadyCreated].sort((left, right) => Number(left) - Number(right))).toEqual([
+      false,
+      true,
+    ]);
     const [stored] = await db.select().from(productResearchJobs).where(eq(productResearchJobs.id, job.id));
     const winner = first.alreadyCreated ? b : a;
     const { researchJobId: _jobId, officialUrlConfirmed: _confirmed, ...reviewedInput } = winner;

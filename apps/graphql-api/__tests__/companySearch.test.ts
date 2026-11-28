@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { GetAllCompanies, SearchCompany, type CompanyRepository } from '@darun/companies-domain';
 import { CompanyQueryResolver } from '@darun/companies-feature/server';
 import { createServer } from '@darun/utils-apollo-server';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('회사 검색의 운영 GraphQL 응답 계약', () => {
@@ -23,7 +24,7 @@ describe('회사 검색의 운영 GraphQL 응답 계약', () => {
 
   beforeAll(() => server.start());
   afterAll(() => server.stop());
-  beforeEach(() => vi.mocked(repository.findByName).mockClear());
+  beforeEach(() => mockedMethods(repository).findByName.mockClear());
 
   async function search(variables: Record<string, unknown>, admin = true) {
     const result = await server.executeOperation(
@@ -47,7 +48,7 @@ describe('회사 검색의 운영 GraphQL 응답 계약', () => {
       const result = await search({ query: ' 다런 ', ...(first === undefined ? {} : { first }) });
       expect(result.errors).toBeUndefined();
       expect(result.data?.searchCompanies).toEqual([]);
-      expect(repository.findByName).toHaveBeenLastCalledWith('다런', expected);
+      expect(mockedMethods(repository).findByName).toHaveBeenLastCalledWith('다런', expected);
     }
   });
 
@@ -58,7 +59,7 @@ describe('회사 검색의 운영 GraphQL 응답 계약', () => {
       expect(result.errors).toHaveLength(1);
       expect(result.errors![0].extensions).toEqual({ code: 'company/invalid-search-args' });
       expect(result.errors![0].message).toBe('company/invalid-search-args');
-      expect(repository.findByName).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findByName).not.toHaveBeenCalled();
     }
   );
 
@@ -66,17 +67,17 @@ describe('회사 검색의 운영 GraphQL 응답 계약', () => {
     expect((await search({ query: ' \t ' })).data?.searchCompanies).toEqual([]);
     const invalid = await search({ query: '다런', first: 1.5 });
     expect(invalid.errors?.[0].extensions?.code).toBe('BAD_USER_INPUT');
-    expect(repository.findByName).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findByName).not.toHaveBeenCalled();
   });
 
   it('관리자 권한이 없는 요청은 저장소 전에 거절한다', async () => {
     const result = await search({ query: '다런', first: 20 }, false);
     expect(result.errors?.[0].extensions?.code).toBe('UNAUTHORIZED');
-    expect(repository.findByName).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findByName).not.toHaveBeenCalled();
   });
 
   it('조회 장애는 입력 오류나 빈 결과로 바꾸지 않고 내부 원문을 숨긴다', async () => {
-    vi.mocked(repository.findByName).mockRejectedValueOnce(new Error('private read failure detail'));
+    mockedMethods(repository).findByName.mockRejectedValueOnce(new Error('private read failure detail'));
     const result = await search({ query: '다런' });
     expect(result.errors).toHaveLength(1);
     expect(result.errors![0]).toMatchObject({

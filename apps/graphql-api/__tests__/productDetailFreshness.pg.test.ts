@@ -2181,7 +2181,10 @@ suite('상품 상세의 요청 간 최신성 (PRODUCT_DETAIL_TEST_DATABASE_URL �
         ('ranking-vote-outside', 'outside', 999)`;
       const repository = new PostgresqlVoteRepository(db);
       const ids = ['ranking-b', 'missing', 'ranking-a', 'ranking-b'];
-      const counts = async () => (await repository.findByTargetIds(ids)).map(row => [row.targetId, row.count]).sort();
+      const counts = async () =>
+        (await repository.findByTargetIds(ids))
+          .map(row => [row.targetId, row.count])
+          .sort(([left], [right]) => String(left).localeCompare(String(right)));
       expect(await counts()).toEqual([
         ['ranking-a', 7],
         ['ranking-b', 23],

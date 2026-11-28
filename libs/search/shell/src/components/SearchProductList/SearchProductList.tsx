@@ -29,7 +29,7 @@ function trackShortcutActivation(trackClick: () => void) {
   };
 }
 
-const CATEGORIES_QUERY = gql`
+gql`
   query CompactCategoriesForSearchProductList($first: Int!, $locale: String!) {
     categories(first: $first, locale: $locale) {
       id
@@ -40,7 +40,7 @@ const CATEGORIES_QUERY = gql`
   }
 `;
 
-const TRENDING_PREVIEW_QUERY = gql`
+gql`
   query CompactTrendingPreviewForSearchProductList($first: Int!, $locale: String!) {
     rankedProducts(first: $first, locale: $locale) {
       id

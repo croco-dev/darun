@@ -82,7 +82,7 @@ test('both read-only probes pass for an empty database without exposing IDs or s
   assert.ok(logs.every(line => line.revision === revision && !Number.isNaN(Date.parse(line.time))));
 });
 
-for (const [name, body, status, result] of [
+for (const [name, body, status, result] of /** @type {Array<[string, unknown, number, string]>} */ ([
   [
     'GraphQL errors with partial data',
     {
@@ -103,7 +103,7 @@ for (const [name, body, status, result] of [
     'graphql_error',
   ],
   ['HTTP failure', { data: { categories: [] } }, 503, 'http_error'],
-]) {
+])) {
   test(`initialization success and database failure remain distinct: ${name}`, async t => {
     const { endpoint, requests } = await fixture(t, (query, res) => {
       if (query.includes('__typename')) return success(query, res);

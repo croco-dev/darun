@@ -96,7 +96,7 @@ test('the import guard rejects missing declarations and private entries across i
   }
 });
 
-test('Turbo includes direct workspace tasks and propagates their source hashes to both apps', () => {
+test('Turbo includes direct workspace tasks and propagates their source and generated client hashes to both apps', () => {
   const fixture = mkdtempSync(path.join(tmpdir(), 'darun-workspace-graph-'));
   const run = (command, args, cwd = fixture) => {
     const result = spawnSync(command, args, {
@@ -149,6 +149,16 @@ test('Turbo includes direct workspace tasks and propagates their source hashes t
       assert.notEqual(task(app).hash, baseline.hash, `${source} must invalidate ${app} typecheck`);
       write(fixture, source, original);
       assert.equal(task(app).hash, baseline.hash, 'restoring a dependency restores the input hash');
+    }
+    // provider-graphql re-exports this client from outside every workspace package.
+    const generatedClient = 'libs/__generated__/graphql.ts';
+    copy(generatedClient);
+    for (const app of ['graphql-api', 'service-web']) {
+      const baseline = task(app);
+      const original = readFileSync(path.join(fixture, generatedClient), 'utf8');
+      write(fixture, generatedClient, `${original}\n// generated client hash probe\n`);
+      assert.notEqual(task(app).hash, baseline.hash, `${generatedClient} must invalidate ${app} typecheck`);
+      write(fixture, generatedClient, original);
     }
   } finally {
     rmSync(fixture, { recursive: true, force: true });

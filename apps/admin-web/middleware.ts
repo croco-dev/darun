@@ -1,7 +1,7 @@
 import { authChecker, initAuthProvider } from '@darun/provider-auth/server';
+import { CookieAttributes, Cookies } from 'next-client-cookies';
 import { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { CookieAttributes, Cookies } from 'next-client-cookies';
 import { container } from './app/container';
 
 initAuthProvider({ authServiceFactory: () => container.createAuthService() });

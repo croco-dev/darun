@@ -296,7 +296,10 @@ suite('계정 저장의 PostgreSQL 수렴', () => {
       expect(await status()).toBe(false);
       await set(true);
       const deletes = await Promise.all([toggle(), toggle()]);
-      expect(deletes.map(result => result.saved).sort()).toEqual([false, true]);
+      expect(deletes.map(result => result.saved).sort((left, right) => Number(left) - Number(right))).toEqual([
+        false,
+        true,
+      ]);
       expect(await status()).toBe(true);
     });
 

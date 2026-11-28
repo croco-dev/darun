@@ -74,6 +74,7 @@ import {
 import { SearchProduct, type SearchableProductRepository } from '@darun/search-domain';
 import { TranslationService, type TranslationRepository, computeSourceHash } from '@darun/translation-domain';
 import type * as ApolloServer from '@darun/utils-apollo-server';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { GetVoteCount, type VoteRepository } from '@darun/voting-domain';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Product } from '../graphs/Product';
@@ -306,7 +307,7 @@ describe('ProductQueryResolver', () => {
       countPublishedByCategoryId: vi.fn().mockResolvedValue(3),
     });
     const categories = createCategoryRepository();
-    vi.mocked(categories.findOneBySlug).mockResolvedValue(
+    mockedMethods(categories).findOneBySlug.mockResolvedValue(
       new Category({
         id: 'category',
         slug: 'tools',
@@ -335,14 +336,14 @@ describe('ProductQueryResolver', () => {
       productRepository: repository,
     });
     const result = await resolver.visualApps(24, undefined, 'App', 'app');
-    expect(repository.findVisualApps).toHaveBeenCalledWith({
+    expect(mockedMethods(repository).findVisualApps).toHaveBeenCalledWith({
       limit: 25,
       afterId: undefined,
       query: 'App',
       productSlug: 'app',
     });
-    expect(repository.findVisualAppCover).not.toHaveBeenCalled();
-    expect(repository.countVisualAppScreenshots).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findVisualAppCover).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).countVisualAppScreenshots).not.toHaveBeenCalled();
     expect(result.totalCount).toBe(9000);
   });
   it('rejects overlong visual app queries before the repository reads', async () => {
@@ -351,7 +352,7 @@ describe('ProductQueryResolver', () => {
     await expect(resolver.visualApps(24, undefined, '가'.repeat(101))).rejects.toMatchObject({
       code: 'product/invalid-args',
     });
-    expect(repository.findVisualApps).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).findVisualApps).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -364,7 +365,7 @@ describe('ProductQueryResolver', () => {
     const repository = createProductRepository();
     const resolver = createProductQueryResolver({ productRepository: repository });
     await resolver.visualApps(24, undefined, query, 'fixture-app');
-    expect(repository.findVisualApps).toHaveBeenCalledExactlyOnceWith({
+    expect(mockedMethods(repository).findVisualApps).toHaveBeenCalledExactlyOnceWith({
       limit: 25,
       afterId: undefined,
       query: normalized,
@@ -415,7 +416,7 @@ describe('ProductQueryResolver', () => {
           { entityId: 'f3', field: 'name' },
         ],
       });
-      expect(repository.findOne).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findOne).not.toHaveBeenCalled();
     });
 
     it('번역 호출 자체가 실패해도 모든 기능의 원문을 반환한다', async () => {
@@ -483,8 +484,12 @@ describe('ProductQueryResolver', () => {
       const result = await resolver.alternatives(createProductRoot('ko'));
 
       expect(result.map(product => product.id)).toEqual(['alt-2', 'alt-1']);
-      expect(productRepository.findPublishedByIds).toHaveBeenCalledExactlyOnceWith(['alt-2', 'alt-1', 'gone']);
-      expect(productRepository.findPublishedOneById).not.toHaveBeenCalled();
+      expect(mockedMethods(productRepository).findPublishedByIds).toHaveBeenCalledExactlyOnceWith([
+        'alt-2',
+        'alt-1',
+        'gone',
+      ]);
+      expect(mockedMethods(productRepository).findPublishedOneById).not.toHaveBeenCalled();
     });
 
     it('공통 상품 조회 장애를 빈 대안 목록으로 숨기지 않는다', async () => {
@@ -583,7 +588,7 @@ describe('ProductQueryResolver', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('p1');
-      expect(rejectingTagsUseCase.execute).not.toHaveBeenCalled();
+      expect(mockedMethods(rejectingTagsUseCase).execute).not.toHaveBeenCalled();
 
       await expect(resolver.tags(result[0])).rejects.toThrow('Tags batch failed');
     });

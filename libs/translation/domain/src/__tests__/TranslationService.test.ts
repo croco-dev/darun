@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TranslationRepository, TranslationRow } from '../repositories/TranslationRepository';
 import { TranslationService } from '../services/TranslationService';
@@ -38,8 +39,8 @@ describe('TranslationService', () => {
         [computeSourceHash('    코드', field), koreanValue],
         [computeSourceHash(koreanValue, field), row.value],
       ] as const) {
-        vi.mocked(repository.findOne).mockResolvedValue({ ...row, sourceHash });
-        vi.mocked(repository.findMany).mockResolvedValue([{ ...row, sourceHash }]);
+        mockedMethods(repository).findOne.mockResolvedValue({ ...row, sourceHash });
+        mockedMethods(repository).findMany.mockResolvedValue([{ ...row, sourceHash }]);
         expect(await service.getTranslation({ ...row, koreanValue })).toBe(expected);
         expect(
           (
@@ -65,14 +66,14 @@ describe('TranslationService', () => {
       });
 
       expect(result).toBe('간편한 협업 툴');
-      expect(repository.findOne).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findOne).not.toHaveBeenCalled();
     });
 
     it('returns translated value when sourceHash matches exactly', async () => {
       const koreanValue = '간편한 협업 툴';
       const sourceHash = computeSourceHash(koreanValue);
 
-      vi.mocked(repository.findOne).mockResolvedValueOnce({
+      mockedMethods(repository).findOne.mockResolvedValueOnce({
         id: 't-1',
         entityType: 'Product',
         entityId: 'p-1',
@@ -98,7 +99,7 @@ describe('TranslationService', () => {
     it('falls back to koreanValue when sourceHash is mismatched (stale translation)', async () => {
       const staleHash = computeSourceHash('이전 한국어 내용');
 
-      vi.mocked(repository.findOne).mockResolvedValueOnce({
+      mockedMethods(repository).findOne.mockResolvedValueOnce({
         id: 't-1',
         entityType: 'Product',
         entityId: 'p-1',
@@ -122,7 +123,7 @@ describe('TranslationService', () => {
     });
 
     it('falls back to koreanValue when sourceHash is null/undefined in existing DB row', async () => {
-      vi.mocked(repository.findOne).mockResolvedValueOnce({
+      mockedMethods(repository).findOne.mockResolvedValueOnce({
         id: 't-1',
         entityType: 'Product',
         entityId: 'p-1',
@@ -146,7 +147,7 @@ describe('TranslationService', () => {
     });
 
     it('falls back to koreanValue when repository throws', async () => {
-      vi.mocked(repository.findOne).mockRejectedValueOnce(new Error('DB error'));
+      mockedMethods(repository).findOne.mockRejectedValueOnce(new Error('DB error'));
 
       const result = await service.getTranslation({
         entityType: 'Product',
@@ -200,7 +201,7 @@ describe('TranslationService', () => {
         },
       ];
 
-      vi.mocked(repository.findMany).mockResolvedValueOnce(rows);
+      mockedMethods(repository).findMany.mockResolvedValueOnce(rows);
 
       const result = await service.getTranslations({
         entityType: 'Product',

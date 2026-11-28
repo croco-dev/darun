@@ -12,6 +12,7 @@ import {
   type ProductRepository,
   type ProductTagRepository,
 } from '@darun/products-domain';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type * as GraphQL from 'graphql';
 import { buildSchemaSync } from 'type-graphql';
@@ -220,7 +221,7 @@ describe('태그 저장소 실패 → GraphQL → 실제 편집 폼', () => {
     fixture.submit();
     expect(fixture.save().disabled).toBe(true);
     expect(fixture.writes).toHaveLength(0);
-    expect(fixture.repository.upsert).not.toHaveBeenCalled();
+    expect(mockedMethods(fixture.repository).upsert).not.toHaveBeenCalled();
     expect(fixture.stored()).toEqual(['핀테크', '결제']);
     expect(JSON.stringify(fixture.client.cache.extract())).not.toContain('"tags":[]');
 

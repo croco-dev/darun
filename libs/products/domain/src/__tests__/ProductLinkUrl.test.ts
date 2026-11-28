@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { ProductLink } from '../entities/ProductLink';
 import type { ProductLinkRepository } from '../repositories/ProductLinkRepository';
@@ -31,8 +32,8 @@ describe('상품 링크 URL 쓰기', () => {
           link,
         })
       ).rejects.toMatchObject({ code: 'product/invalid-args' });
-      expect(repo.insert).not.toHaveBeenCalled();
-      expect(repo.updateById).not.toHaveBeenCalled();
+      expect(mockedMethods(repo).insert).not.toHaveBeenCalled();
+      expect(mockedMethods(repo).updateById).not.toHaveBeenCalled();
     }
   );
 
@@ -50,9 +51,9 @@ describe('상품 링크 URL 쓰기', () => {
     async link => {
       const repo = repository();
       await new AddProductLink(repo).execute({ ...values, link });
-      expect(repo.insert).toHaveBeenCalledWith(expect.objectContaining({ link }));
+      expect(mockedMethods(repo).insert).toHaveBeenCalledWith(expect.objectContaining({ link }));
       const entity = new ProductLink(values);
-      vi.mocked(repo.updateById).mockImplementation(async (_id, _productId, modifier) => modifier(entity));
+      mockedMethods(repo).updateById.mockImplementation(async (_id, _productId, modifier) => modifier(entity));
       await new UpdateProductLink(repo).execute({
         linkId: 'link-1',
         productId: values.productId,
@@ -65,7 +66,7 @@ describe('상품 링크 URL 쓰기', () => {
   it('기존 규칙 밖 주소를 읽고 주소를 생략한 다른 필드 수정도 허용한다', async () => {
     const entity = new ProductLink({ ...values, link: 'legacy-link' });
     const repo = repository();
-    vi.mocked(repo.updateById).mockImplementation(async (_id, _productId, modifier) => modifier(entity));
+    mockedMethods(repo).updateById.mockImplementation(async (_id, _productId, modifier) => modifier(entity));
     await new UpdateProductLink(repo).execute({
       linkId: 'link-1',
       productId: values.productId,

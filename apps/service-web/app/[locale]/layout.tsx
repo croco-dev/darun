@@ -2,11 +2,11 @@ import '../globals.css';
 
 import { notFound } from '@darun/utils-router';
 import { Metadata } from 'next';
-import localFont from 'next/font/local';
-import { headers } from 'next/headers';
 import { CookiesProvider } from 'next-client-cookies/server';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
+import localFont from 'next/font/local';
+import { headers } from 'next/headers';
 import { ReactNode } from 'react';
 import { routing } from '../../i18n/routing';
 import { buildRootLayoutMetadata } from '../../lib/seo/metadata';

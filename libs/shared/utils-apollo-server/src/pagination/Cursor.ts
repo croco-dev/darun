@@ -32,7 +32,7 @@ export class Cursor {
           return `${cursorKey.toString()}${KEY_DELIMITER}${isoString}`;
         }
 
-        return `${cursorKey.toString()}${KEY_DELIMITER}${item[cursorKey]}`;
+        return `${cursorKey.toString()}${KEY_DELIMITER}${String(item[cursorKey])}`;
       })
       .join(CURSOR_DELIMITER);
 

@@ -1,6 +1,7 @@
 import net from 'node:net';
 
 // Preload before Next/Sentry initialization so fixture traces cannot reach external collectors.
+// eslint-disable-next-line @typescript-eslint/unbound-method -- the original is called with apply(this) below.
 const connect = net.Socket.prototype.connect;
 net.Socket.prototype.connect = function (...args) {
   const options = Array.isArray(args[0]) ? args[0] : args;

@@ -17,10 +17,8 @@
     }
   },
   "scripts": {
-    "lint": "eslint .",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@apollo/client": "catalog:",
@@ -39,7 +37,6 @@
     "dompurify": "^3.2.0"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
     "@testing-library/react": "16.3.2",

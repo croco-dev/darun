@@ -649,7 +649,7 @@ suite('대안 교체 PostgreSQL 무결성 (ALTERNATIVE_TEST_DATABASE_URL 필요)
       })
     );
     expect(results.map(result => result.status)).toEqual(Array(12).fill('fulfilled'));
-    const final = (await rows()).map(row => row.alternative_product_id).sort();
+    const final = (await rows()).map(row => String(row.alternative_product_id)).sort();
     expect(requests.map(ids => [...ids].sort())).toContainEqual(final);
   });
 });

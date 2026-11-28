@@ -3,7 +3,6 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { AllProductsOnProductListTableDocument } from '@darun/provider-graphql';
 import { useEffect, useRef, useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query AllProductsOnProductListTable($first: Int, $after: String, $last: Int, $before: String) {
     allProducts(first: $first, after: $after, last: $last, before: $before) {

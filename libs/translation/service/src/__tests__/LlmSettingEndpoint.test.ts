@@ -71,7 +71,7 @@ describe('LLM 설정 저장과 completion의 엔드포인트 일치', () => {
     });
     expect(transport).toHaveBeenCalledTimes(1);
     const [url, init] = transport.mock.calls[0]!;
-    expect(String(url)).toBe(`${expectedBase}/chat/completions`);
+    expect(url instanceof Request ? url.url : url.toString()).toBe(`${expectedBase}/chat/completions`);
     expect(new Headers(init?.headers).get('authorization') === `Bearer ${storedKey}`).toBe(true);
   });
 

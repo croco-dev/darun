@@ -8,7 +8,6 @@ import {
 import { notifications } from '@mantine/notifications';
 import { useState } from 'react';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query TempProductOnPublishProductButton($slug: String!) {
     tempProductBySlug(slug: $slug) {

@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
+import { describe, expect, it } from 'vitest';
 import { Product } from '../entities/Product';
 import { CreateProduct } from '../usecases/CreateProduct';
 import { EditProduct } from '../usecases/EditProduct';
@@ -15,7 +16,7 @@ describe('상품 이름·요약의 DB 문자 수 한도', () => {
   it.each(['name', 'summary'] as const)('%s 초과 입력은 생성·편집 저장소 호출 전에 거절한다', async field => {
     for (const character of ['a', '한', '😀']) {
       const repository = createMockRepository();
-      vi.mocked(repository.insert).mockResolvedValue(new Product(input));
+      mockedMethods(repository).insert.mockResolvedValue(new Product(input));
       const values = { ...input, [field]: character.repeat(256) };
       await expect(new CreateProduct(repository).execute(values)).rejects.toMatchObject({
         code: 'product/invalid-args',
@@ -26,9 +27,9 @@ describe('상품 이름·요약의 DB 문자 수 한도', () => {
           [field]: values[field],
         })
       ).rejects.toMatchObject({ code: 'product/invalid-args' });
-      expect(repository.findOneBySlug).not.toHaveBeenCalled();
-      expect(repository.insert).not.toHaveBeenCalled();
-      expect(repository.updateById).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).findOneBySlug).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).insert).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).updateById).not.toHaveBeenCalled();
     }
   });
 
@@ -39,8 +40,8 @@ describe('상품 이름·요약의 DB 문자 수 한도', () => {
       name: character.repeat(255),
       summary: character.repeat(255),
     };
-    vi.mocked(repository.insert).mockImplementation(async product => product);
-    vi.mocked(repository.updateById).mockImplementation(async (_id, update) => update(new Product(input)));
+    mockedMethods(repository).insert.mockImplementation(async product => product);
+    mockedMethods(repository).updateById.mockImplementation(async (_id, update) => update(new Product(input)));
     expect(await new CreateProduct(repository).execute(values)).toMatchObject(values);
     expect(
       await new EditProduct(repository).execute({
@@ -53,7 +54,7 @@ describe('상품 이름·요약의 DB 문자 수 한도', () => {
 
   it('편집에서 생략한 필드와 빈 요약은 그대로 허용한다', async () => {
     const repository = createMockRepository();
-    vi.mocked(repository.updateById).mockImplementation(async (_id, update) => update(new Product(input)));
+    mockedMethods(repository).updateById.mockImplementation(async (_id, update) => update(new Product(input)));
     expect(
       await new EditProduct(repository).execute({
         id: 'product-1',

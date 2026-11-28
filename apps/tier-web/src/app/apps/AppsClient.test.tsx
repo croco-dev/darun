@@ -146,6 +146,7 @@ test('clearing a pending search restores the catalog and ignores its late respon
       root.render(<AppsClient initialApps={initialApps} initialTotalCount={1} initialNextCursor={null} />);
     });
     const input = container.querySelector('input')!;
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- the native setter is called with call(input) below.
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
     const changeSearch = async (value: string) => {
       await act(async () => {

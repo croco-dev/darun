@@ -6,7 +6,8 @@ export const ProductResearchJobRepositoryToken = new Token<ProductResearchJobRep
 );
 
 export type ClaimProductResearchJobResult =
-  { claimed: true; job: ProductResearchJobEntity } | { claimed: false; job: ProductResearchJobEntity | null };
+  | { claimed: true; job: ProductResearchJobEntity }
+  | { claimed: false; job: ProductResearchJobEntity | null };
 
 export type RecoverableProductResearchJob = Pick<
   ProductResearchJobEntity,

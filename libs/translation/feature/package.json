@@ -12,10 +12,8 @@
     }
   },
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/translation-service": "workspace:*",
@@ -27,7 +25,6 @@
     "typedi": "catalog:"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@darun/utils-vitest-config": "workspace:*",
     "vitest": "catalog:"

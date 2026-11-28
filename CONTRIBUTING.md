@@ -329,8 +329,8 @@ Mongo fixture도 Compose처럼 `admin`에 인증 사용자를 생성하고 URI�
 
 2. **자동 품질 검사 (품질 게이트)**:
    `trunk` 브랜치에 병합되거나 코드가 푸시되면 GitHub Actions가 품질 검사를 실행합니다.
-   검사 순서: `lint` → `typecheck` → `typecheck:tsrs` → `test`
-   Production Deploy는 push·workflow_dispatch·repository_dispatch 모두 해당 실행의 `github.sha`를 quality와 deploy에서 동일하게 checkout합니다. quality는 저장소 루트의 네 검사를 실행하며, Turbo 로그의 패키지·작업 목록으로 공유 라이브러리의 수집 범위를 확인합니다. quality가 실패하거나 취소되면 `needs: quality`에 의해 migration과 SST 배포 job은 실행되지 않습니다. 별도 PR workflow나 과거 revision의 성공으로 이 검사를 대체하지 않습니다.
+   검사 순서: `lint` → `typecheck` → `test`
+   Production Deploy는 push·workflow_dispatch·repository_dispatch 모두 해당 실행의 `github.sha`를 quality와 deploy에서 동일하게 checkout합니다. quality는 저장소 루트의 세 검사를 실행합니다. typecheck와 test는 Turbo 로그의 패키지·작업 목록으로 공유 라이브러리의 수집 범위를 확인하고, lint는 루트에서 한 번 실행하는 oxlint 출력의 검사 파일 수로 확인합니다. quality가 실패하거나 취소되면 `needs: quality`에 의해 migration과 SST 배포 job은 실행되지 않습니다. 별도 PR workflow나 과거 revision의 성공으로 이 검사를 대체하지 않습니다.
    GraphQL 변경은 TypeGraphQL 선언에 canonical 공개 타입 이름을 명시해 번들러의 클래스명 변경이 API 이름에 반영되지 않게 합니다. Node.js 22에서 `pnpm --filter graphql-api build:lambda` 다음 `pnpm --filter graphql-api verify:lambda`를 실행합니다. 검증은 임시 RSA·검증 전용 환경과 네트워크 연결 차단 아래 7개 배포 handler를 초기화하고, 배포와 같은 decorator metadata·minify 설정의 전체 resolver schema와 저장 SDL이 일치하는지 확인합니다. codegen 설정이 수집하는 libs 및 admin/service/visual 앱의 모든 operation·fragment를 두 schema에 검증한 뒤 health query만 실행하며, DB 연결·업무 mutation·worker 실행은 하지 않습니다. 문서는 앱 모듈을 실행하지 않고 정적으로 추출하며, 일치하는 파일의 문서 파싱 오류도 생략하지 않고 실패로 처리합니다. SDL 갱신이 필요하면 `pnpm --filter graphql-api verify:lambda -- --emit-schema`로 생성하고 `pnpm --filter @darun/provider-graphql codegen`으로 저장 SDL의 실제 문서 검증과 생성 타입 갱신을 완료합니다.
 
 3. **배포 실행**:
@@ -708,24 +708,25 @@ PR을 올리기 전에 아래 명령이 모두 통과해야 합니다.
 
 ```bash
 pnpm audit --audit-level=critical  # Critical 의존성 취약점 검사
-pnpm lint           # ESLint + Prettier 검사
-pnpm typecheck      # TypeScript 타입 검사
-pnpm typecheck:tsrs # tsrs 추가 타입 검사
+pnpm lint           # oxlint(type-aware 포함) + oxfmt 포맷 검사
+pnpm typecheck      # tsrs 타입 검사
 pnpm test           # 오프라인 평가 회귀 + Vitest 단위 테스트
 pnpm test:coverage  # 커버리지 포함 테스트 (lcov/html 리포트 생성)
 ```
 
-`pnpm typecheck:tsrs`는 기존 `pnpm typecheck`와 같은 패키지 및 `tsconfig.json`을 검사합니다. 개별 패키지는 `pnpm --filter <package-name> typecheck:tsrs`로 검사할 수 있습니다. PR CI, GraphQL 배포 전 quality 검사, tier-web CI에서 두 검사를 모두 필수로 실행합니다.
+`pnpm typecheck`는 각 패키지의 `tsconfig.json`을 `tsrs`로 검사합니다. 개별 패키지는 `pnpm --filter <package-name> typecheck`로 검사할 수 있습니다. `tsc` 검사는 실행하지 않습니다.
 
-PR CI의 전체 패키지 검사는 `pnpm run typecheck:tsrs --concurrency=4 -- --checkers 1`을 사용합니다. 로컬 명령과 GraphQL·tier-web 단독 CI 검사는 기본 옵션을 사용합니다. 실행 조건별 비교와 선택 근거는 [CI 성능 측정 결과](docs/tsrs-ci-performance.md)에 기록합니다.
+PR CI와 GraphQL 배포 전 quality 검사의 전체 패키지 검사는 `pnpm run typecheck --concurrency=4 -- --checkers 1`을 사용합니다. 로컬 명령과 tier-web 단독 CI 검사는 기본 옵션을 사용합니다. 실행 조건별 비교와 선택 근거는 [CI 성능 측정 결과](docs/tsrs-ci-performance.md)에 기록합니다.
 
-`tsrs`는 버전을 고정하고 `--noEmit --incremental false`로 실행해 JavaScript를 출력하거나 기존 TypeScript의 증분 캐시를 덮어쓰지 않습니다. 기존 `typescript` 의존성과 `tsc` 명령은 유지하며, Lambda의 decorator metadata 변환과 테스트에서 사용하는 TypeScript API도 그대로 유지합니다. 새 패키지에도 두 검사 스크립트를 함께 정의합니다.
+`tsrs`는 버전을 고정하고 `--noEmit --incremental false`로 실행해 JavaScript를 출력하지 않습니다. `typescript` 의존성은 Next.js 빌드, Lambda의 decorator metadata 변환과 테스트에서 사용하는 TypeScript API를 위해 유지합니다. 새 패키지의 `typecheck` 스크립트도 `tsrs --noEmit --incremental false`로 정의합니다.
 
-`tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, PR CI와 같은 Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
+`pnpm lint`는 저장소 루트에서 한 번 실행하며 모든 패키지의 JS/TS 소스를 검사합니다. 패키지별 `lint` 스크립트는 두지 않습니다. 규칙은 `oxlint.config.mts`, 포맷은 `.oxfmtrc.json`에 있고, type-aware 규칙은 `tsrs-lint`(`OXLINT_TSGOLINT_PATH`)로 실행하며 모두 error입니다. 테스트에서 mock 메서드를 `expect()`나 `vi.mocked()`에 넘길 때는 `@darun/utils-vitest-config/testing`의 `mockedMethods(obj).method`로 참조해 `unbound-method`를 지킵니다.
 
-앱·라이브러리·패키지 템플릿의 ESLint glob은 따옴표로 감싸 `ts`와 `tsx` 중첩 소스까지 검사합니다. 셸이 `**`를 먼저 확장하지 않도록 따옴표를 유지합니다. 공통 설정은 `__generated__`, `dist`, `build`, `coverage` 생성물을 제외하고, Next.js가 생성하는 `.next/`와 `next-env.d.ts`도 루트 설정에서 제외합니다.
+`tsrs performance` 워크플로는 수동 실행용입니다. 기본 브랜치에 워크플로가 반영된 뒤 GitHub Actions에서 실행하면, Ubuntu 22.04·DB 서비스 조건의 전체 검사와 Ubuntu 최신 실행기의 앱별 검사를 비교합니다. Turbo 결과 캐시를 끄고 각 설정을 3회 실행하며, 매번 별도 cgroup v2의 `memory.peak`로 모든 하위 프로세스의 최대 메모리를 측정합니다. 원본 측정값과 로그는 workflow artifact에 보관합니다. 측정 도구의 회귀 테스트는 `python3 -B -m unittest discover -s scripts -p 'test_benchmark_tsrs.py'`로 실행합니다.
 
-`node --test scripts/lint-coverage.test.mjs`는 임시 workspace에서 실제 패키지·루트 lint 명령을 실행합니다. 깊은 TS/TSX 파일의 오류를 거절하는지, 오류를 고치면 통과하는지, 생성물의 잘못된 문법은 검사하지 않는지 확인하며 PR CI에서도 실행합니다. 임시 workspace는 설치된 도구를 공유하고 별도 의존성을 설치하지 않습니다.
+oxlint와 oxfmt 설정은 `__generated__`, `dist`, `build`, `coverage` 생성물과 Next.js가 생성하는 `.next/`, `next-env.d.ts`를 제외합니다. oxlint는 `.gitignore`를 따라 `node_modules`를 탐색하지 않습니다.
+
+`node --test scripts/lint-coverage.test.mjs`는 임시 workspace에서 실제 루트 lint 명령을 실행합니다. 여러 패키지의 깊은 TS/TSX/MJS/CJS 파일 오류를 거절하는지, 오류를 고치면 통과하는지, 생성물의 잘못된 문법은 검사하지 않는지 확인하며 PR CI에서도 실행합니다. 임시 workspace는 설치된 도구를 공유하고 별도 의존성을 설치하지 않습니다.
 
 GraphQL 변경은 Node.js 22에서 `pnpm --filter graphql-api build:lambda`와 `pnpm --filter graphql-api verify:lambda`도 실행합니다. 이 검사는 번들 초기화뿐 아니라 실제 resolver 스키마와 커밋된 `schema.graphql`의 일치 여부를 확인합니다.
 
@@ -797,9 +798,9 @@ HTML/Markdown 의미 전환의 공통 원문과 영어 기대값은 `libs/transl
 pnpm format
 ```
 
-Lefthook이 설치되어 있으면 커밋 전 Git index에 스테이징된 내용을 ESLint로 검사합니다. 작업 파일과 index를 자동 수정하지 않으므로 부분 스테이징에서 제외한 변경은 그대로 유지됩니다. 검사 실패 시 오류를 수정하고 변경 내용을 검토한 뒤 커밋할 부분만 다시 스테이징합니다. `pnpm format`은 작업 파일을 자동 수정하므로 실행 후 변경 내용을 확인해야 합니다.
+Lefthook이 설치되어 있으면 커밋 전 Git index에 스테이징된 내용을 oxlint와 oxfmt로 검사합니다. index 전체를 임시 디렉터리에 꺼내 그 안에서 스테이징된 소스만 검사하므로, 작업 파일과 index를 자동 수정하지 않고 부분 스테이징에서 제외한 변경도 검사에 섞이지 않습니다. 검사 실패 시 오류를 수정하고 변경 내용을 검토한 뒤 커밋할 부분만 다시 스테이징합니다. `pnpm format`은 작업 파일을 자동 수정하므로 실행 후 변경 내용을 확인해야 합니다.
 
-`node --test scripts/lint-staged.test.mjs`는 격리 Git 저장소에서 설치된 Lefthook과 ESLint를 실행해 정상 입력, 수정 가능한 오류, 수정 불가능한 오류, 부분 스테이징, 이름 변경과 삭제를 확인합니다. PR CI에서도 같은 검사를 실행합니다.
+`node --test scripts/lint-staged.test.mjs`는 격리 Git 저장소에서 설치된 Lefthook, oxlint, oxfmt를 실행해 정상 입력, 포맷 오류, lint 오류, 부분 스테이징, 이름 변경과 삭제를 확인합니다. PR CI에서도 같은 검사를 실행합니다.
 
 관리자의 전송 취소 통합 검사는 service/visual 앱의 실제 container도 읽습니다. `apps/admin-web/turbo.json`은 두 container와 service의 로컬 SEO 의존 파일을 관리자 test 입력에 포함합니다. 새 로컬 의존 파일을 참조하면 이 입력도 함께 갱신합니다. `node --test scripts/transport-test-cache.test.mjs`는 격리 workspace에서 실제 Turbo와 전송 회귀를 실행해 변경 없는 캐시 재사용, 각 sibling의 공유 batch 전송 결함에 대한 캐시 무효화·검사 실패, 관리자·공통 링크 변경의 hash 전파를 확인하며 PR CI에서도 실행합니다.
 

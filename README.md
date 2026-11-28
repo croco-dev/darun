@@ -102,7 +102,6 @@ pnpm --filter tier-web dev      # http://localhost:3003
 ```bash
 pnpm lint
 pnpm typecheck
-pnpm typecheck:tsrs
 pnpm test
 ```
 
@@ -141,7 +140,7 @@ pnpm --filter @darun/products-feature exec vitest run src/EditProductDescription
 - Frontend: React 19, Next.js 15, Tailwind CSS 4
 - Backend: Apollo Server, TypeDI, AWS Lambda, SST
 - Data: Drizzle ORM, Mongoose
-- Quality: ESLint, Prettier, Vitest, Lefthook
+- Quality: oxlint, oxfmt, tsrs, Vitest, Lefthook
 
 ## Contributing
 

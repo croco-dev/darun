@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Company } from '@darun/companies-domain';
 import { Drizzle } from '@darun/provider-database';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import DataLoader from 'dataloader';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { PostgresqlCompanyRepository } from '../repositories/PostgresqlCompanyRepository';
@@ -20,7 +21,7 @@ describe('PostgresqlCompanyRepository', () => {
       const repository = new PostgresqlCompanyRepository(mockDb);
       const result = await repository.insert(new Company({ name: '다런', address: '서울', type: 'startup' }));
 
-      expect(mockDb.transaction).toHaveBeenCalledOnce();
+      expect(mockedMethods(mockDb).transaction).toHaveBeenCalledOnce();
       expect(result).toBeInstanceOf(Company);
       expect(result!.id).toBe('company-1');
       expect(result!.name).toBe('다런');

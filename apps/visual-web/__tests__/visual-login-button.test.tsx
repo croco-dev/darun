@@ -2,6 +2,7 @@
 import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { AuthProvider } from '@darun/provider-auth/client';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import type { ComponentProps } from 'react';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -139,7 +140,9 @@ describe('Visual Google login', () => {
       button().click();
     });
     expect(fixture.popups).toHaveLength(1);
-    expect(fixture.authService.signInWithGoogle).toHaveBeenCalledExactlyOnceWith({ selectAccount: true });
+    expect(mockedMethods(fixture.authService).signInWithGoogle).toHaveBeenCalledExactlyOnceWith({
+      selectAccount: true,
+    });
     expect(button().disabled).toBe(true);
     expect(button().getAttribute('aria-busy')).toBe('true');
 

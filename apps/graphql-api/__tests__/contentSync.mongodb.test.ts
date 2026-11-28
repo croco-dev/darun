@@ -531,6 +531,7 @@ suite('durable publication sync in isolated PostgreSQL and MongoDB', () => {
     const extensions = { screenshotRegistrationId: randomUUID() };
     const input = { imageUrl: 'https://fixture.invalid/registration.png', imageAlt: '  검색 결과  ' };
     const findProduct = vi.spyOn(repository, 'findOneBySlug');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- the spy calls the original with the repository as this.
     findProduct.mockImplementationOnce(PostgresqlProductRepository.prototype.findOneBySlug);
     findProduct.mockRejectedValueOnce(new Error('synthetic post-commit read failure'));
     try {

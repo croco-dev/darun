@@ -390,7 +390,7 @@ export class PostgresqlProductContentSync implements ProductContentSync {
       if (!reserved) continue;
       try {
         if (await send(intent.id)) queued++;
-      } catch (error) {
+      } catch {
         await this.db
           .update(productContentSyncIntents)
           .set({ error: 'CONTENT_SYNC_QUEUE_FAILED', updatedAt: now })

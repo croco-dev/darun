@@ -16,7 +16,7 @@ const FIREBASE_AUTH_EMULATOR_URL = 'http://localhost:9099';
 /**
  * Firebase Auth Emulator에서 커스텀 토큰을 발급받아 쿠키로 설정
  */
-export async function loginAs(page: Page, email: string = TEST_USER.email): Promise<void> {
+export async function loginAs(page: Page, _email: string = TEST_USER.email): Promise<void> {
   const context = page.context();
 
   // Firebase Auth Emulator에 커스텀 토큰 생성 요청

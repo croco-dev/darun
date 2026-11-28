@@ -9,7 +9,7 @@ import { useLocale } from 'next-intl';
 import { useRef, useState, useSyncExternalStore } from 'react';
 import { useProductVoteCount } from '../ProductVoteCount/useProductVoteCount';
 
-void gql`
+gql`
   query ProductBySlugOnProductUserAction($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id

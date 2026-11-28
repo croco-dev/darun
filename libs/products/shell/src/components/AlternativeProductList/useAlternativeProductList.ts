@@ -3,7 +3,6 @@ import { useSuspenseQuery } from '@apollo/client/react';
 import { ProductBySlugOnAlternativeProductListDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 gql`
   query ProductBySlugOnAlternativeProductList($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {

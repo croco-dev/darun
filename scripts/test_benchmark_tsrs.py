@@ -55,7 +55,7 @@ class BenchmarkEvidenceTests(unittest.TestCase):
     def test_standalone_workloads_use_the_existing_package_script(self):
         case = next(c for c in cases_for('tier-web') if c['name'] == 'k2')
         self.assertEqual(command_for('tier-web', case),
-                         ['pnpm', '--filter', 'tier-web', 'run', 'typecheck:tsrs', '--checkers', '2'])
+                         ['pnpm', '--filter', 'tier-web', 'run', 'typecheck', '--checkers', '2'])
 
 
 if __name__ == '__main__':

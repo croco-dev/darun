@@ -1,8 +1,8 @@
 import './globals.css';
 
 import { Metadata } from 'next';
-import localFont from 'next/font/local';
 import { CookiesProvider } from 'next-client-cookies/server';
+import localFont from 'next/font/local';
 import { ReactNode } from 'react';
 import { ClientRootProvider } from './client';
 import { ServerRootProvider } from './server';

@@ -58,7 +58,6 @@ describe('PostgresqlProductScreenshotRepository UI 요소 태그', () => {
     const limit = vi.fn().mockResolvedValue([]);
     const orderBy = vi.fn().mockReturnValue({ limit });
     where.mockReturnValue({ orderBy });
-    const from = vi.fn().mockReturnValue({ where });
     const innerJoin = vi.fn().mockReturnValue({ where });
     const selectFrom = vi.fn().mockReturnValue({ innerJoin });
     const mockDb = { select: vi.fn().mockReturnValue({ from: selectFrom }) };

@@ -23,6 +23,7 @@ vi.mock('typedi', async importOriginal => {
   return {
     ...actual,
     Container: {
+      // eslint-disable-next-line @typescript-eslint/no-misused-spread -- keeps typedi's static fields; only set is replaced.
       ...actual.Container,
       set: (...args: unknown[]) => mockContainerSet(...args),
     },

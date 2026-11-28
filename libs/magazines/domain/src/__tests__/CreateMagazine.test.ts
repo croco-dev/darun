@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { Magazine } from '../entities/Magazine';
 import type { MagazineRepository } from '../repositories/MagazineRepository';
@@ -28,7 +29,7 @@ describe('CreateMagazine', () => {
         backgroundImageUrl: 'https://example.com/bg.png',
         authorId: 'author-1',
       });
-      vi.mocked(repository.insert).mockResolvedValue(inserted);
+      mockedMethods(repository).insert.mockResolvedValue(inserted);
 
       const usecase = new CreateMagazine(repository as never);
       const result = await usecase.execute({
@@ -37,13 +38,13 @@ describe('CreateMagazine', () => {
         authorId: 'author-1',
       });
 
-      expect(repository.insert).toHaveBeenCalledOnce();
+      expect(mockedMethods(repository).insert).toHaveBeenCalledOnce();
       expect(result).toBe(inserted);
     });
 
     it('insert가 null을 반환하면 에러를 던진다', async () => {
       const repository = createMockRepository();
-      vi.mocked(repository.insert).mockResolvedValue(null);
+      mockedMethods(repository).insert.mockResolvedValue(null);
 
       const usecase = new CreateMagazine(repository as never);
 

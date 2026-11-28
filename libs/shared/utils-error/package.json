@@ -8,16 +8,13 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/utils-croco-adapter": "workspace:*"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*"
   }
 }

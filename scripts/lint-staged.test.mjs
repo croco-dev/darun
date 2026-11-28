@@ -73,13 +73,16 @@ test('the installed commit hook checks index blobs without changing staged or un
     writeFileSync(path.join(fixture, 'package.json'), JSON.stringify({ private: true }));
     writeFileSync(path.join(fixture, 'pnpm-workspace.yaml'), 'verifyDepsBeforeRun: false\n');
     writeFileSync(
-      path.join(fixture, 'eslint.config.mjs'),
-      "export default [{ files: ['**/*.js'], rules: { semi: ['error', 'always'], 'no-undef': 'error' } }];\n"
+      path.join(fixture, '.oxlintrc.json'),
+      JSON.stringify({ categories: { correctness: 'off' }, rules: { 'no-undef': 'error' } })
     );
+    writeFileSync(path.join(fixture, '.oxfmtrc.json'), JSON.stringify({ semi: true }));
+    // The hook checks the committed configuration, so it must be in the index.
+    git('add', '--', 'package.json', '.oxlintrc.json', '.oxfmtrc.json');
     mkdirSync(path.join(fixture, 'nested'));
 
     const failed = check(fixable, fixable, 1);
-    assert.match(failed.output, /semi/);
+    assert.match(failed.output, /Format issues/);
     check(good, good, 0);
     // The worktree is cleanly formatted, but the committed blob is not.
     check(fixable, good, 1);

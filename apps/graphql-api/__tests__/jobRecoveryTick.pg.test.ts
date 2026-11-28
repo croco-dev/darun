@@ -6,6 +6,7 @@ import { DrizzleToken } from '@darun/provider-database';
 import { SearchableProductRepositoryToken } from '@darun/search-domain';
 import { translationJobs } from '@darun/translation-datasource';
 import { TranslationQueueService } from '@darun/translation-service';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import type { Handler } from 'aws-lambda';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
@@ -220,8 +221,8 @@ suite('isolated PostgreSQL recovery tick deadlines', () => {
       // The lock stays held while healthy siblings finish; the DB's 1s statement timeout
       // must end research without depending on their connection setup fitting into 500ms.
       const result = await tick({}, { getRemainingTimeInMillis: () => 12_000 } as never, () => {});
-      expect(descriptionQueue.sendJob).toHaveBeenCalledOnce();
-      expect(translationQueue.sendJob).toHaveBeenCalledOnce();
+      expect(mockedMethods(descriptionQueue).sendJob).toHaveBeenCalledOnce();
+      expect(mockedMethods(translationQueue).sendJob).toHaveBeenCalledOnce();
       expect(result).toMatchObject({
         queued: 2,
         queues: { research: { attempted: 0, queued: 0, timedOut: 1 } },

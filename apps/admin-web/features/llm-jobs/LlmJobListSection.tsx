@@ -117,7 +117,7 @@ export type UnifiedLlmJob = {
   entityType: string;
   entityId: string;
   productSlug?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | (string & {});
   model?: string | null;
   message?: string | null;
   error?: string | null;

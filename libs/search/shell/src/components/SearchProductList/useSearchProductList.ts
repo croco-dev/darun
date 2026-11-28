@@ -8,7 +8,7 @@ import {
 import { useLocale } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
-const SEARCH_PRODUCTS_QUERY = gql`
+gql`
   query SearchProductsOnSearchProductList($query: String!, $locale: String!) {
     searchProducts(query: $query, locale: $locale) {
       id

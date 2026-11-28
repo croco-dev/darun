@@ -1,5 +1,6 @@
 import type { LlmSetting, LlmSettingRepository, LlmSettingWrite } from '@darun/translation-domain';
 import { LlmConfigReadFailedError } from '@darun/utils-llm';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LlmSettingService } from '../LlmSettingService';
 
@@ -46,7 +47,7 @@ describe('LlmSettingService', () => {
 
   describe('getConfig 키 정책', () => {
     it('정상 row 부재는 기본 OpenRouter 구성과 환경 기본 키를 사용한다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(null);
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(null);
 
       const config = await service.getConfig();
 
@@ -56,7 +57,7 @@ describe('LlmSettingService', () => {
     });
 
     it('저장된 row의 커스텀 키를 사용한다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(
         makeSetting({ endpoint: 'https://custom-openrouter.ai/api/v1', apiKey: 'custom-secret-key' })
       );
 
@@ -67,7 +68,7 @@ describe('LlmSettingService', () => {
     });
 
     it('커스텀 엔드포인트 row에 키가 없으면 환경 기본 키를 전송하지 않는다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(
         makeSetting({ endpoint: 'https://custom-openrouter.ai/api/v1', apiKey: null })
       );
 
@@ -78,7 +79,7 @@ describe('LlmSettingService', () => {
     });
 
     it('기본 OpenRouter base의 row에 키가 없으면 환경 기본 키를 사용한다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(
         makeSetting({ endpoint: 'https://openrouter.ai/api/v1', apiKey: null })
       );
 
@@ -88,7 +89,7 @@ describe('LlmSettingService', () => {
     });
 
     it('조회 장애는 LLM_CONFIG_READ_FAILED로 전파되고 기본 설정으로 대체하지 않는다', async () => {
-      vi.mocked(mockRepository.findSetting).mockRejectedValueOnce(new Error('connection refused'));
+      mockedMethods(mockRepository).findSetting.mockRejectedValueOnce(new Error('connection refused'));
 
       const error = await service.getConfig().catch(e => e);
 
@@ -99,7 +100,7 @@ describe('LlmSettingService', () => {
 
   describe('getSetting', () => {
     it('row 부재 시 브라우저 응답에 환경 키를 노출하지 않는다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(null);
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(null);
 
       const setting = await service.getSetting();
 
@@ -108,7 +109,7 @@ describe('LlmSettingService', () => {
     });
 
     it('조회 장애는 LLM_CONFIG_READ_FAILED로 전파된다', async () => {
-      vi.mocked(mockRepository.findSetting).mockRejectedValueOnce(new Error('db down'));
+      mockedMethods(mockRepository).findSetting.mockRejectedValueOnce(new Error('db down'));
 
       await expect(service.getSetting()).rejects.toBeInstanceOf(LlmConfigReadFailedError);
     });
@@ -116,7 +117,7 @@ describe('LlmSettingService', () => {
 
   describe('updateSetting', () => {
     it('값을 정규화해 저장하고 변경 없는 필드를 유지한다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(
         makeSetting({ apiKey: 'old-key', thinkingLevel: 'low' })
       );
       vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
@@ -137,7 +138,7 @@ describe('LlmSettingService', () => {
     });
 
     it('endpoint가 같고 키 입력이 없으면 실제 저장 키를 유지한다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(makeSetting({ apiKey: 'stored-key' }));
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(makeSetting({ apiKey: 'stored-key' }));
       vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ model: 'x-ai/grok-4-fast' });
@@ -146,7 +147,7 @@ describe('LlmSettingService', () => {
     });
 
     it('endpoint가 바뀌는데 키 입력이 없으면 기존 공급자 키를 비운다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(makeSetting({ apiKey: 'old-provider-key' }));
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(makeSetting({ apiKey: 'old-provider-key' }));
       vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ endpoint: 'https://new-provider.example.com/v1' });
@@ -155,7 +156,7 @@ describe('LlmSettingService', () => {
     });
 
     it('최초 endpoint-only 저장은 환경 키를 저장하지 않는다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(null);
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(null);
       vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ endpoint: 'https://custom.example.com/v1', model: 'm1' });
@@ -164,7 +165,7 @@ describe('LlmSettingService', () => {
     });
 
     it('커스텀 엔드포인트에 환경 기본 키와 같은 키 저장을 거절한다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(null);
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(null);
 
       await expect(
         service.updateSetting({ endpoint: 'https://custom.example.com/v1', apiKey: 'env-api-key' })
@@ -174,7 +175,7 @@ describe('LlmSettingService', () => {
     });
 
     it('기본 OpenRouter 엔드포인트에는 환경과 같은 키 저장을 허용한다', async () => {
-      vi.mocked(mockRepository.findSetting).mockResolvedValueOnce(null);
+      mockedMethods(mockRepository).findSetting.mockResolvedValueOnce(null);
       vi.mocked(writeSetting).mockImplementationOnce(async input => makeSetting(input));
 
       await service.updateSetting({ endpoint: 'https://openrouter.ai/api/v1', apiKey: 'env-api-key' });

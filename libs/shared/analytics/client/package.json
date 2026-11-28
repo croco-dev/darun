@@ -8,17 +8,14 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "eslint \"**/*.{ts,tsx}\"",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit",
-    "typecheck:tsrs": "tsrs --noEmit --incremental false"
+    "typecheck": "tsrs --noEmit --incremental false"
   },
   "dependencies": {
     "@darun/utils-router": "workspace:*",
     "posthog-js": "^1.221.0"
   },
   "devDependencies": {
-    "@darun/eslint-config": "workspace:*",
     "@darun/utils-tsconfig": "workspace:*",
     "@types/node": "^25.2.3"
   }

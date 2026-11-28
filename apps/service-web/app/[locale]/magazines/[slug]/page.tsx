@@ -41,7 +41,7 @@ type Props = {
   params: Promise<{ locale: string; slug: string }>;
 };
 
-const getMagazine = cache(async (slug: string, locale: string) => {
+const getMagazine = cache(async (slug: string, _locale: string) => {
   const { data } = await getClient().query<MagazineQueryData>({
     query: magazineQuery,
     variables: { slug },

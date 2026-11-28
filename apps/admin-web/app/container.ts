@@ -24,7 +24,8 @@ const httpErrorLink = new ErrorLink(({ error, operation }) => {
       const { message, locations, path, extensions } = entry;
       const locationText = locations?.map(location => `${location.line}:${location.column}`).join(', ') ?? '-';
       const pathText = path?.join('.') ?? '-';
-      const code = extensions?.['code'] ? ` [code: ${extensions['code']}]` : '';
+      const rawCode = extensions?.['code'];
+      const code = typeof rawCode === 'string' && rawCode ? ` [code: ${rawCode}]` : '';
 
       console.error(`[GraphQL error]${code} ${message} | location=${locationText} | path=${pathText}`);
     }

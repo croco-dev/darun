@@ -1,4 +1,5 @@
 import { createTierPostgrestFixture } from '@/test-utils/postgrest-fixture';
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { createClient } from '@supabase/supabase-js';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,7 +55,7 @@ describe('admin page range recovery through the Supabase client', () => {
       global: {
         fetch: async (input, init) => {
           requests.push({
-            url: new URL(String(input)),
+            url: new URL(input instanceof Request ? input.url : input),
             method: init?.method ?? 'GET',
           });
           const response = responses.shift();
@@ -163,7 +164,7 @@ describe.skipIf(!databaseUrl)('admin pagination with PostgreSQL and PostgREST', 
     await database.prepare();
     fixture.client = database.client;
   });
-  afterAll(database.close);
+  afterAll(mockedMethods(database).close);
 
   it('preserves existing tables when another fixture refuses to prepare the occupied database', async () => {
     const occupied = createTierPostgrestFixture(databaseUrl, restUrl, 'darun_admin_pagination');

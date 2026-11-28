@@ -4,7 +4,7 @@ import { GetPhotosOnProductPhotosDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 import { productSectionQueryOptions } from '../ProductSectionContent';
 
-void gql`
+gql`
   query GetPhotosOnProductPhotos($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id

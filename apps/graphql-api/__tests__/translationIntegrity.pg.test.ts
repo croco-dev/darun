@@ -363,7 +363,7 @@ suite('Translation integrity in isolated PostgreSQL', () => {
     );
     const first = await Promise.all(services.map(service => service.retryProductTranslationJob(original!.id)));
     expect(new Set(first.map(job => job.id)).size).toBe(1);
-    expect(first.map(job => job.queued).sort()).toEqual([false, true]);
+    expect(first.map(job => job.queued).sort((left, right) => Number(left) - Number(right))).toEqual([false, true]);
     const retry = first[0]!;
     expect(retry).toMatchObject({
       status: 'pending',

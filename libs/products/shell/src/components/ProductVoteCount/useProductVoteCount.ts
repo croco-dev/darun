@@ -4,7 +4,7 @@ import { ProductVoteCountDocument } from '@darun/provider-graphql';
 import { useLocale } from 'next-intl';
 import { useRef, useState } from 'react';
 
-void gql`
+gql`
   query ProductVoteCount($slug: String!, $locale: String!) {
     productBySlug(slug: $slug, locale: $locale) {
       id

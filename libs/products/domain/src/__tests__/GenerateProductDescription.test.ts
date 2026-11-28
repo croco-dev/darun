@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import type { IProductDescriptionEvidenceAssembler } from '../services/ProductDescriptionEvidenceAssembler';
 import type { ProductDescriptionGenerator } from '../services/ProductDescriptionGenerator';
@@ -36,7 +37,7 @@ describe('GenerateProductDescriptionCandidate', () => {
     const assembler = createMockAssembler();
     const generator = createMockGenerator();
 
-    vi.mocked(assembler.assemble).mockResolvedValue({
+    mockedMethods(assembler).assemble.mockResolvedValue({
       evidence: mockEvidence,
       evidenceHash: 'hash-ev-1',
       evidenceHashVersion: 'v2',
@@ -44,7 +45,7 @@ describe('GenerateProductDescriptionCandidate', () => {
       baseDescriptionHash: 'hash-desc-1',
     });
 
-    vi.mocked(generator.generate).mockResolvedValue({
+    mockedMethods(generator).generate.mockResolvedValue({
       document: mockDoc,
       candidateHtml: '<p>도입</p><p>마무리</p>',
       writerModel: 'test-model',
@@ -57,8 +58,8 @@ describe('GenerateProductDescriptionCandidate', () => {
     const usecase = new GenerateProductDescriptionCandidate(assembler, generator);
     const result = await usecase.execute({ productId: 'prod-1' });
 
-    expect(assembler.assemble).toHaveBeenCalledTimes(2); // start and pre-return freshness check
-    expect(generator.generate).toHaveBeenCalledWith(mockEvidence, undefined);
+    expect(mockedMethods(assembler).assemble).toHaveBeenCalledTimes(2); // start and pre-return freshness check
+    expect(mockedMethods(generator).generate).toHaveBeenCalledWith(mockEvidence, undefined);
     expect(result.candidateHtml).toBe('<p>도입</p><p>마무리</p>');
     expect(result.evidenceHash).toBe('hash-ev-1');
     expect(result.baseDescriptionHash).toBe('hash-desc-1');
@@ -68,8 +69,8 @@ describe('GenerateProductDescriptionCandidate', () => {
     const assembler = createMockAssembler();
     const generator = createMockGenerator();
 
-    vi.mocked(assembler.assemble)
-      .mockResolvedValueOnce({
+    mockedMethods(assembler)
+      .assemble.mockResolvedValueOnce({
         evidence: mockEvidence,
         evidenceHash: 'hash-ev-1',
         evidenceHashVersion: 'v2',
@@ -84,7 +85,7 @@ describe('GenerateProductDescriptionCandidate', () => {
         baseDescriptionHash: 'hash-desc-1',
       });
 
-    vi.mocked(generator.generate).mockResolvedValue({
+    mockedMethods(generator).generate.mockResolvedValue({
       document: mockDoc,
       candidateHtml: '<p>도입</p>',
       writerModel: 'test-model',

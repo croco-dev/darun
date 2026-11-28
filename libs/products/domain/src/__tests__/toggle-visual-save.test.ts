@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import type { ProductFlowRepository } from '../repositories/ProductFlowRepository';
 import type { ProductScreenshotRepository } from '../repositories/ProductScreenshotRepository';
@@ -55,7 +56,7 @@ describe('ToggleVisualSave (M3)', () => {
     const useCase = new ToggleVisualScreenshotSave(repo);
     const result = await useCase.execute({ id: SCREENSHOT_ID, userId: USER_ID });
     expect(result).toEqual({ saved: true });
-    expect(repo.toggleVisualSave).toHaveBeenCalledWith({ screenshotId: SCREENSHOT_ID, userId: USER_ID });
+    expect(mockedMethods(repo).toggleVisualSave).toHaveBeenCalledWith({ screenshotId: SCREENSHOT_ID, userId: USER_ID });
   });
 
   it('이미 저장된 화면이면 saved:false를 반환한다', async () => {
@@ -81,7 +82,7 @@ describe('ToggleVisualSave (M3)', () => {
     const useCase = new ToggleVisualFlowSave(repo);
     const result = await useCase.execute({ id: FLOW_ID, userId: USER_ID });
     expect(result).toEqual({ saved: true });
-    expect(repo.toggleVisualSave).toHaveBeenCalledWith({ flowId: FLOW_ID, userId: USER_ID });
+    expect(mockedMethods(repo).toggleVisualSave).toHaveBeenCalledWith({ flowId: FLOW_ID, userId: USER_ID });
   });
 
   it('존재하지 않는 플로면 에러를 던진다', async () => {
@@ -107,7 +108,7 @@ describe('VisualSaveQuery (M3)', () => {
     const useCase = new GetMyVisualSaves(sRepo);
     const result = await useCase.execute({ userId: USER_ID, kind: 'screenshot', first: 24, page: 1 });
     expect(result).toEqual({ ids: [SCREENSHOT_ID], totalCount: 1 });
-    expect(sRepo.findVisualSavesByUser).toHaveBeenCalledWith({
+    expect(mockedMethods(sRepo).findVisualSavesByUser).toHaveBeenCalledWith({
       userId: USER_ID,
       kind: 'screenshot',
       limit: 24,
@@ -119,7 +120,7 @@ describe('VisualSaveQuery (M3)', () => {
     const sRepo = screenshotRepo();
     const useCase = new GetMyVisualSaves(sRepo);
     await useCase.execute({ userId: USER_ID, kind: 'flow', first: 100, page: 0 });
-    expect(sRepo.findVisualSavesByUser).toHaveBeenCalledWith({
+    expect(mockedMethods(sRepo).findVisualSavesByUser).toHaveBeenCalledWith({
       userId: USER_ID,
       kind: 'flow',
       limit: 48,
@@ -137,7 +138,7 @@ describe('VisualSaveQuery (M3)', () => {
     const result = await useCase.execute({ userId: USER_ID, first: 24, page: 1 });
     expect(result.totalCount).toBe(1);
     expect(result.hasNextPage).toBe(false);
-    expect(sRepo.findManyVisualSavedScreenshotsByUser).toHaveBeenCalledWith({
+    expect(mockedMethods(sRepo).findManyVisualSavedScreenshotsByUser).toHaveBeenCalledWith({
       userId: USER_ID,
       limit: 25,
       offset: 24,
@@ -152,7 +153,7 @@ describe('VisualSaveQuery (M3)', () => {
     const result = await useCase.execute({ userId: USER_ID, first: 24, page: 0 });
     expect(result.totalCount).toBe(1);
     expect(result.hasNextPage).toBe(false);
-    expect(fRepo.findManyVisualSavedFlowsByUser).toHaveBeenCalledWith({
+    expect(mockedMethods(fRepo).findManyVisualSavedFlowsByUser).toHaveBeenCalledWith({
       userId: USER_ID,
       limit: 25,
       offset: 0,

@@ -165,7 +165,7 @@ export function parseErrorInfo(error: unknown): ParsedErrorInfo {
   try {
     technicalDetails = JSON.stringify(detailsObj, null, 2);
   } catch {
-    technicalDetails = String(error);
+    technicalDetails = error instanceof Error ? error.toString() : Object.prototype.toString.call(error);
   }
 
   return { summary, technicalDetails, statusCode };

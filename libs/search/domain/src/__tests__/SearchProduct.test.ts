@@ -1,3 +1,4 @@
+import { mockedMethods } from '@darun/utils-vitest-config/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { SearchableProduct } from '../entities/SearchableProduct';
 import type { SearchableProductRepository } from '../repositories/SearchableProductRepository';
@@ -101,7 +102,7 @@ describe('SearchProduct', () => {
 
     const result = await useCase.execute({ query: ' Product ' });
 
-    expect(repository.searchProduct).toHaveBeenCalledWith('product', undefined, undefined);
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledWith('product', undefined, undefined);
     expect(result).toEqual(products);
   });
 
@@ -112,7 +113,7 @@ describe('SearchProduct', () => {
 
     const result = await useCase.execute({ query: 'Product', limit: 2 });
 
-    expect(repository.searchProduct).toHaveBeenCalledWith('product', 2, 6);
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledWith('product', 2, 6);
     expect(result).toEqual(products);
   });
 
@@ -122,7 +123,7 @@ describe('SearchProduct', () => {
 
     const result = await useCase.execute({ query: 'missing', limit: 3 });
 
-    expect(repository.searchProduct).toHaveBeenCalledWith('missing', 3, 9);
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledWith('missing', 3, 9);
     expect(result).toEqual([]);
   });
 
@@ -132,7 +133,11 @@ describe('SearchProduct', () => {
 
     await useCase.execute({ query: '노트북 Mouse', limit: 5 });
 
-    expect(repository.searchProduct).toHaveBeenCalledWith('노트북 laptop 랩톱 mouse 마우스 포인팅 디바이스', 5, 15);
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledWith(
+      '노트북 laptop 랩톱 mouse 마우스 포인팅 디바이스',
+      5,
+      15
+    );
   });
 
   it('구 동의어와 주변 검색어를 정규화해 저장소에 전달한다', async () => {
@@ -144,7 +149,7 @@ describe('SearchProduct', () => {
       limit: 4,
     });
 
-    expect(repository.searchProduct).toHaveBeenCalledExactlyOnceWith(
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledExactlyOnceWith(
       'wireless 포인팅 디바이스 마우스 mouse usb',
       4,
       12
@@ -168,7 +173,7 @@ describe('SearchProduct', () => {
 
     await useCase.execute({ query: 'product', limit: 50 });
 
-    expect(repository.searchProduct).toHaveBeenCalledWith('product', 50, 100);
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledWith('product', 50, 100);
   });
 
   it('normalizes scores so ranking magnitude does not dominate search relevance', async () => {
@@ -443,7 +448,7 @@ describe('SearchProduct', () => {
 
     const result = await useCase.execute({ query: 'product', limit: 0 });
 
-    expect(repository.searchProduct).toHaveBeenCalledWith('product', 0, 0);
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledWith('product', 0, 0);
     expect(result).toEqual([]);
   });
 
@@ -849,7 +854,7 @@ describe('SearchProduct', () => {
 
       expect(await useCase.execute({ query: '' })).toEqual([]);
       expect(await useCase.execute({ query: '   ' })).toEqual([]);
-      expect(repository.searchProduct).not.toHaveBeenCalled();
+      expect(mockedMethods(repository).searchProduct).not.toHaveBeenCalled();
     });
 
     it('handles NaN searchScore by treating it as 0', async () => {
@@ -926,11 +931,11 @@ describe('SearchProduct', () => {
     const useCase = createUseCase(repository);
 
     expect(await useCase.execute({ query: 'fixture', limit: 8, eligibleProductIds: [] })).toEqual([]);
-    expect(repository.searchProduct).not.toHaveBeenCalled();
+    expect(mockedMethods(repository).searchProduct).not.toHaveBeenCalled();
 
     const result = await useCase.execute({ query: ' Fixture ', limit: 8, eligibleProductIds: [product.id] });
     expect(result.map(match => match.id)).toEqual([product.id]);
-    expect(repository.searchProduct).toHaveBeenCalledExactlyOnceWith('fixture', 8, 24, [product.id]);
+    expect(mockedMethods(repository).searchProduct).toHaveBeenCalledExactlyOnceWith('fixture', 8, 24, [product.id]);
   });
 
   const createRepository = (

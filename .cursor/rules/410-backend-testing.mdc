@@ -292,7 +292,7 @@ export default defineConfig({
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsrs --noEmit --incremental false"
   }
 }
 ```

@@ -38,7 +38,7 @@ function setup(list: (typeof lists)[number]) {
     ...list.details,
   }));
   const request = vi.fn<typeof fetch>(async (_url, init) => {
-    const { operationName, variables, query } = JSON.parse(String(init?.body));
+    const { operationName, variables, query } = JSON.parse(init?.body as string);
     if (operationName === list.legacyName) {
       expect(query).toContain(`${list.legacy}(status: $status, limit: $limit, offset: $offset)`);
       const { limit, offset } = variables;
@@ -85,7 +85,7 @@ function setup(list: (typeof lists)[number]) {
   };
   const operations = () =>
     request.mock.calls.map(([, init]) => {
-      const { operationName, variables } = JSON.parse(String(init?.body));
+      const { operationName, variables } = JSON.parse(init?.body as string);
       return { operationName, variables };
     });
   return {

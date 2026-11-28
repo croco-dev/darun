@@ -63,11 +63,11 @@ def cases_for(workload):
 
 def command_for(workload, case):
     if workload == 'workspace':
-        command = ['pnpm', 'exec', 'turbo', 'run', 'typecheck:tsrs',
+        command = ['pnpm', 'exec', 'turbo', 'run', 'typecheck',
                    f'--concurrency={case["concurrency"]}', '--force',
                    '--env-mode=strict', '--output-logs=errors-only']
         return command + (['--'] + case['flags'] if case['flags'] else [])
-    return ['pnpm', '--filter', workload, 'run', 'typecheck:tsrs'] + case['flags']
+    return ['pnpm', '--filter', workload, 'run', 'typecheck'] + case['flags']
 
 
 def parse_counters(text):
@@ -157,7 +157,7 @@ class Benchmark:
         self.budget = int(min(memory['MemTotal'] * 0.8, memory['MemAvailable'] - 1024 * MIB))
         if self.budget < 1024 * MIB:
             raise RuntimeError('Insufficient free memory for an isolated benchmark.')
-        plan = json.loads(self.capture(['pnpm', 'exec', 'turbo', 'run', 'typecheck:tsrs', '--dry=json']))
+        plan = json.loads(self.capture(['pnpm', 'exec', 'turbo', 'run', 'typecheck', '--dry=json']))
         tasks = [task for task in plan['tasks']
                  if task.get('command') and task['command'] != '<NONEXISTENT>']
         if args.workload != 'workspace':

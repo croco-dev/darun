@@ -54,7 +54,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
       .where(ilike(companies.name, pattern))
       .orderBy(desc(sql`lower(${companies.name}) = lower(${query})`), asc(companies.name), asc(companies.id))
       .limit(limit)
-      .then(res => res.map(this.mapper));
+      .then(res => res.map(row => this.mapper(row)));
   }
 
   async findAllWithPagination(page: number = 1, limit: number = 50): Promise<{ data: Company[]; total: number }> {
@@ -67,7 +67,7 @@ export class PostgresqlCompanyRepository implements CompanyRepository {
         .orderBy(desc(companies.createdAt), desc(companies.id))
         .limit(limit)
         .offset(offset)
-        .then(res => res.map(this.mapper)),
+        .then(res => res.map(row => this.mapper(row))),
       this.db
         .select({ count: count() })
         .from(companies)

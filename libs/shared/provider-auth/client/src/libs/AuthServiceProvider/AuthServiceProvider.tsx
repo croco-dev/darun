@@ -25,7 +25,7 @@ export const AuthServiceProvider = ({ cookies, children, authService }: AuthServ
         cookies.remove('idToken');
         cookies.remove('refreshToken');
         cookies.remove('redirectUrl');
-        client.resetStore();
+        void client.resetStore();
       },
       set: storage => {
         const keys = Object.keys(storage) as (keyof typeof storage)[];
